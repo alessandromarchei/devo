@@ -233,9 +233,6 @@ def h5_to_voxels(scenedir, nbins=5, H=640, W=480, use_event_stack=False):
     event_idxs = np.searchsorted(t_ns, tss_imgs_ns, side='left')
     event_idxs = np.clip(event_idxs, 0, total_events - 1)
 
-    with open("indexes_full_batch.txt", "w") as f:
-        for idx in event_idxs:
-            f.write(f"{idx}\n")
 
     # If no indexes provided, default to all image frames
     indexes = list(range(num_imgs))
@@ -340,10 +337,6 @@ def h5_to_voxels_indexed(scenedir, nbins=5, H=640, W=480, use_event_stack=False,
         ts_idx += 1
 
     event_idxs = np.clip(event_idxs, 0, total_events - 1)
-
-    with open("indexes.txt", "w") as f:
-        for idx in event_idxs:
-            f.write(f"{idx}\n")
 
     # Build voxels
     voxel_list = []
