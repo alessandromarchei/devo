@@ -4,7 +4,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Logger:
-    def __init__(self, name, scheduler, total_steps=0, step=1, tensorboard_update_step=100):
+    def __init__(self, name, scheduler, total_steps=0, step=1, tensorboard_update_step=100, args_config=None):
         
         self.total_steps = total_steps
         self.step = step
@@ -13,6 +13,7 @@ class Logger:
         self.name = name
         self.scheduler = scheduler
         self.tensorboard_update_step = tensorboard_update_step
+        self.args_config = args_config
 
     def _print_training_status(self):
         if self.writer is None:
@@ -56,6 +57,12 @@ class Logger:
             
         for key in results:
             self.writer.add_scalar(key, results[key], self.total_steps * self.step)
+        
+        try:
+            self.log_config_once()
+        except Exception as e:
+            print(f"Error logging config: {e}")
+            pass
 
     def write_figures(self, figures):
         if self.writer is None:
@@ -63,6 +70,13 @@ class Logger:
             
         for key in figures:
             self.writer.add_figure(key, figures[key], self.total_steps * self.step)
+
+    def log_config_once(self):
+        if self.writer is not None and self.args_config is not None and not hasattr(self, '_config_logged'):
+            config_text = self.args_config.format_values().replace("\n", "  \n")  # Markdown-friendly
+            self.writer.add_text("config", f"```bash\n{config_text}\n```", global_step=0)
+            print("Logged config to TensorBoard.")
+            self._config_logged = True  # Prevent re-logging
 
     def close(self):
         self.writer.close()
