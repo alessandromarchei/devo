@@ -335,89 +335,173 @@ class BasicEncoder4Evs(nn.Module):
         return x.view(b, n, c2, h2, w2)
     
 
-
 class DepthwiseSeparableConv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1):
-        super(DepthwiseSeparableConv, self).__init__()
-        
-        self.padding = (kernel_size-1)//2
-        # Depthwise Convolution (groups=in_channels ensures each channel is processed separately)
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, 
-                                   stride=stride, padding=self.padding, groups=in_channels, bias=False)
-        
-        # Pointwise Convolution (1x1 Conv to mix channels)
+        super().__init__()
+        padding = (kernel_size - 1) // 2
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels, bias=False)
         self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        x = self.depthwise(x)  # Apply depthwise convolution
-        x = self.pointwise(x)  # Apply pointwise convolution
-        return x
-    
-
+        x = self.depthwise(x)
+        x = self.pointwise(x)
+        x = self.bn(x)
+        return self.relu(x)
 
 class MKSmallEncoder(nn.Module):
     def __init__(self, in_channels, output_dim=128, norm_fn='batch', dropout=0.0):
-        super(MKSmallEncoder, self).__init__()     #call the constructor of nn.Module
+        super(MKSmallEncoder, self).__init__()
 
         self.in_channels = in_channels
         self.output_dim = output_dim
         self.norm_fn = norm_fn
 
-        #conv2d with 2 output channels
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(self.in_channels, 2, kernel_size=3, stride=1, padding=1),
+        def norm(c):
+            if norm_fn == 'batch':
+                return nn.BatchNorm2d(c)
+            elif norm_fn == 'group':
+                return nn.GroupNorm(num_groups=8, num_channels=c)
+            elif norm_fn == 'instance':
+                return nn.InstanceNorm2d(c)
+            else:
+                return nn.Identity()
+
+        # Block 1: 160x160 → 160x160 | 24 ch
+        self.block1 = nn.Sequential(
+            nn.Conv2d(in_channels, 24, 3, padding=1, bias=False),
+            norm(24),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(24, 24, 3, padding=1, bias=False),
+            norm(24),
             nn.ReLU(inplace=True)
         )
 
-        #depthwise separable convolution
-        self.sep_conv1 = nn.Sequential(
-            DepthwiseSeparableConv(2, 4, kernel_size=3, stride=1),
+        # Block 2: 160x160 → 80x80 | 32 ch
+        self.block2 = nn.Sequential(
+            nn.Conv2d(24, 32, 3, stride=2, padding=1, bias=False),
+            norm(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, 3, padding=1, bias=False),
+            norm(32),
             nn.ReLU(inplace=True)
         )
 
-        #here perform pooling
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-
-        self.sep_conv2 = nn.Sequential(
-            DepthwiseSeparableConv(4, 8, kernel_size=3, stride=1),
+        # Block 3: 80x80 → 80x80 | 32 ch
+        self.block3 = nn.Sequential(
+            nn.Conv2d(32, 32, 3, padding=1, bias=False),
+            norm(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, 3, padding=1, bias=False),
+            norm(32),
             nn.ReLU(inplace=True)
         )
 
-        self.sep_conv3 = nn.Sequential(
-            DepthwiseSeparableConv(8, 16, kernel_size=3, stride=1),
+        # Block 4: 80x80 → 40x40 | 32 ch
+        self.block4 = nn.Sequential(
+            nn.Conv2d(32, 32, 3, stride=2, padding=1, bias=False),
+            norm(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, 3, padding=1, bias=False),
+            norm(32),
             nn.ReLU(inplace=True)
         )
 
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        # Final 1x1 projection to output dim
+        self.output_proj = nn.Conv2d(32, output_dim, kernel_size=1)
 
-        self.sep_conv4 = nn.Sequential(
-            DepthwiseSeparableConv(16, 32, kernel_size=3, stride=1),
-            nn.ReLU(inplace=True)
-        )
+        self.dropout = nn.Dropout2d(dropout) if dropout > 0 else nn.Identity()
 
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=1)
+        # Kaiming init
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d, nn.GroupNorm)):
+                if m.weight is not None:
+                    nn.init.constant_(m.weight, 1)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
-        self.conv4 = nn.Conv2d(32, self.output_dim, kernel_size=1)
-
-    def forward(self,x):
+    def forward(self, x):
         b, n, c, h, w = x.shape
-        x = x.view(b*n, c, h, w)
+        x = x.view(b * n, c, h, w)
 
-        x = self.conv1(x)
-        x = self.sep_conv1(x)
-        x = self.pool1(x)
-        x = self.sep_conv2(x)
-        x = self.sep_conv3(x)
-        x = self.pool2(x)
-        x = self.sep_conv4(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
+        x = self.block1(x)      # 160x160 → 24
+        x = self.block2(x)      # 80x80  → 32
+        x = self.block3(x)      # 80x80  → 32
+        x = self.block4(x)      # 40x40  → 32
+        x = self.output_proj(x)
+        x = self.dropout(x)
 
-        #return the output shape.
-        # if output_dim = 128, MATCHING FEATURES
-        # if output_dim = 384, CONTEXT FEATURES
         _, c2, h2, w2 = x.shape
         return x.view(b, n, c2, h2, w2)
+
+
+###### ORIGINAL FROM CLAUDIO 
+# class MKSmallEncoder(nn.Module):
+#     def __init__(self, in_channels, output_dim=128, norm_fn='batch', dropout=0.0):
+#         super(MKSmallEncoder, self).__init__()     #call the constructor of nn.Module
+
+#         self.in_channels = in_channels
+#         self.output_dim = output_dim
+#         self.norm_fn = norm_fn
+
+#         #conv2d with 2 output channels
+#         self.conv1 = nn.Sequential(
+#             nn.Conv2d(self.in_channels, 2, kernel_size=3, stride=1, padding=1),
+#             nn.ReLU(inplace=True)
+#         )
+
+#         #depthwise separable convolution
+#         self.sep_conv1 = nn.Sequential(
+#             DepthwiseSeparableConv(2, 4, kernel_size=3, stride=1),
+#             nn.ReLU(inplace=True)
+#         )
+
+#         #here perform pooling
+#         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+#         self.sep_conv2 = nn.Sequential(
+#             DepthwiseSeparableConv(4, 8, kernel_size=3, stride=1),
+#             nn.ReLU(inplace=True)
+#         )
+
+#         self.sep_conv3 = nn.Sequential(
+#             DepthwiseSeparableConv(8, 16, kernel_size=3, stride=1),
+#             nn.ReLU(inplace=True)
+#         )
+
+#         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+#         self.sep_conv4 = nn.Sequential(
+#             DepthwiseSeparableConv(16, 32, kernel_size=3, stride=1),
+#             nn.ReLU(inplace=True)
+#         )
+
+#         self.conv3 = nn.Conv2d(32, 32, kernel_size=1)
+
+#         self.conv4 = nn.Conv2d(32, self.output_dim, kernel_size=1)
+
+#     def forward(self,x):
+#         b, n, c, h, w = x.shape
+#         x = x.view(b*n, c, h, w)
+
+#         x = self.conv1(x)
+#         x = self.sep_conv1(x)
+#         x = self.pool1(x)
+#         x = self.sep_conv2(x)
+#         x = self.sep_conv3(x)
+#         x = self.pool2(x)
+#         x = self.sep_conv4(x)
+#         x = self.conv3(x)
+#         x = self.conv4(x)
+
+#         #return the output shape.
+#         # if output_dim = 128, MATCHING FEATURES
+#         # if output_dim = 384, CONTEXT FEATURES
+#         _, c2, h2, w2 = x.shape
+#         return x.view(b, n, c2, h2, w2)
 
 
 
