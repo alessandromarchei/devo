@@ -187,8 +187,8 @@ if __name__ == '__main__':
     cmd = "ulimit -n 2000000"
     os.system(cmd)
 
-    if not os.path.isdir(f'../checkpoints/{args.name}'):
-        os.makedirs(f'../checkpoints/{args.name}')
+    if not os.path.isdir(f'checkpoints/{args.name}'):
+        os.makedirs(f'checkpoints/{args.name}')
     
     if args.ddp:
         mp.spawn(plot_flow_train_loader, nprocs=args.gpu_num, args=(args,))

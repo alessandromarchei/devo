@@ -8,7 +8,7 @@ from devo.config import cfg
 
 from utils.eval_utils import run_voxel, assert_eval_config
 from utils.load_utils import voxel_iterator_parallel, voxel_iterator
-from utils.eval_utils import log_results, log_results_loss, write_raw_results, compute_results, compute_median_results
+from utils.eval_utils import log_results, write_raw_results, compute_median_results
 from utils.transform_utils import transform_rescale_poses
 from utils.viz_utils import viz_flow_inference
 
@@ -20,7 +20,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
 
     if config is None:
         config = cfg
-        config.merge_from_file("config/default.yaml")
+        config.merge_from_file("config/configs_eval_training.yaml")
 
     scenes = open(split_file).read().split()
 
@@ -36,23 +36,49 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
         for trial in range(trials):
 
             # estimated trajectory
-            datapath_val = os.path.join(datapath, scene.split("/")[0], scene.split("/")[2])
-            scene_path = os.path.join(datapath_val, "evs_left", scene, "h5")
-            traj_ref = osp.join(datapath_val, "image_left", scene, "pose_left.txt")
+            datapath_val = os.path.join(datapath, scene.split("/")[0], scene.split("/")[2], scene.split("/")[3])
+            scene_path = datapath_val
+            traj_ref = osp.join(datapath_val, "pose_left.txt")
 
+            #compute path of the evaluation set
+            #datapath_val = '/usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory/Easy'
+            #scene = 'abandonedfactory/abandonedfactory/Easy/P011'
+            # we want scene_path = /usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory/Easy/P011'
+            
+
+            
             # run the slam system
             if scale != 1.0:
-                nH, nW = math.floor(scale * 480), math.floor(scale * 640) # TODO in tartan_rgb and tartan_frame
+                nW = math.floor(scale * 640)
+                if args.square == True:
+                    #in this case the scaled image is squared
+                    nH = nW
+                else:
+                    #in this case the scaled image is rectangular
+                    nH = math.floor(scale * 480)
+                    
                 kwargs.update({"scale": scale, "H": nH, "W": nW})
+            
             traj_est, tstamps, flowdata = run_voxel(scene_path, config, net, viz=viz,
-                                                 iterator=voxel_iterator(scene_path, timing=timing, stride=stride, scale=scale),
+                                                 iterator=voxel_iterator(scene_path, timing=timing, stride=stride, scale=scale, max_events_loaded=args.max_events_loaded, square=args.square),
                                                  timing=timing, **kwargs, viz_flow=viz_flow)
 
             PERM = [1, 2, 0, 4, 5, 3, 6] # ned -> xyz
             # events between two adjacent frames t-1 and t are accumulated in event voxel t -> ignore first pose (t=0)
             traj_ref = np.loadtxt(traj_ref, delimiter=" ")[1::stride, PERM] # dtype="float32"
             if scale != 1.0:
-                traj_ref = transform_rescale_poses(scale, torch.from_numpy(traj_ref)).data.numpy()
+                nW = math.floor(scale * 640)
+                if args.square == True:
+                    #in this case the scaled image is squared
+                    nH = nW
+                else:
+                    #in this case the scaled image is rectangular
+                    nH = math.floor(scale * 480)
+
+                #compute the scales based on the target dimension
+                scale_x = nW / 640
+                scale_y = nH / 480
+                traj_ref = transform_rescale_poses(scale_x, scale_y, torch.from_numpy(traj_ref)).data.numpy()
 
             FREQ = 50
             # do evaluation 

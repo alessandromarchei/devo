@@ -69,6 +69,8 @@ def to_voxel_grid_numpy(events, num_bins, width=W, height=H):
     vals_right = pols * dts
 
     valid_indices = tis < num_bins
+
+    # add the events to the voxel grid using bilinear interpolation
     np.add.at(voxel_grid, (xs[valid_indices] + ys[valid_indices] * width +
               tis[valid_indices] * width * height).astype(np.int64), vals_left[valid_indices])
 

@@ -9,6 +9,12 @@ import h5py
 import hdf5plugin
 import glob
 import math
+
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 from utils.event_utils import EventSlicer, compute_ms_to_idx
 from utils.viz_utils import render
 

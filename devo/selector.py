@@ -15,6 +15,7 @@ class SelectionMethod(str, enum.Enum):
     RANDOM = "random"
     GRADIENT = "gradient"
     SCORER = "scorer"
+    TOPK = "topk"
 
 class Scorer(nn.Module):
     def __init__(self, bins=5) -> None:
@@ -126,6 +127,8 @@ class PatchSelector():
             _, _, h2, w2, _ = scores_grid.shape
             scores_t = scores_grid.view(b*n,h2*w2,(self.GRID**2)).transpose(-2,-1).contiguous().view(b*n*(self.GRID**2),h2*w2) # (b,n,h2*w2,GRID*GRID) -> (b,n,GRID*GRID,h2*w2) -> (b*n*GRID*GRID,h2*w2)
             scores_t += 1e-7 # to fulfill non-zero sum
+
+            #HERE ERROR IN CASE OF PATCHES_PER_IMAGE % (GRID**2) != 0 (SO DIVISIBLE BY 4)
             idx = torch.multinomial(scores_t, patches_per_image//(self.GRID**2)) # (b*n*GRID*GRID,patches_per_image/(GRID*GRID))
             idx = idx.view(b*n,self.GRID**2,-1).transpose(-2,-1) # -> (b*n,patches_per_image/(GRID*GRID),GRID*GRID)
             idx = self._grid2_idx_up(idx, scores_grid) # (b*n,patches_per_image)

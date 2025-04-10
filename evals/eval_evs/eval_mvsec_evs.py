@@ -9,6 +9,7 @@ from utils.viz_utils import viz_flow_inference
 
 H, W = 260, 346
 
+
 @torch.no_grad()
 def evaluate(config, args, net, train_step=None, datapath="", split_file=None, 
              trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, side='left', viz_flow=False):
@@ -45,7 +46,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args)
             all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                                                                    plot=plot, save=save, return_figure=return_figure, stride=stride,
-                                                                   expname=args.expname)
+                                                                   expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name)
             
             if viz_flow:
                 viz_flow_inference(outfolder, flowdata)
@@ -78,6 +79,9 @@ if __name__ == '__main__':
     parser.add_argument('--side', type=str, default="left")
     parser.add_argument('--viz_flow', action="store_true")
     parser.add_argument('--expname', type=str, default="")
+    parser.add_argument('--save_csv', action="store_true")
+    parser.add_argument('--csv_name', type=str, default="")
+
 
     args = parser.parse_args()
     assert_eval_config(args)
@@ -88,8 +92,8 @@ if __name__ == '__main__':
 
     torch.manual_seed(1234)
 
-    args.save_trajectory = True
-    args.plot = True
+    # args.save_trajectory = True
+    # args.plot = True
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz,timing=args.timing, \
                         stride=args.stride, side=args.side, viz_flow=args.viz_flow)

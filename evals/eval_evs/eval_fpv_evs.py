@@ -64,8 +64,8 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
                 data = (traj_hf, tss_traj_us, traj_est, tstamps)
                 hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args)
                 all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
-                                                                    plot=plot, save=save, return_figure=return_figure, stride=stride,
-                                                                    expname=args.expname)
+                                                                   plot=plot, save=save, return_figure=return_figure, stride=stride,
+                                                                   expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name)
                 
                 if viz_flow:
                     viz_flow_inference(outfolder, flowdata)
@@ -98,6 +98,8 @@ if __name__ == '__main__':
     parser.add_argument('--side', type=str, default="left")
     parser.add_argument('--viz_flow', action="store_true")
     parser.add_argument('--expname', type=str, default="")
+    parser.add_argument('--save_csv', action="store_true")
+    parser.add_argument('--csv_name', type=str, default="")
 
     args = parser.parse_args()
     assert_eval_config(args)

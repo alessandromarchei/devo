@@ -9,6 +9,8 @@ import numpy as np
 from numba import jit
 import torch
 
+from torch import cuda
+
 # from https://github.com/uzh-rpg/DSEC/blob/main/scripts/utils/eventslicer.py
 class EventSlicer:
     def __init__(self, h5f: h5py.File):
@@ -177,6 +179,48 @@ class EventSlicer:
     
 
 
+def to_event_stack(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, device='cpu'):
+    """Returns fast, vectorized event stack: shape (nb_of_time_bins, H, W)"""
+
+    if cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+
+    if len(ts) == 0:
+        return torch.zeros(nb_of_time_bins, H, W, dtype=torch.float32, device=device)
+
+    ps = ps.astype(np.int8)
+    ps[ps == 0] = -1
+
+    duration = ts[-1] - ts[0]
+    if duration == 0:
+        return torch.zeros(nb_of_time_bins, H, W, dtype=torch.float32, device=device)
+
+    # Normalize to bin index
+    bin_indices = ((ts - ts[0]) * nb_of_time_bins / duration).astype(np.int32)
+    bin_indices = np.clip(bin_indices, 0, nb_of_time_bins - 1)
+
+    xs = np.clip(xs, 0, W - 1).astype(np.int32)
+    ys = np.clip(ys, 0, H - 1).astype(np.int32)
+
+    # Convert to torch tensors
+    bin_indices = torch.from_numpy(bin_indices).to(device)
+    xs = torch.from_numpy(xs).to(device)
+    ys = torch.from_numpy(ys).to(device)
+    ps = torch.from_numpy(ps).to(device).float()
+
+    # Flattened index for the 3D tensor
+    linear_idx = bin_indices * (H * W) + ys * W + xs
+
+    # Create the flattened voxel grid and accumulate using index_add_
+    voxel_grid_flat = torch.zeros(nb_of_time_bins * H * W, dtype=torch.float32, device=device)
+    voxel_grid_flat.index_add_(0, linear_idx, ps)
+
+    voxel_grid = voxel_grid_flat.view(nb_of_time_bins, H, W)
+    return voxel_grid
+
+
 def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_maps=None):
     """Returns voxel grid representation of event steam. (5, H, W)
 
@@ -187,11 +231,17 @@ def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_map
 
     If event stream is empty, voxel grid will be empty.
     """
+
+    if cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+
+
     voxel_grid = torch.zeros(nb_of_time_bins,
                           H,
                           W,
-                          dtype=torch.float32,
-                          device='cpu')
+                          dtype=torch.float32)
 
     voxel_grid_flat = voxel_grid.flatten()
     ps = ps.astype(np.int8)
@@ -226,7 +276,9 @@ def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_map
                           + lim_y.long() * W \
                           + lim_t.long() * W * H
 
-                weight = polarity * (1-(lim_x-x).abs()) * (1-(lim_y-y).abs()) * (1-(lim_t-t).abs())
+                lin_idx = lin_idx
+
+                weight = (polarity * (1-(lim_x-x).abs()) * (1-(lim_y-y).abs()) * (1-(lim_t-t).abs()))
                 voxel_grid_flat.index_add_(dim=0, index=lin_idx[mask], source=weight[mask].float())
 
     return voxel_grid

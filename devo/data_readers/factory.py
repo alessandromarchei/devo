@@ -20,6 +20,8 @@ def dataset_factory(dataset_list, **kwargs):
         ValueError("dataset_list {dataset_list} should be a subset of {dataset_map}.")
     
     db_list = []
+    print("Loading datasets: {}".format(dataset_list))
+
     for key in dataset_list:
         # cache datasets for faster future loading
         db = dataset_map[key][0](**kwargs)

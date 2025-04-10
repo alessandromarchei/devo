@@ -1,0 +1,2127 @@
+nohup: ignoring input
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_3_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_5_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_6_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_7_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_9_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=96, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=44, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=24, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=12, REMOVAL=22, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=96, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=44, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=24, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=10
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=12, REMOVAL=10, OPT=5
+ → Skipping: already evaluated
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_10_Davis_With_Gt, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=96, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=96, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=44, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=44, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=24, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=24, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=12, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=12, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=96, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=96, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=44, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=44, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=24, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=24, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=12, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=12, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_8_Davis, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=96, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=96, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=44, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=44, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=24, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=24, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=12, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=12, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=96, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=96, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=44, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=44, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=24, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=24, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=12, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=12, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_11_Davis, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=96, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=96, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=44, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=44, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=24, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=24, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=12, REMOVAL=22, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=12, REMOVAL=22, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=96, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=96, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=44, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=44, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=24, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=24, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=12, REMOVAL=10, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=12, REMOVAL=10, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=96, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=96, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=44, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=44, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=24, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=24, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=12, REMOVAL=5, OPT=10
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Checking SCENE=Indoor_Forward_12_Davis, PATCHES=12, REMOVAL=5, OPT=5
+ → Running evaluation...
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_fpv_evs.py", line 7, in <module>
+    from utils.eval_utils import assert_eval_config, run_voxel
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 4, in <module>
+    from devo.devo import DEVO
+  File "/home/amarchei/Desktop/repos/DEVO/devo/devo.py", line 16, in <module>
+    Id = SE3.Identity(1, device="cuda")
+  File "/home/amarchei/Desktop/repos/DEVO/devo/lietorch/groups.py", line 94, in Identity
+    data = data.to(kwargs['device'])
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

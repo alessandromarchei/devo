@@ -5,6 +5,10 @@ import cv2
 import tqdm
 import glob
 import multiprocessing
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 import h5py
 from utils.load_utils import compute_rmap_vector

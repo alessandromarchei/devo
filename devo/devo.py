@@ -411,7 +411,7 @@ class DEVO:
                 # [DEBUG]
                 # print("nonzero-zero-ratio", num_nonzeros, num_zeros, num_nonzeros / (num_zeros + num_nonzeros))
                 if num_nonzeros / (num_zeros + num_nonzeros) < 2e-2: # TODO eval hyperparam (add to config.py)
-                    print(f"skip voxel at {tstamp} due to lack of events!")
+                    #print(f"skip voxel at {tstamp} due to lack of events!")
                     return
 
             b, n, v, h, w = image.shape

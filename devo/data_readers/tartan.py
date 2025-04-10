@@ -11,7 +11,7 @@ import hdf5plugin
 
 from ..lietorch import SE3
 from .base import RGBDDataset, EVSDDataset
-from .utils import is_converted, scene_in_split
+from .utils import is_converted, scene_in_split, h5_to_voxels_indexed
 
 class TartanAir(RGBDDataset):
     """ Derived class for TartanAir RGBD dataset """
@@ -28,19 +28,22 @@ class TartanAir(RGBDDataset):
         print("Building TartanAir RGBD dataset")
 
         scene_info = {}
-        scenes = glob.glob(osp.join(self.root, '*/*/image_left'))
-        scenes = [glob.glob(osp.join(s, '*/*/*/*')) for s in scenes]
-        scenes = functools.reduce(operator.concat, scenes)
+
+        #creates a set of directories or files named image_left located three levels deep under self.root, which is /scratch/amarchei/TartanEvent/
+        scenes = glob.glob(osp.join(self.root, '*/*/*/image_left'))
+        print(f"Found {len(scenes)} scenes")
+        print(f"example scene: {scenes[0]}")
+
         for scene in tqdm(sorted(scenes)):
-            if not scene_in_split(scene, self.train_split):
+            if not scene_in_split(scene, self.train_split, verbose=False):
                 continue
-            
-            images = sorted(glob.glob(osp.join(scene, 'imgs/*.png')))
+                        
+            images = sorted(glob.glob(osp.join(scene, '*.png')))
             assert len(images) > 0
-            depths = sorted(glob.glob(osp.join(scene.replace("image_left", "depth_left"), 'depth_left/*.npy')))
+            depths = sorted(glob.glob(osp.join(scene.replace("image_left", "depth_left"), '*.npy')))
             assert len(images) == len(depths)
 
-            poses = np.loadtxt(osp.join(scene, 'pose_left.txt'), delimiter=' ')
+            poses = np.loadtxt(osp.join(scene, '../pose_left.txt'), delimiter=' ')
             poses = poses[:, [1, 2, 0, 4, 5, 3, 6]] # NED (z,x,y) to (x,y,z) camera frame
             poses[:,:3] /= TartanAir.DEPTH_SCALE
             intrinsics = [TartanAir.calib_read()] * len(images)
@@ -142,42 +145,53 @@ class TartanAirEVS(EVSDDataset):
     # scale depths to balance rot & trans
     DEPTH_SCALE = 5.0
 
-    def __init__(self, mode='training', **kwargs):
+    def __init__(self, mode='training', scale=1.0, args=None, **kwargs):
         self.mode = mode
+        self.scale = scale 
         self.n_frames = 2
-        super(TartanAirEVS, self).__init__(name='TartanAirEVS', **kwargs)
+        super(TartanAirEVS, self).__init__(name='TartanAirEVS', scale=scale, args=args, **kwargs)
 
     def _build_dataset(self):
         from tqdm import tqdm
         print("Building TartanAir EVSD dataset")
 
         scene_info = {}
-        scenes = glob.glob(osp.join(self.root, '*/*/evs_left'))
-        scenes = [glob.glob(osp.join(s, '*/*/*/*')) for s in scenes]
-        scenes = functools.reduce(operator.concat, scenes)
+        scenes = glob.glob(osp.join(self.root, '*/*/*/'))
+        print(f"Found {len(scenes)} scenes")
+        print(f"example scene: {scenes[0]}")
+
+
         for scene in tqdm(sorted(scenes)):
-            if not is_converted(scene):
-                print(f"Skipping {scene}. Not fully converted")
-                continue
+            #if not is_converted(scene):
+            #    print(f"Skipping {scene}. Not fully converted")
+            #    continue
 
             if not scene_in_split(scene, self.train_split):
                 continue
+            
+            #save the path for the event file
+            voxels = sorted(glob.glob(osp.join(scene, '*.h5')))
 
-            voxels = sorted(glob.glob(osp.join(scene, 'h5/*.h5')))
             assert len(voxels) > 0
-            depths = sorted(glob.glob(osp.join(scene.replace("evs_left", "depth_left"), 'depth_left/*.npy')))[1:] # No event voxel at first timestamp t=0
-            assert len(voxels) == len(depths)
+            depths = sorted(glob.glob(osp.join(scene, 'depth_left/*.npy')))[1:] # No event voxel at first timestamp t=0
+            #assert len(voxels) == len(depths)
 
             # [simon] poses are c2w, did thorough viz and data_type.md]
-            poses = np.loadtxt(osp.join(scene.replace('evs_left', 'image_left'), 'pose_left.txt'), delimiter=' ')[1:] # No event voxel at first timestamp t=0
+            poses = np.loadtxt(osp.join(scene, 'pose_left.txt'), delimiter=' ')[1:] # No event voxel at first timestamp t=0
             poses = poses[:, [1, 2, 0, 4, 5, 3, 6]] # NED (z,x,y) to (x,y,z) camera frame
             poses[:,:3] /= TartanAirEVS.DEPTH_SCALE
-            intrinsics = [TartanAirEVS.calib_read()] * len(voxels)
-            assert poses.shape[0] == len(voxels)
+            intrinsics = [TartanAirEVS.calib_read()] * len(depths)
+            assert poses.shape[0] == len(depths)
 
             # graph of co-visible frames based on flow
+            #OPTICAL FLOW COMPUTATION BETWEEN EACH FRAME PAIR
+            # OF = f(GT_POSE,DEPTH)
+            
+            #GOAl : skip frames that have too much magnitude or not
             graph = self.build_frame_graph(poses, depths, intrinsics) # graph is dict of {frameIdx: (co-visible frames, distance)}
 
+
+            #this creates a set of directories or files named image_left located three levels deep under self.root, which is /scratch/amarchei/TartanEvent/
             scene = '/'.join(scene.split('/'))
             scene_info[scene] = {'voxels': voxels, 'depths': depths,
                 'poses': poses, 'intrinsics': intrinsics, 'graph': graph}

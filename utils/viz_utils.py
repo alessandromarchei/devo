@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend suitable for headless environments
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
@@ -669,6 +671,11 @@ def visualize_N_voxels(voxels_in, EPS=1e-3, idx_plot_vox=[0]):
     cmap = plt.cm.colors.ListedColormap(colors)
     norm = plt.Normalize(vmin=-1, vmax=1)
 
+    device = voxels_in.device
+
+    if voxels_in.device != 'cpu':
+        voxels_in = voxels_in.detach().cpu()
+
     voxels = torch.clone(voxels_in)
     N = voxels.shape[0]
     assert N > sorted(idx_plot_vox)[-1]
@@ -694,6 +701,10 @@ def visualize_N_voxels(voxels_in, EPS=1e-3, idx_plot_vox=[0]):
     plt.tight_layout() 
     plt.show()
 
+    #restore the voxels to original device
+    if device != 'cpu':
+        voxels = voxels.to(device)
+
 
 def visualize_voxel(*voxel_in, EPS=1e-3, save=False, folder="results/voxels"):
     # cmaps
@@ -703,6 +714,10 @@ def visualize_voxel(*voxel_in, EPS=1e-3, save=False, folder="results/voxels"):
 
     plt.figure(figsize=(20, 20))
     for i, vox in enumerate(voxel_in):
+
+        if vox.device != 'cpu':
+            vox = vox.detach().cpu()
+        
         voxel = torch.clone(vox)
         bins = vox.shape[0]
 

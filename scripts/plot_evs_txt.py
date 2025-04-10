@@ -7,9 +7,18 @@ import json
 import shutil
 import h5py
 import glob
+
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+
 from utils.event_utils import *
 from utils.viz_utils import render
 from utils.load_utils import read_ecd_tss
+
+
 
 
 def main():

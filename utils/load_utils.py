@@ -12,12 +12,15 @@ import os
 import hdf5plugin # required for import of blosc
 import json
 import torch.nn.functional as F
+from tqdm import tqdm
 
 import torchvision
 
-from utils.event_utils import EventSlicer, to_voxel_grid, RemoveHotPixelsVoxel
+from utils.event_utils import EventSlicer, to_voxel_grid, RemoveHotPixelsVoxel, to_event_stack
 from utils.viz_utils import visualize_voxel, visualize_N_voxels, render
 from utils.transform_utils import transform_rescale
+from devo.data_readers.utils import h5_to_voxels_limit
+
 
 def load_intrinsics_tumvie(path, camID=0):
     with open(os.path.join(path, "calib_undist.json"), 'r') as f:
@@ -436,17 +439,40 @@ def voxel_iterator_parallel(voxeldir, tss_file=None, ext=".h5", intrinsics=[320,
 
 
 
-def voxel_iterator(voxeldir, tss_file=None, ext=".h5", intrinsics=[320, 320, 320, 240], stride=1, timing=False, scale=1.0):
-    voxfiles = sorted(glob.glob(osp.join(voxeldir, "*{}".format(ext))))
+def voxel_iterator(voxeldir, tss_file=None, ext=".h5", intrinsics=[320, 320, 320, 240], stride=1, timing=False, scale=1.0, max_events_loaded=None, square=False):
+    '''
+    function similar to mvsec_iterator, where N voxel grids are returned, along with intrinsics and timestamps
+    returns : list(voxels, intrinsics, timestamp of the voxels)
+    '''
+    
+    # voxfiles = osp.join(voxeldir, "*{}".format(ext))
+    voxfile = osp.join(voxeldir, "events.h5")
     fx, fy, cx, cy = intrinsics
 
+    #timestamps are within the same folder of events.h5, with a line for each of the voxels
+    # in a .txt file called "timestamps.txt", with nanosecond resolution between the event voxels
+
     if tss_file is None:
-        tss_imgs_us = np.arange(len(voxfiles))
+
+        #### NEW LINES ####
+        #retrireve the file
+        ts_file = osp.join(voxeldir, "timestamps.txt")
+
+        #read the txt file 
+        tss_imgs_us = np.loadtxt(ts_file, dtype="float32")
+        
+        #remove the first element
+        tss_imgs_us = np.delete(tss_imgs_us, 0)
+
+
+        #### OLD LINES ####
+        #tss_imgs_us = np.arange(len(ts_file))  //original code
     else:
         tss_imgs_us = sorted(np.loadtxt(tss_file))
 
-    voxfiles = voxfiles[::stride]
-    tss_imgs_us = tss_imgs_us[::stride]
+    # voxfiles = voxfiles[::stride]
+    # tss_imgs_us = tss_imgs_us[::stride]
+
 
     if timing:
         t0 = torch.cuda.Event(enable_timing=True)
@@ -454,13 +480,36 @@ def voxel_iterator(voxeldir, tss_file=None, ext=".h5", intrinsics=[320, 320, 320
         t0.record()
 
     data_list = []
-    for (ts_us, voxfile) in zip(tss_imgs_us, voxfiles):
-        voxel = torch.from_numpy(voxel_read(voxfile))
+
+    #retrieve the voxels
+    print(f"Loading {voxfile} into h5 format")
+    all_voxels = h5_to_voxels_limit(voxfile, 5, 480, 640, max_events_loaded=max_events_loaded)
+
+    # assert len(all_voxels) == len(tss_imgs_us)
+    #shorten tss_imgs_us to the number of voxels
+    tss_imgs_us = tss_imgs_us[:len(all_voxels)]
+
+    #here LOAD EVERY VOXEL GRID and the timestamps
+    for (ts_ns, voxel) in zip(tss_imgs_us, all_voxels):
+        #convert tss from nanoseconds to microseconds
+        ts_us = ts_ns/1e3
         intrinsics = torch.as_tensor([fx, fy, cx, cy])
         if scale != 1.0:
-            voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics[None])
+            voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics, square=square)
+        
+        #append every data into the output list
         data_list.append((voxel, intrinsics.squeeze(), ts_us))
 
+
+    ### OLD LINES ###
+    # for (ts_us, voxfile) in zip(tss_imgs_us, voxfiles):
+    #         voxel = torch.from_numpy(voxel_read(voxfile))
+    #         intrinsics = torch.as_tensor([fx, fy, cx, cy])
+    #         if scale != 1.0:
+    #             voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics[None])
+    #         data_list.append((voxel, intrinsics.squeeze(), ts_us))
+
+        
     if timing:
         t1.record()
         torch.cuda.synchronize()
@@ -635,6 +684,8 @@ def read_ecd_tss(p, idx=0):
 def get_ecd_data(tss_imgs_us, evs, intrinsics, rectify_map, DELTA_MS=None, H=180, W=240, return_dict=None):
     print(f"Delta {DELTA_MS} ms")
     data_list = []
+    print("Creating voxel grids")
+    print(f"Number of slices : {len(tss_imgs_us)}")
     for (ts_idx, ts_us) in enumerate(tss_imgs_us):
         if ts_idx == len(tss_imgs_us) - 1:
             break
@@ -779,7 +830,11 @@ def rpg_evs_iterator(scenedir, side="left", stride=1, dT_ms=None, H=180, W=240, 
 
     evs_file = glob.glob(osp.join(scenedir, f"evs_{side}.txt"))
     assert len(evs_file) == 1
+
+    print(f"Loading events from .txt file")
     evs = np.asarray(np.loadtxt(evs_file[0], delimiter=" ")) # (N, 4) with [ts_usecs, x, y, p]
+
+    print(f"Loading events done")
 
     rect_file = osp.join(scenedir, f"rectify_map_{side}.h5")
     rectify_map = None if "simulation_3planes" in scenedir else read_rmap(rect_file, H=H, W=W)
@@ -823,12 +878,13 @@ def rpg_evs_iterator(scenedir, side="left", stride=1, dT_ms=None, H=180, W=240, 
     for (voxel, intrinsics, ts_us) in data_list:
         yield voxel.cuda(), intrinsics.cuda(), ts_us
 
-def mvsec_evs_iterator(scenedir, side="left", stride=1, dT_ms=None, timing=False, H=260, W=346):
+def mvsec_evs_iterator(scenedir, side="left", stride=1, dT_ms=None, timing=False, H=260, W=346, use_event_stack=False):
     if timing:
         t0 = torch.cuda.Event(enable_timing=True)
         t1 = torch.cuda.Event(enable_timing=True)
         t0.record()
 
+    print(f"loading calibs from {os.path.join(scenedir, f'calib_undist_{side}.txt')}")
     intrinsics = np.loadtxt(os.path.join(scenedir, f"calib_undist_{side}.txt"))
     fx, fy, cx, cy = intrinsics
     intrinsics = torch.from_numpy(np.array([fx, fy, cx, cy]))
@@ -844,18 +900,29 @@ def mvsec_evs_iterator(scenedir, side="left", stride=1, dT_ms=None, timing=False
     rect_file = osp.join(scenedir, f"rectify_map_{side}.h5")
     rectify_map = read_rmap(rect_file, H=H, W=W)
 
-    event_idxs = datain["davis"][side]["image_raw_event_inds"]
+    event_idxs = datain["davis"][side]["image_raw_event_inds"] #image_raw_event_inds : mapping for the nearest event to each DAVIS image in time, 
     all_evs = datain["davis"][side]["events"][:]
     evidx_left = 0
     data_list = []
     for img_i in range(num_imgs):        
+        #take the event id between the current image and the next image
         evid_nextimg = event_idxs[img_i]
+
+        #take the events between the current image and the next image
         evs_batch = all_evs[evidx_left:evid_nextimg][:]
+
+        #update the event id for the next image
         evidx_left = evid_nextimg
+
+        #rectify the events of the batch
         rect = rectify_map[evs_batch[:, 1].astype(np.int32), evs_batch[:, 0].astype(np.int32)]
 
-        voxel = to_voxel_grid(rect[..., 0], rect[..., 1], evs_batch[:, 2], evs_batch[:, 3], H=H, W=W, nb_of_time_bins=5)
-        # visualize_voxel(voxel)
+        #create the voxel grid, with 5 channels
+        if not use_event_stack : 
+            voxel = to_voxel_grid(rect[..., 0], rect[..., 1], evs_batch[:, 2], evs_batch[:, 3], H=H, W=W, nb_of_time_bins=5)
+        else : 
+            voxel = to_event_stack(rect[..., 0], rect[..., 1], evs_batch[:, 2], evs_batch[:, 3], H=H, W=W, nb_of_time_bins=5)
+
         data_list.append((voxel, intrinsics, tss_imgs_us[img_i]))
 
 
@@ -1194,8 +1261,11 @@ def fpv_evs_iterator(scenedir, stride=1, timing=False, dT_ms=None, H=260, W=346,
 
     evs_file = glob.glob(osp.join(scenedir, "events.txt"))
     assert len(evs_file) == 1
+
+    print(f"Loading events from .txt file")
     evs = np.asarray(np.loadtxt(evs_file[0], delimiter=" ")) # (N, 4) with [ts_sec, x, y, p]
     evs[:, 0] = evs[:, 0] * 1e6
+    print(f"Loading events done")
 
     t_offset_us = np.loadtxt(os.path.join(scenedir, "t_offset_us.txt")).astype(np.int64)
     evs[:, 0] -= t_offset_us

@@ -7,6 +7,12 @@ import glob
 import multiprocessing
 import h5py
 import yaml, shutil
+import sys
+import cv2
+
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 from utils.load_utils import compute_rmap_ecd, read_ecd_tss, compute_rmap_ecd
 from utils.viz_utils import render
@@ -78,7 +84,7 @@ def process_seq_mvsec(infilesh5, side="left"):
                 # continue
 
         # creating rectify map
-        with open(os.path.join(outdir, "../indoor_flying_calib/camchain-imucam-indoor_flying.yaml"), 'r') as file:
+        with open(os.path.join(outdir, "../outdoor_night_calib/camchain-imucam-outdoor_night.yaml"), 'r') as file:
             all_intr = yaml.safe_load(file)
 
         camID = "cam0" if side == "left" else "cam1"

@@ -15,6 +15,9 @@ import math
 import shutil
 from scipy.spatial.transform import Rotation as R
 from tabulate import tabulate
+import matplotlib
+matplotlib.use('Agg')
+
 
 from devo.plot_utils import plot_trajectory, fig_trajectory
 from devo.plot_utils import save_trajectory_tum_format
@@ -25,6 +28,7 @@ from evo.tools import file_interface
 import evo.main_ape as main_ape
 from evo.core import sync, metrics
 from evo.core.trajectory import PoseTrajectory3D
+from tqdm import tqdm
 
 # [DEBUG]
 # import matplotlib.pyplot as plt
@@ -110,7 +114,7 @@ def run_voxel_norm_seq(voxeldir, cfg, network, viz=False, iterator=None, timing=
 def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, **kwargs): 
     slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=viz, viz_flow=viz_flow, **kwargs)
     
-    for i, (voxel, intrinsics, t) in enumerate(iterator):
+    for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
         if timing and i == 0:
             t0 = torch.cuda.Event(enable_timing=True)
             t1 = torch.cuda.Event(enable_timing=True)
@@ -310,17 +314,24 @@ def make_evo_traj(poses_N_x_7, tss_us):
         timestamps=tss_us/1e6)
     return traj_evo
 
-
 @torch.no_grad()            
 def log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                 plot=False, save=True, return_figure=False, rpg_eval=True, stride=1, 
-                calib1_eds=None, camID_tumvie=None, outdir=None, expname="", max_diff_sec=0.01):
+                calib1_eds=None, camID_tumvie=None, outdir=None, expname="", max_diff_sec=0.01, save_csv=False, cfg=None, name=None):
     # results: dict of (scene, list of results)
     # all_results: list of all raw_results
 
     # unpack data
     traj_GT, tss_GT_us, traj_est, tss_est_us = data
     train_step, net, dataset_name, scene, trial, cfg, args = hyperparam
+
+    ####### SINCE EVALUATION DATA HAS BEEN SHORTENED DUE TO MEMORY ISSUES,
+    ####### THE GT DATA should be truncated as the traj_est length
+    ####### ONLY FOR TARTANAIR DATASET
+    if 'tartan' in dataset_name.lower():
+        traj_GT = traj_GT[:len(traj_est)]
+        tss_GT_us = tss_GT_us[:len(traj_est)]
+    
 
     # create folders
     if train_step is None:
@@ -379,6 +390,18 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
         
         res_str = f"\nATE[cm]: {ate_score:.03f} | R_rmse[deg]: {R_rmse_deg:.03f} | MPE[%/m]: {MPE:.03f} \n"
         # res_str += f"MTE[m]: {MTE_m:.03f} | (ATE_int[cm]: {ate_inter:.02f} | ATE_rpg[cm]: {ate_rpg:.02f}) \n"
+        
+                    #save on results.csv file, in append mode, the following information based on the scene
+            #dataset, scene, patches, opt_window,Rem_window,patch_lt, ate, rot_error_x,rot_error_y, rot_error_z
+        if cfg is not None and save_csv is not False:
+            if name is None:
+                name = "out_eval.csv"
+            with open(name, "a") as f:
+                f.write(
+                    f"{'mvsec'},{scene_name},{cfg['PATCHES_PER_FRAME']},{cfg['OPTIMIZATION_WINDOW']},{cfg['REMOVAL_WINDOW']},{cfg['PATCH_LIFETIME']},{ate_score},{R_rmse_deg},{MPE}\n")
+
+
+
 
         write_res_table(outfolder, res_str, scene_name, trial)
     else:

@@ -25,8 +25,17 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from utils.viz_utils import plot_patch_following_all, plot_patch_following, plot_patch_depths_all
+from utils.viz_utils import *
+from tqdm import tqdm
 
 DEBUG_PLOT_PATCHES = False
+NUM_WORKERS = 1
+
+#clear cache
+torch.cuda.empty_cache()
+
+
+FIRST_GT_POSES = 1000 # first N steps with GT poses, then switch to predicted poses for loss
 
 def setup_ddp(rank, args):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -59,7 +68,8 @@ def kabsch_umeyama(A, B):
     VarA = torch.mean((A - EA).norm(dim=1)**2)
 
     H = ((A - EA).T @ (B - EB)) / n
-    U, D, VT = torch.svd(H)
+    U, D, VT = torch.linalg.svd(H.cpu(), full_matrices=False)
+    #U, D, VT = torch.svd(H) instead of the above line
 
     c = VarA / torch.trace(torch.diag(D))
     return c
@@ -68,6 +78,7 @@ def kabsch_umeyama(A, B):
 def train(rank, args):
     """ main training loop """
     
+    print("args.scale: ", args.scale)
     # coordinate multiple GPUs
     if args.ddp:
         setup_ddp(rank, args)
@@ -76,28 +87,32 @@ def train(rank, args):
     if args.evs:
         db = dataset_factory(['tartan_evs'], datapath=args.datapath, n_frames=args.n_frames,
                              fgraph_pickle=args.fgraph_pickle, train_split=args.train_split,
-                             val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)
+                             val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale, args=args)
     elif args.e2vid:
         db = dataset_factory(['tartan_e2vid'], datapath=args.datapath, n_frames=args.n_frames,
                              fgraph_pickle=args.fgraph_pickle, train_split=args.train_split,
                              val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)  
-    else:
+    elif args.evs and args.e2vid:
         db = dataset_factory(['tartan'], datapath=args.datapath, n_frames=args.n_frames,
                              fgraph_pickle=args.fgraph_pickle, train_split=args.train_split, 
                              val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)
-
+    else:
+        #raise error
+        raise ValueError("Unknown dataset")
+    
     # setup dataloader
     if args.ddp:
         train_sampler = torch.utils.data.distributed.DistributedSampler(
             db, shuffle=True, num_replicas=args.gpu_num, rank=rank)
-        train_loader = DataLoader(db, batch_size=args.batch, sampler=train_sampler, num_workers=4)
+        train_loader = DataLoader(db, batch_size=args.batch, sampler=train_sampler, num_workers=NUM_WORKERS)
     else:
-        train_loader = DataLoader(db, batch_size=args.batch, shuffle=True, num_workers=4)
+        train_loader = DataLoader(db, batch_size=args.batch, shuffle=True, num_workers=NUM_WORKERS)
 
     # Initial VOnet
     kwargs_net = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "dim": args.dim}
     net = VONet(**kwargs_net, patch_selector=args.patch_selector.lower()) if not args.evs else \
-    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug)
+    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, model=args.patchifier_model)
+
 
     net.train()
     net.cuda()
@@ -138,26 +153,33 @@ def train(rank, args):
             total_steps = checkpoint['steps']
 
     if rank == 0:
-        logger = Logger(args.name, scheduler, args.gpu_num * total_steps, args.gpu_num)
+        print("Rank 0 : initialize logger")
+        logger = Logger(args.name, scheduler, args.gpu_num * total_steps, args.gpu_num, args.tensorboard_update_step)
 
     with torch.profiler.profile(
             activities=[
                 torch.profiler.ProfilerActivity.CPU,
                 torch.profiler.ProfilerActivity.CUDA],
             schedule=torch.profiler.schedule(skip_first=1997, wait=1, warmup=1, active=2, repeat=2),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler(f'../runs/{args.name}', rank),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(f'runs/{args.name}', rank),
             record_shapes=True,
             profile_memory=True,
             with_stack=True
         ) if args.profiler else contextlib.nullcontext() as prof:
         while True:
-            for data_blob in train_loader:
+            for data_blob in tqdm(train_loader):
                 scene_id = data_blob.pop()
                 images, poses, disps, intrinsics = [x.cuda().float() for x in data_blob] # images: (B,n_frames,C,H,W), poses: (B,n_frames,7), disps: (B,n_frames,H,W) (all float32)
-                optimizer.zero_grad() # TODO set_to_none=True
+                optimizer.zero_grad(set_to_none=True) # TODO set_to_none=True
 
+                # print(f"scene_id: {scene_id}")
+                # visualize_voxel(images[0][0])
+
+                
                 # fix poses to gt for first 1k steps
-                so = total_steps < (1000 // args.gpu_num) and (args.checkpoint is None or args.checkpoint == "")
+                ##### POSES = GT for the first N STEPS #####
+                ##### ONLY TRAIN ON THE DEPTHS #####
+                so = total_steps < (FIRST_GT_POSES // args.gpu_num) and (args.checkpoint is None or args.checkpoint == "")
 
                 poses = SE3(poses).inv() # [simon]: this does c2w -> w2c (which dpvo predicts&stores internally)
                 traj = net(images, poses, disps, intrinsics, M=1024, STEPS=args.iters, structure_only=so, plot_patches=DEBUG_PLOT_PATCHES, patches_per_image=args.patches_per_image)
@@ -266,13 +288,17 @@ def train(rank, args):
                 }
 
                 if rank == 0:
+                    # log to tensorboard
+                    #RESULTS ON TRAINING LOSSES UPDATE AT every SUM_FREQ (inside logger class)
                     logger.push(metrics)
 
-                if total_steps % 10000 == 0:
+
+                #SAVING CHECKPOINTS AND EVALUATION ON TARTANEVENT
+                if total_steps % args.save_checkpoint_step == 0:
                     torch.cuda.empty_cache()
 
                     if rank == 0:
-                        PATH = '../checkpoints/%s/%06d.pth' % (args.name, args.gpu_num * total_steps)
+                        PATH = 'checkpoints/%s/%06d.pth' % (args.name, args.gpu_num * total_steps)
                         torch.save({
                             'steps': total_steps,
                             'model_state_dict': net.module.state_dict() if args.ddp else net.state_dict(),
@@ -280,14 +306,15 @@ def train(rank, args):
                             'scheduler_state_dict': scheduler.state_dict()}, PATH)
                         
                         if args.eval:
+                            print("Evaluating...")
                             if args.evs:
                                 from evals.eval_evs.eval_tartan_evs import evaluate as eval_tartan_evs
-                                val_results, val_figures = eval_tartan_evs(None, None, net.module if args.ddp else net, total_steps,
+                                val_results, val_figures = eval_tartan_evs(None, args, net.module if args.ddp else net, total_steps,
                                                                         args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
                                                                         scale=args.scale, expname=args.name, **kwargs_net)
                             else:
                                 from evals.eval_rgb.eval_tartan import evaluate as eval_tartan
-                                val_results, val_figures = eval_tartan(None, None, net.module if args.ddp else net, total_steps,
+                                val_results, val_figures = eval_tartan(None, args, net.module if args.ddp else net, total_steps,
                                                                    args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
                                                                    scale=args.scale, expname=args.name)
                             logger.write_dict(val_results)
@@ -305,7 +332,8 @@ def train(rank, args):
             break
     
     if rank == 0:
-        logger.close()
+        if logger.writer is not None:
+            logger.close()
     if args.ddp:
         dist.destroy_process_group()
 
@@ -380,7 +408,12 @@ if __name__ == '__main__':
     parser.add_argument('--patch_selector', type=str, default="random", help='name of patch selector (random, gradient, scorer)')
     parser.add_argument('--norm', type=str, default="rescale", help='name of norm (evs only) (none, rescale, standard)')
     parser.add_argument('--randaug', action='store_true', help='enable randAug (evs only)')
-    
+    parser.add_argument('--max_events_loaded', type=int, default=10000, help='max number of events to load (evs only)')
+    parser.add_argument('--save_checkpoint_step', type=int, default=1000, help='save checkpoint every N steps')
+    parser.add_argument('--tensorboard_update_step', type=int, default=100, help='tensorboard update step')
+    parser.add_argument('--square', action='store_true', help='use square scaling')
+    parser.add_argument('--patchifier_model', type=str, default="original", help='patchifier model (evs only) (resnet18, resnet50)')
+
     args = parser.parse_known_args()[0]
     assert_config(args)
     print("----------")
@@ -400,8 +433,8 @@ if __name__ == '__main__':
     cmd = "ulimit -n 2000000"
     os.system(cmd)
 
-    if not os.path.isdir(f'../checkpoints/{args.name}'):
-        os.makedirs(f'../checkpoints/{args.name}')
+    if not os.path.isdir(f'checkpoints/{args.name}'):
+        os.makedirs(f'checkpoints/{args.name}')
     
     if args.ddp:
         mp.spawn(train, nprocs=args.gpu_num, args=(args,))

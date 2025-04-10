@@ -1,7 +1,9 @@
 import os
 import torch
 from devo.config import cfg
+import sys
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from utils.load_utils import load_gt_us, hku_evs_iterator
 from utils.eval_utils import assert_eval_config, run_voxel
 from utils.eval_utils import log_results, write_raw_results, compute_median_results
@@ -27,6 +29,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
         print(f"Eval on {scene}")
         results_dict_scene[scene] = []
 
+        print(f"Running {trials} trials on {scene}")
         for trial in range(trials):
             # estimated trajectory
             datapath_val = os.path.join(datapath, scene)
@@ -44,7 +47,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args)
             all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                                                                    plot=plot, save=save, return_figure=return_figure, stride=stride,
-                                                                   expname=args.expname)
+                                                                   expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name)
             
             if viz_flow:
                 viz_flow_inference(outfolder, flowdata)
@@ -77,6 +80,8 @@ if __name__ == '__main__':
     parser.add_argument('--side', type=str, default="left")
     parser.add_argument('--viz_flow', action="store_true")
     parser.add_argument('--expname', type=str, default="")
+    parser.add_argument('--save_csv', action="store_true")
+    parser.add_argument('--csv_name', type=str, default="")
 
     args = parser.parse_args()
     assert_eval_config(args)
