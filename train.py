@@ -154,11 +154,8 @@ def train(rank, args):
 
     if rank == 0:
         print("Rank 0 : initialize logger")
-        logger = Logger(args.name, scheduler, args.gpu_num * total_steps, args.gpu_num, args.tensorboard_update_step)
-        
-        # Save config to TensorBoard
-        config_text = parser.format_values().replace("\n", "  \n")  # Markdown-friendly line breaks
-        logger.writer.add_text("config", f"```bash\n{config_text}\n```", global_step=0)
+        logger = Logger(args.name, scheduler, args.gpu_num * total_steps, args.gpu_num, args.tensorboard_update_step, args_config=args)
+
 
     with torch.profiler.profile(
             activities=[
