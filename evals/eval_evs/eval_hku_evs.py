@@ -37,7 +37,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             # run the slam system
             traj_est, tstamps, flowdata = run_voxel(datapath_val, config, net, viz=viz, 
                                           iterator=hku_evs_iterator(datapath_val, side=side, stride=stride, timing=timing, H=H, W=W),
-                                          timing=timing, H=H, W=W, viz_flow=viz_flow)
+                                          timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model)
 
             # load  traj
             tss_traj_us, traj_hf = load_gt_us(os.path.join(datapath_val, f"gt_stamped_{side}.txt"))
@@ -82,6 +82,7 @@ if __name__ == '__main__':
     parser.add_argument('--expname', type=str, default="")
     parser.add_argument('--save_csv', action="store_true")
     parser.add_argument('--csv_name', type=str, default="")
+    parser.add_argument('--model', type=str, default="original")
 
     args = parser.parse_args()
     assert_eval_config(args)
