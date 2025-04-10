@@ -19,7 +19,8 @@ from utils.viz_utils import visualize_voxel
 
 
 class DEVO:
-    def __init__(self, cfg, network, evs=False, ht=480, wd=640, viz=False, viz_flow=False, dim_inet=384, dim_fnet=128, dim=32):
+    def __init__(self, cfg, network, evs=False, ht=480, wd=640, viz=False, viz_flow=False, dim_inet=384, dim_fnet=128, dim=32, model=None, **kwargs):
+        
         self.cfg = cfg
         self.evs = evs
 
@@ -27,6 +28,8 @@ class DEVO:
         self.dim_fnet = dim_fnet
         self.dim = dim
         # TODO add patch_selector
+
+        self.model = model
         
         self.load_weights(network)
         self.is_initialized = False
@@ -107,7 +110,7 @@ class DEVO:
             checkpoint = torch.load(network)
             # TODO infer dim_inet=self.dim_inet, dim_fnet=self.dim_fnet, dim=self.dim
             self.network = VONet(patch_selector=self.cfg.PATCH_SELECTOR) if not self.evs else \
-                eVONet(dim_inet=self.dim_inet, dim_fnet=self.dim_fnet, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR)
+                eVONet(dim_inet=self.dim_inet, dim_fnet=self.dim_fnet, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model)
             if 'model_state_dict' in checkpoint:
                 self.network.load_state_dict(checkpoint['model_state_dict'])
             else:
