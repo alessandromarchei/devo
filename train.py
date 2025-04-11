@@ -35,7 +35,7 @@ NUM_WORKERS = 4
 torch.cuda.empty_cache()
 
 
-FIRST_GT_POSES = 1000 # first N steps with GT poses, then switch to predicted poses for loss
+# FIRST_GT_POSES = 1000 # first N steps with GT poses, then switch to predicted poses for loss
 
 def setup_ddp(rank, args):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -180,7 +180,7 @@ def train(rank, args):
                 # fix poses to gt for first 1k steps
                 ##### POSES = GT for the first N STEPS #####
                 ##### ONLY TRAIN ON THE DEPTHS #####
-                so = total_steps < (FIRST_GT_POSES // args.gpu_num) and (args.checkpoint is None or args.checkpoint == "")
+                so = total_steps < (args.first_gt_poses // args.gpu_num) and (args.checkpoint is None or args.checkpoint == "")
 
                 poses = SE3(poses).inv() # [simon]: this does c2w -> w2c (which dpvo predicts&stores internally)
                 traj = net(images, poses, disps, intrinsics, M=1024, STEPS=args.iters, structure_only=so, plot_patches=DEBUG_PLOT_PATCHES, patches_per_image=args.patches_per_image)
@@ -414,6 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--tensorboard_update_step', type=int, default=100, help='tensorboard update step')
     parser.add_argument('--square', action='store_true', help='use square scaling')
     parser.add_argument('--patchifier_model', type=str, default="original", help='patchifier model (evs only) (resnet18, resnet50)')
+    parser.add_argument('--first_gt_poses', type=int, default=1000, help='first N steps with GT poses, then switch to predicted poses for loss')
 
     args = parser.parse_known_args()[0]
     assert_config(args)
