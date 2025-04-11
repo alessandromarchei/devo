@@ -18649,3 +18649,382 @@ abandonedfactory/abandonedfactory/Hard/P011 [53.734811437976646]
 Eval on abandonedfactory_night/abandonedfactory_night/Easy/P013
 
 0it [00:00, ?it/s]Loading /usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory_night/Easy/P013/events.h5 into h5 format
+/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+Preloaded 158 voxels, imstart=0, imstop=-1, stride=1, /usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory_night/Easy/P013
+
+1it [01:08, 68.74s/it]
+9it [01:08,  5.54s/it]
+18it [01:08,  2.24s/it]
+27it [01:09,  1.22s/it]
+36it [01:09,  1.35it/s]
+45it [01:09,  2.10it/s]
+54it [01:09,  3.13it/s]
+62it [01:09,  4.40it/s]
+70it [01:09,  6.12it/s]
+78it [01:09,  8.41it/s]
+85it [01:09, 11.02it/s]
+92it [01:10, 14.23it/s]
+99it [01:10, 18.13it/s]
+106it [01:10, 22.61it/s]
+113it [01:10, 27.45it/s]
+119it [01:10, 31.46it/s]
+125it [01:10, 35.46it/s]
+131it [01:10, 39.22it/s]
+137it [01:10, 42.44it/s]
+143it [01:10, 44.68it/s]
+149it [01:11, 46.83it/s]
+155it [01:11, 48.56it/s]158it [01:11,  2.22it/s]
+keyframes 15
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Abandonedfactory_Night_Easy_P013_trial_0_step_12000/../Abandonedfactory_Night_Easy_P013_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Abandonedfactory_Night_Easy_P013_trial_0_step_12000/GT_Abandonedfactory_Night_Easy_P013_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+abandonedfactory_night/abandonedfactory_night/Easy/P013 [105.26141963421591]
+Eval on abandonedfactory_night/abandonedfactory_night/Hard/P014
+
+0it [00:00, ?it/s]Loading /usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory_night/Hard/P014/events.h5 into h5 format
+/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+Preloaded 152 voxels, imstart=0, imstop=-1, stride=1, /usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory_night/Hard/P014
+
+1it [01:02, 62.25s/it]
+8it [01:02,  5.67s/it]
+17it [01:02,  2.13s/it]
+26it [01:02,  1.13s/it]
+35it [01:02,  1.45it/s]
+42it [01:02,  2.08it/s]
+49it [01:03,  2.96it/s]
+56it [01:03,  4.17it/s]
+63it [01:03,  5.80it/s]
+70it [01:03,  7.95it/s]
+77it [01:03, 10.69it/s]
+83it [01:03, 13.61it/s]
+89it [01:03, 17.08it/s]
+95it [01:03, 21.05it/s]
+101it [01:04, 25.33it/s]
+107it [01:04, 29.24it/s]
+113it [01:04, 32.88it/s]
+118it [01:04, 35.70it/s]
+123it [01:04, 37.89it/s]
+128it [01:04, 39.68it/s]
+133it [01:04, 40.65it/s]
+138it [01:04, 41.29it/s]
+143it [01:04, 41.55it/s]
+148it [01:05, 41.23it/s]152it [01:05,  2.33it/s]
+keyframes 20
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Abandonedfactory_Night_Hard_P014_trial_0_step_12000/../Abandonedfactory_Night_Hard_P014_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Abandonedfactory_Night_Hard_P014_trial_0_step_12000/GT_Abandonedfactory_Night_Hard_P014_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+abandonedfactory_night/abandonedfactory_night/Hard/P014 [81.05650635520428]
+Eval on amusement/amusement/Easy/P008
+
+0it [00:00, ?it/s]Loading /usr/scratch/badile43/amarchei/TartanEvent/amusement/Easy/P008/events.h5 into h5 format
+/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+Preloaded 294 voxels, imstart=0, imstop=-1, stride=1, /usr/scratch/badile43/amarchei/TartanEvent/amusement/Easy/P008
+
+1it [00:55, 55.86s/it]
+8it [00:55,  5.09s/it]
+15it [00:56,  2.22s/it]
+24it [00:56,  1.10s/it]
+32it [00:56,  1.49it/s]
+40it [00:56,  2.30it/s]
+48it [00:56,  3.41it/s]
+55it [00:56,  4.71it/s]
+62it [00:56,  6.49it/s]
+68it [00:56,  8.50it/s]
+74it [00:57, 11.06it/s]
+80it [00:57, 13.88it/s]
+86it [00:57, 17.47it/s]
+92it [00:57, 21.24it/s]
+97it [00:57, 24.63it/s]
+102it [00:57, 27.85it/s]
+107it [00:57, 30.98it/s]
+112it [00:57, 33.72it/s]
+117it [00:58, 36.06it/s]
+122it [00:58, 37.81it/s]
+127it [00:58, 37.47it/s]
+132it [00:58, 38.81it/s]
+137it [00:58, 39.72it/s]
+142it [00:58, 40.23it/s]
+147it [00:58, 40.36it/s]
+152it [00:58, 40.00it/s]
+157it [00:59, 39.79it/s]
+162it [00:59, 39.34it/s]
+166it [00:59, 38.80it/s]
+170it [00:59, 38.49it/s]
+174it [00:59, 37.72it/s]
+178it [00:59, 37.22it/s]
+182it [00:59, 36.26it/s]
+186it [00:59, 35.58it/s]
+190it [00:59, 35.10it/s]
+194it [01:00, 34.79it/s]
+198it [01:00, 34.54it/s]
+202it [01:00, 34.36it/s]
+206it [01:00, 34.24it/s]
+210it [01:00, 34.09it/s]
+214it [01:00, 33.89it/s]
+218it [01:00, 33.79it/s]
+222it [01:00, 33.71it/s]
+226it [01:00, 33.67it/s]
+230it [01:01, 33.68it/s]
+234it [01:01, 33.74it/s]
+238it [01:01, 33.80it/s]
+242it [01:01, 33.89it/s]
+246it [01:01, 33.60it/s]
+250it [01:01, 33.50it/s]
+254it [01:01, 33.46it/s]
+258it [01:01, 33.21it/s]
+262it [01:02, 33.25it/s]
+266it [01:02, 33.18it/s]
+270it [01:02, 33.18it/s]
+274it [01:02, 32.93it/s]
+278it [01:02, 32.83it/s]
+282it [01:02, 32.79it/s]
+286it [01:02, 32.72it/s]
+290it [01:02, 32.79it/s]
+294it [01:03, 32.63it/s]294it [01:03,  4.66it/s]
+keyframes 26
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Amusement_Easy_P008_trial_0_step_12000/../Amusement_Easy_P008_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Amusement_Easy_P008_trial_0_step_12000/GT_Amusement_Easy_P008_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+amusement/amusement/Easy/P008 [13.912998602065416]
+Eval on amusement/amusement/Hard/P007
+
+0it [00:00, ?it/s]Loading /usr/scratch/badile43/amarchei/TartanEvent/amusement/Hard/P007/events.h5 into h5 format
+/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+Preloaded 316 voxels, imstart=0, imstop=-1, stride=1, /usr/scratch/badile43/amarchei/TartanEvent/amusement/Hard/P007
+
+1it [00:55, 55.54s/it]
+8it [00:55,  5.06s/it]
+15it [00:56,  2.24s/it]
+19it [00:56,  1.55s/it]
+24it [00:56,  1.01s/it]
+29it [00:56,  1.46it/s]
+34it [00:57,  2.09it/s]
+40it [00:57,  3.09it/s]
+45it [00:57,  4.23it/s]
+51it [00:57,  5.85it/s]
+56it [00:58,  7.24it/s]
+62it [00:58,  9.36it/s]
+68it [00:58, 11.58it/s]
+73it [00:58, 13.03it/s]
+78it [00:59, 14.37it/s]
+83it [00:59, 15.49it/s]
+88it [00:59, 16.42it/s]
+92it [00:59, 16.23it/s]
+97it [01:00, 17.00it/s]
+102it [01:00, 17.48it/s]
+107it [01:00, 17.84it/s]
+112it [01:01, 18.18it/s]
+117it [01:01, 18.31it/s]
+122it [01:01, 18.42it/s]
+127it [01:01, 18.58it/s]
+132it [01:02, 18.66it/s]
+137it [01:02, 18.64it/s]
+142it [01:02, 18.67it/s]
+147it [01:02, 18.70it/s]
+151it [01:03, 17.60it/s]
+155it [01:03, 16.76it/s]
+159it [01:03, 16.33it/s]
+163it [01:03, 15.91it/s]
+167it [01:04, 15.62it/s]
+171it [01:04, 15.41it/s]
+175it [01:04, 15.32it/s]
+179it [01:05, 15.21it/s]
+183it [01:05, 15.17it/s]
+187it [01:05, 15.13it/s]
+190it [01:05, 13.99it/s]
+194it [01:06, 14.29it/s]
+197it [01:06, 13.35it/s]
+200it [01:06, 12.79it/s]
+203it [01:06, 12.31it/s]
+206it [01:07, 11.99it/s]
+209it [01:07, 11.81it/s]
+212it [01:07, 11.64it/s]
+215it [01:07, 11.53it/s]
+218it [01:08, 11.41it/s]
+221it [01:08, 11.37it/s]
+224it [01:08, 11.31it/s]
+227it [01:09, 11.31it/s]
+230it [01:09, 11.32it/s]
+233it [01:09, 11.31it/s]
+236it [01:09, 11.24it/s]
+239it [01:10, 11.26it/s]
+242it [01:10, 11.26it/s]
+245it [01:10, 11.25it/s]
+248it [01:10, 11.24it/s]
+251it [01:11, 11.24it/s]
+254it [01:11, 11.25it/s]
+257it [01:11, 11.27it/s]
+260it [01:11, 11.23it/s]
+263it [01:12, 11.24it/s]
+266it [01:12, 11.24it/s]
+269it [01:12, 11.24it/s]
+272it [01:13, 11.24it/s]
+275it [01:13, 11.25it/s]
+278it [01:13, 11.26it/s]
+281it [01:13, 11.23it/s]
+284it [01:14, 11.24it/s]
+287it [01:14, 11.25it/s]
+290it [01:14, 11.23it/s]
+293it [01:14, 11.23it/s]
+296it [01:15, 11.27it/s]
+299it [01:15, 11.17it/s]
+302it [01:15, 11.19it/s]
+305it [01:15, 11.18it/s]
+308it [01:16, 11.24it/s]
+311it [01:16, 11.17it/s]
+314it [01:16, 11.18it/s]316it [01:16,  4.11it/s]
+keyframes 31
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Amusement_Hard_P007_trial_0_step_12000/../Amusement_Hard_P007_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Amusement_Hard_P007_trial_0_step_12000/GT_Amusement_Hard_P007_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+amusement/amusement/Hard/P007 [311.7821635162384]
+Eval on carwelding/carwelding/Easy/P007
+
+0it [00:00, ?it/s]Loading /usr/scratch/badile43/amarchei/TartanEvent/carwelding/Easy/P007/events.h5 into h5 format
+/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+Preloaded 356 voxels, imstart=0, imstop=-1, stride=1, /usr/scratch/badile43/amarchei/TartanEvent/carwelding/Easy/P007
+
+1it [00:51, 51.38s/it]
+8it [00:51,  4.68s/it]
+17it [00:51,  1.76s/it]
+26it [00:51,  1.07it/s]
+35it [00:51,  1.77it/s]
+44it [00:51,  2.76it/s]
+52it [00:52,  3.96it/s]
+60it [00:52,  5.61it/s]
+68it [00:52,  7.80it/s]
+76it [00:52, 10.61it/s]
+83it [00:52, 13.67it/s]
+90it [00:52, 17.31it/s]
+97it [00:52, 21.31it/s]
+103it [00:52, 24.96it/s]
+109it [00:53, 28.59it/s]
+115it [00:53, 32.10it/s]
+121it [00:53, 35.02it/s]
+126it [00:53, 37.06it/s]
+131it [00:53, 38.95it/s]
+136it [00:53, 39.92it/s]
+141it [00:53, 40.62it/s]
+146it [00:53, 41.13it/s]
+151it [00:54, 40.88it/s]
+156it [00:54, 40.74it/s]
+161it [00:54, 40.39it/s]
+166it [00:54, 39.77it/s]
+171it [00:54, 38.94it/s]
+175it [00:54, 38.29it/s]
+179it [00:54, 37.49it/s]
+183it [00:54, 36.68it/s]
+187it [00:54, 36.10it/s]
+191it [00:55, 35.24it/s]
+195it [00:55, 34.98it/s]
+199it [00:55, 34.53it/s]
+203it [00:55, 34.33it/s]
+207it [00:55, 33.92it/s]
+211it [00:55, 33.61it/s]
+215it [00:55, 33.32it/s]
+219it [00:55, 33.11it/s]
+223it [00:56, 33.08it/s]
+227it [00:56, 33.04it/s]
+231it [00:56, 32.87it/s]
+235it [00:56, 32.86it/s]
+239it [00:56, 32.68it/s]
+243it [00:56, 32.69it/s]
+247it [00:56, 32.59it/s]
+251it [00:56, 32.64it/s]
+255it [00:57, 32.66it/s]
+259it [00:57, 32.71it/s]
+263it [00:57, 32.67it/s]
+267it [00:57, 32.62it/s]
+271it [00:57, 32.62it/s]
+275it [00:57, 32.64it/s]
+279it [00:57, 32.63it/s]
+283it [00:57, 32.67it/s]
+287it [00:58, 32.69it/s]
+291it [00:58, 32.72it/s]
+295it [00:58, 32.73it/s]
+299it [00:58, 32.78it/s]
+303it [00:58, 32.78it/s]
+307it [00:58, 32.92it/s]
+311it [00:58, 33.02it/s]
+315it [00:58, 33.04it/s]
+319it [00:58, 33.11it/s]
+323it [00:59, 33.14it/s]
+327it [00:59, 33.10it/s]
+331it [00:59, 33.22it/s]
+335it [00:59, 33.16it/s]
+339it [00:59, 33.23it/s]
+343it [00:59, 33.24it/s]
+347it [00:59, 33.22it/s]
+351it [00:59, 33.23it/s]
+355it [01:00, 32.89it/s]356it [01:00,  5.92it/s]
+keyframes 42
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Carwelding_Easy_P007_trial_0_step_12000/../Carwelding_Easy_P007_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+Saved /home/amarchei/Desktop/repos/DEVO/results/tartanair_evs/2025-04-11_patchifier_small2/Carwelding_Easy_P007_trial_0_step_12000/GT_Carwelding_Easy_P007_Trial01_exp_patchifier_small2_step_12000_stride_1.pdf
+carwelding/carwelding/Easy/P007 [394.171953441477]
+Eval on endofworld/endofworld/Easy/P009
+
+0it [00:00, ?it/s]Loading /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P009/events.h5 into h5 format
+/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+  warnings.warn(
+Preloaded 542 voxels, imstart=0, imstop=-1, stride=1, /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P009
+
+1it [00:19, 19.61s/it]
+9it [00:19,  1.59s/it]
+18it [00:19,  1.54it/s]
+27it [00:19,  2.81it/s]
+36it [00:20,  4.56it/s]
+45it [00:20,  6.92it/s]
+54it [00:20, 10.01it/s]
+62it [00:20, 13.51it/s]
+70it [00:20, 17.84it/s]
+78it [00:20, 22.81it/s]
+86it [00:20, 27.98it/s]
+93it [00:20, 32.07it/s]
+100it [00:21, 36.14it/s]
+107it [00:21, 39.84it/s]
+113it [00:21, 42.72it/s]
+119it [00:21, 45.28it/s]
+125it [00:21, 46.56it/s]
+131it [00:21, 47.59it/s]
+137it [00:21, 47.21it/s]
+143it [00:21, 46.19it/s]
+148it [00:22, 44.88it/s]
+153it [00:22, 43.55it/s]
+158it [00:22, 41.85it/s]
+163it [00:22, 40.82it/s]
+168it [00:22, 39.53it/s]
+173it [00:22, 38.50it/s]
+177it [00:22, 37.35it/s]
+181it [00:22, 36.57it/s]
+185it [00:23, 36.08it/s]
+189it [00:23, 35.45it/s]
+193it [00:23, 35.04it/s]
+197it [00:23, 34.83it/s]
+201it [00:23, 34.53it/s]
+205it [00:23, 34.24it/s]
+209it [00:23, 34.03it/s]
+213it [00:23, 33.91it/s]
+217it [00:23, 33.87it/s]
+221it [00:24, 33.79it/s]
+225it [00:24, 33.25it/s]
+229it [00:24, 33.32it/s]
+233it [00:24, 33.25it/s]
+237it [00:24, 33.35it/s]
+241it [00:24, 33.29it/s]
+245it [00:24, 33.18it/s]
+249it [00:24, 33.11it/s]
+253it [00:25, 33.15it/s]
+257it [00:25, 33.03it/s]
+261it [00:25, 33.05it/s]
+265it [00:25, 32.87it/s]
+269it [00:25, 32.75it/s]
+273it [00:25, 32.76it/s]
+277it [00:25, 32.69it/s]
+281it [00:25, 32.28it/s]
+285it [00:26, 32.38it/s]
+289it [00:26, 32.05it/s]
+293it [00:26, 32.18it/s]
+297it [00:26, 32.14it/s]
+301it [00:26, 31.96it/s]
+305it [00:26, 31.92it/s]

@@ -328,9 +328,14 @@ def get_coords_from_topk_events(
     border_suppression_size=0,
     non_max_supp_rad=0,
 ):
+    #get the absolute value of the events tensor. shape [batch_size, 1, height, width]
     positive_event_tensor = torch.abs(events.squeeze(0))
+
+    #downsample [batch_size, 1, height, width] to [batch_size, 1, height/4, width/4]
     downsampled_event_tensor = F.avg_pool2d(positive_event_tensor, 4, 4)
     event_in_xy_form = downsampled_event_tensor.transpose(3, 2)
+
+    #mean across the BINS. shape [batch_size, 1, height/4, width/4]
     ev_mean = torch.mean(event_in_xy_form, dim=1)
 
     if border_suppression_size != 0:
@@ -344,7 +349,11 @@ def get_coords_from_topk_events(
         # perform non maximum suppression
         ev_mean = nms_image(ev_mean, kernel_size=non_max_supp_rad)
 
+
+    #flatten : shape [batch_size, height/4 * width/4]
     event_mean_flat = torch.flatten(ev_mean, start_dim=1, end_dim=-1)
+
+    #get the indices of the top k values in the flattened tensor
     values, indices = torch.topk(event_mean_flat, k=patches_per_image, dim=-1)
 
     # compute the row and column indices of the top k values in the flattened tensor
