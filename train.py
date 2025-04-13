@@ -1,11 +1,9 @@
+import matplotlib.pyplot as plt
 import cv2
 import os
 import numpy as np
 from collections import OrderedDict
 import contextlib
-
-import matplotlib.pyplot as plt
-plt.switch_backend('Agg')
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -282,10 +280,10 @@ def train(rank, args):
                     "loss/flow_train": flow_loss.item(),                # flow loss
                     "loss/scores_train": scores_loss.item(),            # scores loss
                     "px1": (e < .25).float().mean().item(),             # AUC
-                    "r1": (ro < .001).float().mean().item(),            #
-                    "r2": (ro < .01).float().mean().item(),             #
-                    "t1": (tr < .001).float().mean().item(),            #
-                    "t2": (tr < .01).float().mean().item(),             #
+                    "r1": (ro < .001).float().mean().item(),            # fraction of frames rotation error < 0.001 degrees
+                    "r2": (ro < .01).float().mean().item(),             # fraction of frames rotation error < 0.01 degrees
+                    "t1": (tr < .001).float().mean().item(),            # fraction of frames translation error < 0.001 m
+                    "t2": (tr < .01).float().mean().item(),             # fraction of frames translation error < 0.01 m
                 }
 
                 if rank == 0:

@@ -182,7 +182,7 @@ class DEVO:
 
     def terminate(self):
         """ interpolate missing poses """
-        print("keyframes", self.n)
+        # print("keyframes", self.n)
         self.traj = {}
         for i in range(self.n):
             self.traj[self.tstamps_[i].item()] = self.poses_[i]

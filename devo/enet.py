@@ -153,7 +153,12 @@ class Patchifier(nn.Module):
                 output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
                 norm_fn="none",
             )
-        else :
+        elif self.model == "DEVO":
+            print("Using DEVO original, for evaluation only")
+            self.fnet = BasicEncoder4Evs(output_dim=self.match_feat_dim, dim=dim, norm_fn='instance') # matching-feature extractor
+            self.inet = BasicEncoder4Evs(output_dim=self.ctx_feat_dim, dim=dim, norm_fn='none') # context-feature extractor
+        
+        else:
             raise ValueError("Invalid model type")
 
 
@@ -171,8 +176,12 @@ class Patchifier(nn.Module):
 
     def forward(self, events, patches_per_image=96, disps=None, return_color=False, scorer_eval_mode="multi", scorer_eval_use_grid=True):
         """ extract patches from input events """
-        fmap = self.matching_feat_encoder(events) / 4.0 # (1, 15, 128, 120, 160)
-        imap = self.ctx_feat_encoder(events) / 4.0 # (1, 15, 384, 120, 160)
+        if self.model == "DEVO":
+            fmap = self.fnet(events) / 4.0 # (1, 15, 128, 120, 160)
+            imap = self.inet(events) / 4.0
+        else:
+            fmap = self.matching_feat_encoder(events) / 4.0 # (1, 15, 128, 120, 160)
+            imap = self.ctx_feat_encoder(events) / 4.0 # (1, 15, 384, 120, 160)
 
         b, n, c, h, w = fmap.shape # (1, 15, 128, 120, 160)
         P = self.patch_size

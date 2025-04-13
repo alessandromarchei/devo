@@ -1,14 +1,17 @@
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend suitable for headless environments
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+matplotlib.use('Agg')  # Use non-interactive backend suitable for headless environments
+
 import numpy as np
 import torch
 import cv2
 import os
 from datetime import datetime
+
 from evo.core.trajectory import PoseTrajectory3D
 from evo.tools import plot
+
 
 
 def render(x: np.ndarray, y: np.ndarray, pol: np.ndarray, H: int, W: int) -> np.ndarray:

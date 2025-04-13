@@ -1,203 +1,0 @@
-nohup: ignoring input
-Thu Apr 10 23:49:10 2025       
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 570.124.04             Driver Version: 570.124.04     CUDA Version: 12.8     |
-|-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA GeForce RTX 4070 ...    Off |   00000000:01:00.0 Off |                  N/A |
-|  0%   40C    P8             12W /  285W |     245MiB /  16376MiB |      0%      Default |
-|                                         |                        |                  N/A |
-+-----------------------------------------+------------------------+----------------------+
-                                                                                         
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|    0   N/A  N/A         2243883      G   /usr/libexec/Xorg                       152MiB |
-|    0   N/A  N/A         2243973      G   /usr/bin/gnome-shell                     27MiB |
-|    0   N/A  N/A         2244873      G   /usr/lib64/firefox/firefox               11MiB |
-+-----------------------------------------------------------------------------------------+
-badile43.ee.ethz.ch
-sh: line 0: ulimit: open files: cannot modify limit: Operation not permitted
-----------
-Print config
-Namespace(batch=1, checkpoint='', clip=10.0, config='config/DEVO_base.conf', datapath='/usr/scratch/badile43/amarchei/TartanEvent/', ddp=False, dim=32, dim_fnet=128, dim_inet=384, e2vid=False, eval=True, evs=True, fgraph_pickle='', flow_weight=0.1, gpu_num=1, iters=18, lr=8e-05, max_events_loaded=500000000, n_frames=15, name='patchifier_small2', norm='std2', patch_selector='scorer', patches_per_image=80, patchifier_model='mksmall', port='12348', pose_weight=10.0, profiler=False, randaug=True, save_checkpoint_step=1000, scale=0.5, scores_weight=0.05, square=False, steps=100000, tensorboard_update_step=100, train_split='splits/tartan/train_split.txt', val_split='splits/tartan/tartan_val_small.txt')
-----------
-Command Line Args:   -c=config/DEVO_base.conf --name=patchifier_small2
-Config File (config/DEVO_base.conf):
-  expweek:           2025-mm-dd
-  datapath:          /usr/scratch/badile43/amarchei/TartanEvent/
-  evs:               True
-  eval:              True
-  ddp:               False
-  profiler:          False
-  gpu_num:           1
-  checkpoint:        
-  fgraph_pickle:     
-  train_split:       splits/tartan/train_split.txt
-  val_split:         splits/tartan/tartan_val_small.txt
-  save_checkpoint_step:1000
-  tensorboard_update_step:100
-  PATCHES_PER_FRAME: 96
-  patch_selector:    scorer
-  norm:              std2
-  randaug:           True
-  batch_size:        1
-  iters:             18
-  steps:             100000
-  lr:                0.00008
-  clip:              10
-  n_frames:          15
-  scale:             0.5
-  square:            False
-  pose_weight:       10.0
-  flow_weight:       0.1
-  scores_weight:     0.05
-  max_events_loaded: 500000000
-  patchifier_model:  mksmall
-Defaults:
-  --batch:           1
-  --port:            12348
-  --dim_inet:        384
-  --dim_fnet:        128
-  --dim:             32
-  --patches_per_image:80
-
-----------
-11.8
-args.scale:  0.5
-Loading datasets: ['tartan_evs']
-
-WARNING: hospital/hospital/Hard/P049 is in both train and val split!!!
-
-
-WARNING: endofworld/endofworld/Easy/P009 is in both train and val split!!!
-
-
-WARNING: ocean/ocean/Easy/P013 is in both train and val split!!!
-
-
-WARNING: carwelding/carwelding/Easy/P007 is in both train and val split!!!
-
-
-WARNING: office/office/Hard/P007 is in both train and val split!!!
-
-
-WARNING: hospital/hospital/Easy/P036 is in both train and val split!!!
-
-Building TartanAir EVSD dataset
-Found 369 scenes
-example scene: /usr/scratch/badile43/amarchei/TartanEvent/office2/Hard/P002/
-  0%|          | 0/369 [00:00<?, ?it/s]/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torch/functional.py:504: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at ../aten/src/ATen/native/TensorShape.cpp:3526.)
-  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
- 12%|█▏        | 46/369 [00:00<00:05, 59.20it/s] 19%|█▉        | 70/369 [00:01<00:05, 55.86it/s] 21%|██        | 76/369 [00:01<00:09, 31.61it/s] 22%|██▏       | 80/369 [00:07<00:50,  5.71it/s] 22%|██▏       | 83/369 [00:09<01:04,  4.40it/s] 23%|██▎       | 85/369 [00:12<01:39,  2.85it/s] 23%|██▎       | 86/369 [00:13<01:53,  2.50it/s] 24%|██▎       | 87/369 [00:14<02:00,  2.35it/s] 24%|██▍       | 88/369 [00:14<02:06,  2.22it/s] 24%|██▍       | 89/369 [00:15<02:04,  2.25it/s] 29%|██▉       | 107/369 [00:16<00:36,  7.11it/s] 29%|██▉       | 108/369 [00:16<00:45,  5.77it/s] 30%|██▉       | 109/369 [00:17<00:51,  5.07it/s] 30%|██▉       | 110/369 [00:18<01:02,  4.13it/s] 30%|███       | 111/369 [00:18<01:07,  3.82it/s] 30%|███       | 112/369 [00:19<01:26,  2.99it/s] 31%|███       | 115/369 [00:19<01:05,  3.86it/s] 31%|███▏      | 116/369 [00:20<01:16,  3.31it/s] 32%|███▏      | 117/369 [00:20<01:20,  3.15it/s] 32%|███▏      | 118/369 [00:20<01:24,  2.97it/s] 32%|███▏      | 119/369 [00:21<01:25,  2.94it/s] 33%|███▎      | 120/369 [00:21<01:28,  2.81it/s] 33%|███▎      | 121/369 [00:22<01:30,  2.75it/s] 33%|███▎      | 122/369 [00:22<02:06,  1.95it/s] 33%|███▎      | 123/369 [00:23<02:22,  1.73it/s] 34%|███▎      | 124/369 [00:24<02:09,  1.89it/s] 34%|███▍      | 125/369 [00:28<07:06,  1.75s/it] 34%|███▍      | 126/369 [00:29<05:35,  1.38s/it] 34%|███▍      | 127/369 [00:29<04:30,  1.12s/it] 35%|███▍      | 128/369 [00:30<04:00,  1.00it/s] 35%|███▍      | 129/369 [00:31<03:21,  1.19it/s] 35%|███▌      | 130/369 [00:31<02:56,  1.36it/s] 36%|███▌      | 131/369 [00:32<02:37,  1.51it/s] 36%|███▌      | 132/369 [00:32<02:20,  1.69it/s] 36%|███▌      | 133/369 [00:33<02:20,  1.68it/s] 36%|███▋      | 134/369 [00:33<02:11,  1.79it/s] 37%|███▋      | 135/369 [00:33<02:03,  1.89it/s] 37%|███▋      | 136/369 [00:35<02:48,  1.38it/s] 37%|███▋      | 137/369 [00:36<03:06,  1.24it/s] 37%|███▋      | 138/369 [00:36<02:56,  1.31it/s] 38%|███▊      | 140/369 [00:37<01:58,  1.93it/s] 38%|███▊      | 142/369 [00:37<01:27,  2.60it/s] 39%|███▉      | 143/369 [00:38<01:37,  2.31it/s] 39%|███▉      | 144/369 [00:38<01:42,  2.19it/s] 39%|███▉      | 145/369 [00:39<01:37,  2.31it/s] 40%|███▉      | 146/369 [00:39<01:48,  2.05it/s] 40%|███▉      | 147/369 [00:40<01:58,  1.87it/s] 40%|████      | 148/369 [00:41<02:27,  1.50it/s] 40%|████      | 149/369 [00:42<02:42,  1.36it/s] 41%|████      | 151/369 [00:43<02:15,  1.61it/s] 41%|████      | 152/369 [00:43<02:04,  1.75it/s] 41%|████▏     | 153/369 [00:44<02:09,  1.67it/s] 42%|████▏     | 154/369 [00:45<02:22,  1.51it/s] 42%|████▏     | 155/369 [00:46<02:28,  1.44it/s] 42%|████▏     | 156/369 [00:46<02:06,  1.69it/s] 56%|█████▌    | 207/369 [00:50<00:16,  9.70it/s] 56%|█████▋    | 208/369 [00:51<00:19,  8.40it/s] 57%|█████▋    | 209/369 [00:51<00:23,  6.88it/s] 57%|█████▋    | 210/369 [00:54<00:45,  3.53it/s] 57%|█████▋    | 211/369 [00:55<00:48,  3.27it/s] 57%|█████▋    | 212/369 [00:55<00:49,  3.18it/s] 58%|█████▊    | 213/369 [00:59<01:43,  1.51it/s] 58%|█████▊    | 214/369 [01:00<01:39,  1.56it/s] 58%|█████▊    | 215/369 [01:00<01:32,  1.66it/s] 59%|█████▊    | 216/369 [01:01<01:44,  1.46it/s] 59%|█████▉    | 217/369 [01:02<01:50,  1.37it/s] 59%|█████▉    | 218/369 [01:03<02:04,  1.21it/s] 59%|█████▉    | 219/369 [01:06<03:10,  1.27s/it] 60%|█████▉    | 220/369 [01:07<02:56,  1.18s/it] 60%|█████▉    | 221/369 [01:08<02:57,  1.20s/it] 60%|██████    | 222/369 [01:08<02:24,  1.02it/s] 60%|██████    | 223/369 [01:09<02:18,  1.06it/s] 61%|██████    | 224/369 [01:10<02:01,  1.19it/s] 61%|██████    | 225/369 [01:11<02:32,  1.06s/it] 61%|██████    | 226/369 [01:13<02:43,  1.14s/it] 62%|██████▏   | 227/369 [01:14<02:36,  1.10s/it] 62%|██████▏   | 228/369 [01:14<02:23,  1.02s/it] 62%|██████▏   | 229/369 [01:19<05:00,  2.15s/it] 64%|██████▍   | 237/369 [01:20<01:20,  1.64it/s] 64%|██████▍   | 238/369 [01:23<01:51,  1.18it/s] 65%|██████▍   | 239/369 [01:23<01:41,  1.27it/s] 65%|██████▌   | 241/369 [01:26<01:52,  1.14it/s] 66%|██████▌   | 242/369 [01:27<01:51,  1.14it/s] 66%|██████▌   | 243/369 [01:29<02:21,  1.12s/it] 66%|██████▌   | 244/369 [01:29<02:04,  1.01it/s] 67%|██████▋   | 248/369 [01:31<01:30,  1.33it/s] 67%|██████▋   | 249/369 [01:32<01:22,  1.45it/s] 68%|██████▊   | 252/369 [01:32<00:53,  2.18it/s] 69%|██████▉   | 254/369 [01:33<00:44,  2.58it/s] 70%|██████▉   | 258/369 [01:33<00:29,  3.77it/s] 71%|███████   | 261/369 [01:34<00:28,  3.79it/s] 76%|███████▋  | 282/369 [01:34<00:06, 12.80it/s] 80%|███████▉  | 295/369 [01:35<00:04, 16.73it/s] 81%|████████  | 298/369 [01:35<00:04, 14.77it/s] 84%|████████▎ | 309/369 [01:36<00:03, 18.01it/s] 86%|████████▌ | 316/369 [01:36<00:03, 16.98it/s]100%|██████████| 369/369 [01:36<00:00,  3.82it/s]
-Added /usr/scratch/badile43/amarchei/TartanEvent/abandonedfactory_night/Hard/P011/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/carwelding/Easy/P007/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P003/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P004/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P007/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P008/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Easy/P009/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Hard/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Hard/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Hard/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Hard/P005/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/endofworld/Hard/P006/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P003/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P004/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P005/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P008/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P009/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P010/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P011/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P012/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P013/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P014/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P015/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P016/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P017/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P018/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P019/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P020/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P021/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P022/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P023/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P024/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P025/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P026/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P027/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P028/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P029/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P030/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P031/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P033/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P035/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Easy/P036/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P037/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P038/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P039/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P040/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P041/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P042/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P044/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P045/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P046/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P047/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P048/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/hospital/Hard/P049/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P004/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P005/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P006/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P008/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P009/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P010/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P011/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P012/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Easy/P013/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P003/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P004/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P005/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P006/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P007/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P008/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/ocean/Hard/P009/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Easy/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Hard/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Hard/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Hard/P003/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Hard/P005/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Hard/P006/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office/Hard/P007/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Easy/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Easy/P006/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Easy/P007/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Easy/P010/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Hard/P000/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Hard/P004/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/office2/Hard/P007/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/seasidetown/Easy/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/seasonsforest/Easy/P001/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/seasonsforest/Easy/P002/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/seasonsforest/Hard/P006/ to TartanAir EVDS dataset
-Added /usr/scratch/badile43/amarchei/TartanEvent/seasonsforest_winter/Easy/P006/ to TartanAir EVDS dataset
-Dataset tartan_evs has 49943 images
-Using MKSmallEncoder
-Rank 0 : initialize logger
-  0%|          | 0/49943 [00:00<?, ?it/s]  0%|          | 1/49943 [00:05<82:47:31,  5.97s/it]  0%|          | 2/49943 [00:06<40:03:33,  2.89s/it]  0%|          | 3/49943 [00:07<26:19:14,  1.90s/it]  0%|          | 4/49943 [00:08<20:17:56,  1.46s/it]  0%|          | 5/49943 [00:13<39:08:23,  2.82s/it]  0%|          | 6/49943 [00:14<29:35:14,  2.13s/it]  0%|          | 7/49943 [00:15<23:21:48,  1.68s/it]  0%|          | 8/49943 [00:15<19:21:03,  1.40s/it]  0%|          | 9/49943 [00:18<26:10:09,  1.89s/it]  0%|          | 10/49943 [00:19<21:41:10,  1.56s/it]  0%|          | 11/49943 [00:20<18:47:44,  1.36s/it]  0%|          | 12/49943 [00:21<16:41:14,  1.20s/it]  0%|          | 13/49943 [00:22<15:20:32,  1.11s/it]  0%|          | 14/49943 [00:23<14:03:58,  1.01s/it]  0%|          | 15/49943 [00:23<13:19:05,  1.04it/s]  0%|          | 16/49943 [00:24<12:52:04,  1.08it/s]  0%|          | 17/49943 [00:28<25:07:26,  1.81s/it]  0%|          | 18/49943 [00:33<38:33:34,  2.78s/it]  0%|          | 19/49943 [00:34<30:11:04,  2.18s/it]  0%|          | 20/49943 [00:35<24:23:13,  1.76s/it]  0%|          | 21/49943 [00:35<20:11:16,  1.46s/it]  0%|          | 22/49943 [00:36<17:28:12,  1.26s/it]  0%|          | 23/49943 [00:37<15:34:35,  1.12s/it]  0%|          | 24/49943 [00:38<14:05:59,  1.02s/it]  0%|          | 25/49943 [00:39<13:17:38,  1.04it/s]  0%|          | 26/49943 [00:39<12:46:36,  1.09it/s]  0%|          | 27/49943 [00:40<12:09:52,  1.14it/s]  0%|          | 28/49943 [00:41<11:50:17,  1.17it/s]  0%|          | 29/49943 [00:42<11:37:53,  1.19it/s]  0%|          | 30/49943 [00:43<11:25:18,  1.21it/s]  0%|          | 31/49943 [00:44<13:10:50,  1.05it/s]  0%|          | 32/49943 [00:47<23:37:15,  1.70s/it]  0%|          | 33/49943 [00:48<19:49:53,  1.43s/it]  0%|          | 34/49943 [00:49<17:20:50,  1.25s/it]  0%|          | 35/49943 [00:50<15:36:36,  1.13s/it]  0%|          | 36/49943 [00:52<19:15:04,  1.39s/it]  0%|          | 37/49943 [00:53<16:37:44,  1.20s/it]  0%|          | 38/49943 [00:53<14:53:09,  1.07s/it]  0%|          | 39/49943 [00:54<13:25:28,  1.03it/s]  0%|          | 40/49943 [00:57<20:10:59,  1.46s/it]  0%|          | 41/49943 [00:58<17:50:04,  1.29s/it]  0%|          | 42/49943 [00:58<16:14:21,  1.17s/it]  0%|          | 43/49943 [00:59<14:15:13,  1.03s/it]  0%|          | 44/49943 [01:00<13:12:52,  1.05it/s]  0%|          | 45/49943 [01:01<12:31:38,  1.11it/s]  0%|          | 46/49943 [01:01<11:59:58,  1.16it/s]  0%|          | 47/49943 [01:02<11:24:44,  1.21it/s]  0%|          | 48/49943 [01:03<11:17:10,  1.23it/s]  0%|          | 49/49943 [01:07<22:38:55,  1.63s/it]  0%|          | 50/49943 [01:07<18:59:21,  1.37s/it]  0%|          | 51/49943 [01:08<16:23:33,  1.18s/it]  0%|          | 52/49943 [01:09<14:43:43,  1.06s/it]  0%|          | 53/49943 [01:10<13:16:24,  1.04it/s]  0%|          | 54/49943 [01:10<12:33:35,  1.10it/s]  0%|          | 55/49943 [01:11<11:53:01,  1.17it/s]  0%|          | 56/49943 [01:12<11:26:15,  1.21it/s]  0%|          | 57/49943 [01:13<11:31:31,  1.20it/s]  0%|          | 58/49943 [01:13<11:21:24,  1.22it/s]  0%|          | 59/49943 [01:14<12:20:38,  1.12it/s]  0%|          | 60/49943 [01:15<12:02:15,  1.15it/s]  0%|          | 61/49943 [01:24<45:58:26,  3.32s/it]  0%|          | 62/49943 [01:25<34:56:12,  2.52s/it]  0%|          | 63/49943 [01:26<27:28:39,  1.98s/it]  0%|          | 64/49943 [01:27<22:48:50,  1.65s/it]  0%|          | 65/49943 [01:27<18:41:32,  1.35s/it]  0%|          | 66/49943 [01:28<16:15:56,  1.17s/it]  0%|          | 67/49943 [01:29<14:44:10,  1.06s/it]  0%|          | 68/49943 [01:30<13:45:20,  1.01it/s]  0%|          | 69/49943 [01:30<12:49:37,  1.08it/s]  0%|          | 70/49943 [01:31<12:17:26,  1.13it/s]  0%|          | 71/49943 [01:32<11:53:56,  1.16it/s]  0%|          | 72/49943 [01:33<11:16:21,  1.23it/s]  0%|          | 73/49943 [01:37<25:55:56,  1.87s/it]  0%|          | 74/49943 [01:38<21:21:48,  1.54s/it]  0%|          | 75/49943 [01:38<17:37:07,  1.27s/it]  0%|          | 76/49943 [01:39<15:34:35,  1.12s/it]  0%|          | 77/49943 [01:40<14:02:01,  1.01s/it]  0%|          | 78/49943 [01:41<12:52:39,  1.08it/s]  0%|          | 79/49943 [01:41<12:04:13,  1.15it/s]  0%|          | 80/49943 [01:42<11:16:57,  1.23it/s]  0%|          | 81/49943 [01:54<55:54:04,  4.04s/it]  0%|          | 82/49943 [01:54<42:03:43,  3.04s/it]  0%|          | 83/49943 [01:55<32:24:38,  2.34s/it]  0%|          | 84/49943 [01:56<26:12:59,  1.89s/it]  0%|          | 85/49943 [01:57<22:09:19,  1.60s/it]  0%|          | 86/49943 [01:58<18:31:00,  1.34s/it]  0%|          | 87/49943 [01:58<16:04:36,  1.16s/it]  0%|          | 88/49943 [01:59<14:16:27,  1.03s/it]  0%|          | 89/49943 [02:00<12:58:47,  1.07it/s]  0%|          | 90/49943 [02:01<12:12:58,  1.13it/s]  0%|          | 91/49943 [02:01<11:42:40,  1.18it/s]  0%|          | 92/49943 [02:02<11:28:52,  1.21it/s]  0%|          | 93/49943 [02:03<11:36:03,  1.19it/s]  0%|          | 94/49943 [02:04<11:21:01,  1.22it/s]  0%|          | 95/49943 [02:05<11:45:35,  1.18it/s]  0%|          | 96/49943 [02:05<11:27:00,  1.21it/s]  0%|          | 97/49943 [02:16<51:48:32,  3.74s/it]  0%|          | 98/49943 [02:17<39:19:06,  2.84s/it]  0%|          | 99/49943 [02:17<30:35:18,  2.21s/it]/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:1694: UserWarning: To get the last learning rate computed by the scheduler, please use `get_last_lr()`.
-  warnings.warn("To get the last learning rate computed by the scheduler, "
-  0%|          | 100/49943 [02:18<24:52:17,  1.80s/it]  0%|          | 101/49943 [02:19<21:00:42,  1.52s/it]  0%|          | 102/49943 [02:20<18:06:14,  1.31s/it]  0%|          | 103/49943 [02:21<16:21:26,  1.18s/it]  0%|          | 104/49943 [02:22<14:53:51,  1.08s/it]  0%|          | 105/49943 [02:23<15:57:48,  1.15s/it]  0%|          | 106/49943 [02:24<16:07:01,  1.16s/it]  0%|          | 107/49943 [02:25<14:28:32,  1.05s/it]  0%|          | 108/49943 [02:26<13:12:47,  1.05it/s]  0%|          | 109/49943 [02:35<46:47:55,  3.38s/it]  0%|          | 110/49943 [02:36<35:57:54,  2.60s/it]  0%|          | 111/49943 [02:36<28:05:02,  2.03s/it]  0%|          | 112/49943 [02:37<22:45:39,  1.64s/it]  0%|          | 113/49943 [02:38<19:13:01,  1.39s/it]  0%|          | 114/49943 [02:39<16:44:15,  1.21s/it]  0%|          | 115/49943 [02:39<14:58:34,  1.08s/it]  0%|          | 116/49943 [02:40<13:25:39,  1.03it/s]  0%|          | 117/49943 [02:41<12:23:15,  1.12it/s]  0%|          | 118/49943 [02:42<11:42:20,  1.18it/s]  0%|          | 119/49943 [02:42<11:29:36,  1.20it/s]  0%|          | 120/49943 [02:43<11:24:12,  1.21it/s]  0%|          | 121/49943 [02:44<11:23:28,  1.21it/s]  0%|          | 122/49943 [02:46<16:52:41,  1.22s/it]  0%|          | 123/49943 [02:47<15:06:32,  1.09s/it]  0%|          | 124/49943 [02:48<13:57:39,  1.01s/it]  0%|          | 125/49943 [02:48<13:01:42,  1.06it/s]  0%|          | 126/49943 [02:52<21:52:47,  1.58s/it]  0%|          | 127/49943 [02:52<18:24:47,  1.33s/it]  0%|          | 128/49943 [02:53<16:08:08,  1.17s/it]

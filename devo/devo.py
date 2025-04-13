@@ -1,11 +1,12 @@
 import torch
 import numpy as np
 import torch.nn.functional as F
-
+import csv
 from . import fastba
 from . import altcorr
 from . import lietorch
 from .lietorch import SE3
+import time
 
 # from .net import VONet # TODO add net.py
 from .enet import eVONet
@@ -21,6 +22,11 @@ from utils.viz_utils import visualize_voxel
 class DEVO:
     def __init__(self, cfg, network, evs=False, ht=480, wd=640, viz=False, viz_flow=False, dim_inet=384, dim_fnet=128, dim=32, model=None, **kwargs):
         
+        #timing file should be like : itming_log_npatches_remwindow_optwindow
+        self.timing_log_file = "timing_log_{}_{}_{}.csv".format(cfg.PATCHES_PER_FRAME, cfg.REMOVAL_WINDOW, cfg.OPTIMIZATION_WINDOW)
+        # with open(self.timing_log_file, mode='a', newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(["iteration", "total_time_ms", "ba_time_ms"])
         self.cfg = cfg
         self.evs = evs
 
@@ -188,7 +194,7 @@ class DEVO:
 
     def terminate(self):
         """ interpolate missing poses """
-        print("keyframes", self.n)
+        # print("keyframes", self.n)
         self.traj = {}
         for i in range(self.n):
             self.traj[self.tstamps_[i].item()] = self.poses_[i]
@@ -332,6 +338,9 @@ class DEVO:
             # [DEBUG]
         target = coords[...,self.P//2,self.P//2] + delta.float()
 
+
+        # start_ba = time.time()
+
         with Timer("BA", enabled=self.enable_timing):
             t0 = self.n - self.cfg.OPTIMIZATION_WINDOW if self.is_initialized else 1
             t0 = max(t0, 1)
@@ -345,6 +354,9 @@ class DEVO:
             points = pops.point_cloud(SE3(self.poses), self.patches[:, :self.m], self.intrinsics, self.ix[:self.m])
             points = (points[...,1,1,:3] / points[...,1,1,3:]).reshape(-1, 3)
             self.points_[:len(points)] = points[:]
+
+        # self._ba_time_ms = (time.time() - start_ba) * 1000
+
 
     def flow_viz_step(self):
         # [DEBUG]
@@ -384,6 +396,7 @@ class DEVO:
 
     def __call__(self, tstamp, image, intrinsics, scale=1.0):
         """ track new frame """
+        # start_total = time.time()
 
         if (self.n+1) >= self.N:
             raise Exception(f'The buffer size is too small. You can increase it using "--buffer {self.N*2}"')
@@ -553,6 +566,13 @@ class DEVO:
         elif self.is_initialized:
             self.update()
             self.keyframe()
+
+        # total_time_ms = (time.time() - start_total) * 1000
+        # ba_time_ms = getattr(self, '_ba_time_ms', -1)
+        # with open(self.timing_log_file, mode='a', newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow([self.counter, total_time_ms, ba_time_ms])
+
 
         if self.viz_flow:
             self.flow_viz_step()

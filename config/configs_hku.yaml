@@ -1,7 +1,7 @@
 ### DEVO Config File for HKU ###
 
 # VO config (increase for better accuracy)
-PATCHES_PER_FRAME: 12
+PATCHES_PER_FRAME: 24
 REMOVAL_WINDOW: 5
 OPTIMIZATION_WINDOW: 5
 PATCH_LIFETIME: 13

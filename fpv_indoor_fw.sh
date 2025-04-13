@@ -5,12 +5,12 @@ export MPLBACKEND=Agg
 YAML_FILE="config/configs_fpv_indoor_fw.yaml"
 SPLIT_FILE="splits/fpv/fpv_val_indoor_fw.txt"
 CSV_NAME="eval_fpv_indoor_fw.csv"
-TRIALS=2
+TRIALS=1
 DATASET_PATH="/usr/scratch/badile13/amarchei/fpv/"
 
 # PATCHES_PER_FRAME must be divisible by 4
-patches_per_frame_values=(96 44 24 12)
-removal_window_values=(22 10 5)
+patches_per_frame_values=(12)
+removal_window_values=(10 5)
 optimization_window_values=(10 5)
 
 SCENES=(
@@ -54,7 +54,8 @@ for scene in "${SCENES[@]}"; do
           --config="$YAML_FILE" \
           --val_split="$SPLIT_FILE" \
           --csv_name="$CSV_NAME" \
-          --expname="fpv_${patches}_${removal}_${opt}_${scene}"
+          --expname="fpv_${patches}_${removal}_${opt}_${scene}" \
+	  --model="DEVO"
         sleep 1
 
       done

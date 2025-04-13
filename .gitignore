@@ -165,3 +165,4 @@ thirdparty/*
 movies/
 results/*
 TartanAirEVS.pickle
+keyframes.txt
