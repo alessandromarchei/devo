@@ -20,7 +20,7 @@ from utils.viz_utils import visualize_voxel
 
 
 class DEVO:
-    def __init__(self, cfg, network, evs=False, ht=480, wd=640, viz=False, viz_flow=False, dim_inet=384, dim_fnet=128, dim=32, model=None, **kwargs):
+    def __init__(self, cfg, network, evs=False, ht=480, wd=640, viz=False, viz_flow=False, ctx_feat_dim=384, match_feat_dim=128, dim=32, model=None, pyramid=True,**kwargs):
         
         #timing file should be like : itming_log_npatches_remwindow_optwindow
         self.timing_log_file = "timing_log_{}_{}_{}.csv".format(cfg.PATCHES_PER_FRAME, cfg.REMOVAL_WINDOW, cfg.OPTIMIZATION_WINDOW)
@@ -30,13 +30,18 @@ class DEVO:
         self.cfg = cfg
         self.evs = evs
 
-        self.dim_inet = dim_inet
-        self.dim_fnet = dim_fnet
+
+        self.ctx_feat_dim = kwargs.get("dim_inet", ctx_feat_dim)
+        self.match_feat_dim = kwargs.get("dim_fnet", match_feat_dim)
+
+        
         self.dim = dim
         # TODO add patch_selector
 
         self.model = model
-        
+        self.use_pyramid = kwargs.get("use_pyramid", pyramid)
+        print(f"Using pyramid: {self.use_pyramid}")
+
         self.load_weights(network)
         self.is_initialized = False
         self.enable_timing = False # TODO timing in param
@@ -63,6 +68,10 @@ class DEVO:
         self.image_ = torch.zeros(self.ht, self.wd, 3, dtype=torch.uint8, device="cpu")
 
         self.tstamps_ = torch.zeros(self.N, dtype=torch.long, device="cuda")
+
+        #ABSOLUTE POSES. REFINED BY THE BUNDLE ADJUSTMENT on the optimization window
+        # [0] = 0 0 0 0 0 0 1 (STARTING POSE in world coordinates)
+        # from 1 to N-1 = tvec qvec, progressively updated
         self.poses_ = torch.zeros(self.N, 7, dtype=torch.float, device="cuda")
         self.patches_ = torch.zeros(self.N, self.M, 3, self.P, self.P, dtype=torch.float, device="cuda") # 3 channels = (x, y, depth)
         self.patches_gt_ = torch.zeros(self.N, self.M, 3, self.P, self.P, dtype=torch.float, device="cuda")
@@ -82,19 +91,19 @@ class DEVO:
         else:
             self.kwargs = kwargs = {"device": "cuda", "dtype": torch.float}
         
-        self.imap_ = torch.zeros(self.mem, self.M, self.dim_inet, **kwargs)
-        self.gmap_ = torch.zeros(self.mem, self.M, self.dim_fnet, self.P, self.P, **kwargs)
+        self.imap_ = torch.zeros(self.mem, self.M, self.ctx_feat_dim, **kwargs)
+        self.gmap_ = torch.zeros(self.mem, self.M, self.match_feat_dim, self.P, self.P, **kwargs)
 
         ht = int(ht // RES)
         wd = int(wd // RES)
 
-        self.fmap1_ = torch.zeros(1, self.mem, self.dim_fnet, int(ht // 1), int(wd // 1), **kwargs)
-        self.fmap2_ = torch.zeros(1, self.mem, self.dim_fnet, int(ht // 4), int(wd // 4), **kwargs)
+        self.fmap1_ = torch.zeros(1, self.mem, self.match_feat_dim, int(ht // 1), int(wd // 1), **kwargs)   #MATCHING FEATURES 1/4
+        self.fmap2_ = torch.zeros(1, self.mem, self.match_feat_dim, int(ht // 4), int(wd // 4), **kwargs)   #MATCHING FEATURES 1/16
 
-        # feature pyramid
+        #STORE THE REFERENCES, so gets updated when fmap1_ and fmap2_ are updated
         self.pyramid = (self.fmap1_, self.fmap2_)
 
-        self.net = torch.zeros(1, 0, self.dim_inet, **kwargs)
+        self.net = torch.zeros(1, 0, self.ctx_feat_dim, **kwargs)
         self.ii = torch.as_tensor([], dtype=torch.long, device="cuda")
         self.jj = torch.as_tensor([], dtype=torch.long, device="cuda")
         self.kk = torch.as_tensor([], dtype=torch.long, device="cuda")
@@ -109,14 +118,16 @@ class DEVO:
         if viz:
             self.start_viewer()
 
+
+
     def load_weights(self, network):
         # load network from checkpoint file
         if isinstance(network, str):
             print(f"Loading from {network}")
             checkpoint = torch.load(network)
-            # TODO infer dim_inet=self.dim_inet, dim_fnet=self.dim_fnet, dim=self.dim
+            # TODO infer ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim
             self.network = VONet(patch_selector=self.cfg.PATCH_SELECTOR) if not self.evs else \
-                eVONet(dim_inet=self.dim_inet, dim_fnet=self.dim_fnet, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model)
+                eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid)
             if 'model_state_dict' in checkpoint:
                 self.network.load_state_dict(checkpoint['model_state_dict'])
             else:
@@ -129,11 +140,12 @@ class DEVO:
                 self.network.load_state_dict(new_state_dict)
 
         else:
+            self.use_pyramid = network.use_pyramid
             self.network = network
 
         # steal network attributes
-        self.dim_inet = self.network.dim_inet
-        self.dim_fnet = self.network.dim_fnet
+        self.ctx_feat_dim = self.network.ctx_feat_dim
+        self.match_feat_dim = self.network.match_feat_dim
         self.dim = self.network.dim
         self.RES = self.network.RES
         self.P = self.network.P
@@ -179,11 +191,11 @@ class DEVO:
 
     @property
     def imap(self):
-        return self.imap_.view(1, self.mem * self.M, self.dim_inet)
+        return self.imap_.view(1, self.mem * self.M, self.ctx_feat_dim)
 
     @property
     def gmap(self):
-        return self.gmap_.view(1, self.mem * self.M, self.dim_fnet, 3, 3)
+        return self.gmap_.view(1, self.mem * self.M, self.match_feat_dim, 3, 3)
 
     def get_pose(self, t):
         if t in self.traj:
@@ -221,9 +233,21 @@ class DEVO:
         ii, jj = indicies if indicies is not None else (self.kk, self.jj)
         ii1 = ii % (self.M * self.mem)
         jj1 = jj % (self.mem)
+
+        # compute the correlation operation with PATCHES FROM MATCHING FEATURES
         corr1 = altcorr.corr(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
-        corr2 = altcorr.corr(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
-        return torch.stack([corr1, corr2], -1).view(1, len(ii), -1)
+        
+        if not self.use_pyramid:
+            # if use_pyramid is False, only use corr1
+            corr_volume = corr1.reshape(1, len(ii), -1)
+        else:
+            # otherwise, use both corr1 and corr2
+            corr2 = altcorr.corr(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
+            # stack together the two correlation volumes
+            corr_volume = torch.stack([corr1, corr2], -1).reshape(1, len(ii), -1)
+
+
+        return corr_volume
 
     def reproject(self, indicies=None):
         """ reproject patch k from i -> j """
@@ -238,7 +262,7 @@ class DEVO:
         # TODO: self.ix.shape = self.M*self.N
         # self.ix is filled dynamically
 
-        net = torch.zeros(1, len(ii), self.dim_inet, **self.kwargs)
+        net = torch.zeros(1, len(ii), self.ctx_feat_dim, **self.kwargs)
         self.net = torch.cat([self.net, net], dim=1)
 
     def remove_factors(self, m):
@@ -253,7 +277,7 @@ class DEVO:
         jj = self.n * torch.ones_like(kk)
         ii = self.ix[kk]
 
-        net = torch.zeros(1, len(ii), self.dim_inet, **self.kwargs)
+        net = torch.zeros(1, len(ii), self.ctx_feat_dim, **self.kwargs)
         coords = self.reproject(indicies=(ii, jj, kk))
 
         with autocast(enabled=self.cfg.MIXED_PRECISION):
@@ -539,6 +563,8 @@ class DEVO:
         self.imap_[self.n % self.mem] = imap.squeeze()
         self.gmap_[self.n % self.mem] = gmap.squeeze()
         
+
+        #CREATING THE MATCHING FEATURES FOR THE PYRAMID
         self.fmap1_[:, self.n % self.mem] = F.avg_pool2d(fmap[0], 1, 1)
         self.fmap2_[:, self.n % self.mem] = F.avg_pool2d(fmap[0], 4, 4)
 

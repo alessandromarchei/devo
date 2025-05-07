@@ -30,7 +30,7 @@ from utils.viz_utils import visualize_voxel, visualize_N_voxels, visualize_score
 DIM = 384 # default 384
 
 class Update(nn.Module):
-    def __init__(self, p, dim=DIM):
+    def __init__(self, p, dim=DIM, use_pyramid=True):
         super(Update, self).__init__()
         self.dim = dim
 
@@ -56,14 +56,29 @@ class Update(nn.Module):
             GatedResidual(dim),
         )
 
-        self.corr = nn.Sequential(
-            nn.Linear(2*49*p*p, dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(dim, dim),
-            nn.LayerNorm(dim, eps=1e-3),
-            nn.ReLU(inplace=True),
-            nn.Linear(dim, dim),
+        if(use_pyramid == False) :
+            #SMALLER VERSION : ONLY THE HIGH RESOLUTION MATCHING FEATURES ARE USED (1/4 ON, 1/16 NOT ADDED) --> NOT PYRAMID.
+            # only half the features are used
+            self.corr = nn.Sequential(
+                nn.Linear(49*p*p, dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+                nn.LayerNorm(dim, eps=1e-3),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+            )
+        else:
+            # DEFAULT CASE, with matching features downsampled at 1/4 and 1/16 and stacked toghether, with output flattened = 2*49*p*p
+            self.corr = nn.Sequential(
+                nn.Linear(2*49*p*p, dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+                nn.LayerNorm(dim, eps=1e-3),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
         )
+
+
 
         self.d = nn.Sequential(
             nn.ReLU(inplace=False),
@@ -94,9 +109,10 @@ class Update(nn.Module):
         net = net + self.agg_ij(net, ii*12345 + jj)
 
         net = self.gru(net)
-        weights = self.w(net)
+        patch_flow=self.d(net)
+        confidence_weigths = self.w(net)
 
-        return net, (self.d(net), weights, None)
+        return net, (patch_flow, confidence_weigths, None)
 
 
 
@@ -242,8 +258,15 @@ class Patchifier(nn.Module):
             raise NotImplementedError
         
         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
-        imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.ctx_feat_dim, 1, 1) # [B, n_events*n_patches_per_image, dim_inet, 1, 1]
-        gmap = altcorr.patchify(fmap[0], coords, P//2).view(b, -1, self.match_feat_dim, P, P) # [B, n_events*n_patches_per_image, dim_fnet, 3, 3]
+        
+        #FMAP : MATCHING FEATURE MAP (1/4 RESOLUTION)
+        #IMAP : CONTEXT FEATURE MAP (1/4 RESOLUTION)
+
+        #extract the N PATCHES 1X1 FROM THE FMAP (INPUT : DIM,H/4,W/4) -> (OUTPUT : DIM,N_PATCHES,1,1)
+        imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.ctx_feat_dim, 1, 1) # [B, n_events*n_patches_per_image, ctx_feat_dim, 1, 1]
+        
+        #extract the N PATCHES 3X3 FROM THE FMAP (INPUT : DIM,H/4,W/4) -> (OUTPUT : DIM,N_PATCHES,3,3)
+        gmap = altcorr.patchify(fmap[0], coords, P//2).view(b, -1, self.match_feat_dim, P, P) # [B, n_events*n_patches_per_image, match_feat_dim, 3, 3]
 
         if return_color:
             clr = altcorr.patchify(events[0].abs().sum(dim=1,keepdim=True), 4*(coords + 0.5), 0).clamp(min=0,max=255).view(b, -1, 1)
@@ -271,14 +294,14 @@ class Patchifier(nn.Module):
 
 ####### ORIGINAL PATCHIFIER CLASS #######
 # class Patchifier(nn.Module):
-#     def __init__(self, patch_size=3, dim_inet=DIM, dim_fnet=128, dim=32, patch_selector=SelectionMethod.SCORER):
+#     def __init__(self, patch_size=3, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER):
 #         super(Patchifier, self).__init__()
 #         self.patch_size = patch_size
-#         self.dim_inet = dim_inet # dim of context extractor and hidden state (update operator)
-#         self.dim_fnet = dim_fnet # dim of matching extractor
+#         self.ctx_feat_dim = ctx_feat_dim # dim of context extractor and hidden state (update operator)
+#         self.match_feat_dim = match_feat_dim # dim of matching extractor
 #         self.patch_selector = patch_selector.lower()
-#         self.fnet = BasicEncoder4Evs(output_dim=self.dim_fnet, dim=dim, norm_fn='instance') # matching-feature extractor
-#         self.inet = BasicEncoder4Evs(output_dim=self.dim_inet, dim=dim, norm_fn='none') # context-feature extractor
+#         self.fnet = BasicEncoder4Evs(output_dim=self.match_feat_dim, dim=dim, norm_fn='instance') # matching-feature extractor
+#         self.inet = BasicEncoder4Evs(output_dim=self.ctx_feat_dim, dim=dim, norm_fn='none') # context-feature extractor
 #         if self.patch_selector == SelectionMethod.SCORER:
 #             self.scorer = Scorer(5)
 
@@ -346,8 +369,8 @@ class Patchifier(nn.Module):
 #             raise NotImplementedError
         
 #         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
-#         imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.dim_inet, 1, 1) # [B, n_images*n_patches_per_image, dim_inet, 1, 1]
-#         gmap = altcorr.patchify(fmap[0], coords, P//2).view(b, -1, self.dim_fnet, P, P) # [B, n_images*n_patches_per_image, dim_fnet, 3, 3]
+#         imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.ctx_feat_dim, 1, 1) # [B, n_images*n_patches_per_image, ctx_feat_dim, 1, 1]
+#         gmap = altcorr.patchify(fmap[0], coords, P//2).view(b, -1, self.match_feat_dim, P, P) # [B, n_images*n_patches_per_image, match_feat_dim, 3, 3]
 
 #         if return_color:
 #             clr = altcorr.patchify(images[0].abs().sum(dim=1,keepdim=True), 4*(coords + 0.5), 0).clamp(min=0,max=255).view(b, -1, 1)
@@ -372,6 +395,7 @@ class Patchifier(nn.Module):
 
 
 class CorrBlock:
+    """ Correlation block for computing correlation between matching features """
     def __init__(self, fmap, gmap, radius=3, dropout=0.2, levels=[1,4]):
         self.dropout = dropout
         self.radius = radius
@@ -388,21 +412,26 @@ class CorrBlock:
 
 
 class eVONet(nn.Module):
-    def __init__(self, P=3, use_viewer=False, dim_inet=DIM, dim_fnet=128, dim=32, patch_selector=SelectionMethod.SCORER, norm="std2", randaug=False, model="original"):
+    def __init__(self, P=3, use_viewer=False, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER, norm="std2", randaug=False, model="DEVO", use_pyramid=True): 
         super(eVONet, self).__init__()
+        print(f"Using {model} model")
+        print(f"Using {ctx_feat_dim} context feature dimension")
+        print(f"Using {match_feat_dim} matching feature dimension")
         self.P = P
-        self.dim_inet = dim_inet # dim of context extractor and hidden state (update operator)
-        self.dim_fnet = dim_fnet # dim of matching extractor
+        self.ctx_feat_dim = ctx_feat_dim # dim of context extractor and hidden state (update operator)
+        self.match_feat_dim = match_feat_dim # dim of matching extractor
         self.patch_selector = patch_selector
         self.model = model
-        self.patchify = Patchifier(patch_size=self.P, ctx_feat_dim=self.dim_inet, match_feat_dim=self.dim_fnet, dim=dim, patch_selector=patch_selector, model=self.model)
-        self.update = Update(self.P, self.dim_inet)
+        self.use_pyramid = use_pyramid
+
+        self.patchify = Patchifier(patch_size=self.P, ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=dim, patch_selector=patch_selector, model=self.model)
+        self.update = Update(self.P, self.ctx_feat_dim, use_pyramid=self.use_pyramid)
         
         self.dim = dim # dim of the first layer in extractor
         self.RES = 4.0
         self.norm = norm
         self.randaug = randaug
-
+        
 
 
     @autocast(enabled=False)
@@ -456,7 +485,14 @@ class eVONet(nn.Module):
         # ix are image indices, i.e. simply (n_images, 80).flatten() = 15*80 = 1200 = n_patches
         # patches is (B, n_patches, 3, 3, 3), where (:, n_patches, 0, :, :) are x-coords, (:, n_patches, 1, :, :) are y-coords, (:, n_patches, 2, :, :) are depths 
         
-        corr_fn = CorrBlock(fmap, gmap)
+        if self.use_pyramid == False:
+            #create only 1 level (in case pyramid is not used)
+            levels = [1]
+            corr_fn = CorrBlock(fmap, gmap, levels=levels)
+        else:
+            #DEFAULT : use 2 levels (1 and 4)
+            levels = [1, 4]
+            corr_fn = CorrBlock(fmap, gmap, levels=levels)
 
         b, N, c, h, w = fmap.shape
         p = self.P
@@ -473,8 +509,8 @@ class eVONet(nn.Module):
         kk, jj = flatmeshgrid(torch.where(ix < 8)[0], torch.arange(0,8, device="cuda"), indexing="ij")
         ii = ix[kk] # here, ii are image indices for initialization (5120)
 
-        imap = imap.view(b, -1, self.dim_inet) # (b,n_patches,dim_inet) = (b,1200,384)
-        net = torch.zeros(b, len(kk), self.dim_inet, device="cuda", dtype=torch.float) # init hidden state
+        imap = imap.view(b, -1, self.ctx_feat_dim) # (b,n_patches,ctx_feat_dim) = (b,1200,384)
+        net = torch.zeros(b, len(kk), self.ctx_feat_dim, device="cuda", dtype=torch.float) # init hidden state
         
         Gs = SE3.IdentityLike(poses)
 
@@ -498,7 +534,7 @@ class eVONet(nn.Module):
                 jj = torch.cat([jj1, jj2, jj])
                 kk = torch.cat([kk1, kk2, kk])
 
-                net1 = torch.zeros(b, len(kk1) + len(kk2), self.dim_inet, device="cuda")
+                net1 = torch.zeros(b, len(kk1) + len(kk2), self.ctx_feat_dim, device="cuda")
                 net = torch.cat([net1, net], dim=1)
 
                 if np.random.rand() < 0.1:
@@ -514,6 +550,8 @@ class eVONet(nn.Module):
             coords = pops.transform(Gs, patches, intrinsics, ii, jj, kk)
             coords1 = coords.permute(0, 1, 4, 2, 3).contiguous() # (B,edges,P,P,2) -> (B,edges,2,P,P)
 
+
+            #call the correlation function METHOD, specify if using the pyramid or not (baseline uses pyramid)
             corr = corr_fn(kk, jj, coords1)
             # corr (b,edges,p*p*7*7*2)
             # delta, weights (b,edges,2)

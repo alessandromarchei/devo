@@ -3,6 +3,7 @@ import torch
 from devo.config import cfg
 import sys
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from utils.load_utils import load_gt_us, hku_evs_iterator
 from utils.eval_utils import assert_eval_config, run_voxel
@@ -13,7 +14,7 @@ H, W = 260, 346
 
 @torch.no_grad()
 def evaluate(config, args, net, train_step=None, datapath="", split_file=None, 
-             trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, side='left', viz_flow=False):
+             trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, side='left', viz_flow=False, **kwargs):
     dataset_name = "hku_evs"
     assert side == "left" or side == "right"
 
@@ -37,7 +38,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             # run the slam system
             traj_est, tstamps, flowdata = run_voxel(datapath_val, config, net, viz=viz, 
                                           iterator=hku_evs_iterator(datapath_val, side=side, stride=stride, timing=timing, H=H, W=W),
-                                          timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model)
+                                          timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model, **kwargs)
 
             # load  traj
             tss_traj_us, traj_hf = load_gt_us(os.path.join(datapath_val, f"gt_stamped_{side}.txt"))
@@ -67,7 +68,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default="config/eval_hku.yaml")
-    parser.add_argument('--datapath', default='', help='path to dataset directory')
+    parser.add_argument('--datapath', default='/usr/scratch/badile13/amarchei/HKU/', help='path to dataset directory')
     parser.add_argument('--weights', default="DEVO.pth")
     parser.add_argument('--val_split', type=str, default="splits/hku/hku_val.txt")
     parser.add_argument('--trials', type=int, default=5)
@@ -83,6 +84,14 @@ if __name__ == '__main__':
     parser.add_argument('--save_csv', action="store_true")
     parser.add_argument('--csv_name', type=str, default="")
     parser.add_argument('--model', type=str, default="original")
+    parser.add_argument('--dim_inet', type=int, default=384, help='channel dimension of hidden state')
+    parser.add_argument('--dim_fnet', type=int, default=128, help='channel dimension of last layer fnet')
+    parser.add_argument(
+        '--use_pyramid',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use pyramid (default: True)'
+    )
 
     args = parser.parse_args()
     assert_eval_config(args)
@@ -95,9 +104,10 @@ if __name__ == '__main__':
 
     args.save_trajectory = True
     args.plot = True
+    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_pyramid": args.use_pyramid}
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz,timing=args.timing, \
-                        stride=args.stride, side=args.side, viz_flow=args.viz_flow)
+                        stride=args.stride, side=args.side, viz_flow=args.viz_flow,**kwargs)
     
     print("val_results= \n")
     for k in val_results:

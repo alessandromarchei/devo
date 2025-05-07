@@ -439,87 +439,164 @@ def voxel_iterator_parallel(voxeldir, tss_file=None, ext=".h5", intrinsics=[320,
 
 
 
-def voxel_iterator(voxeldir, tss_file=None, ext=".h5", intrinsics=[320, 320, 320, 240], stride=1, timing=False, scale=1.0, max_events_loaded=None, square=False):
-    '''
-    function similar to mvsec_iterator, where N voxel grids are returned, along with intrinsics and timestamps
-    returns : list(voxels, intrinsics, timestamp of the voxels)
-    '''
-    
-    # voxfiles = osp.join(voxeldir, "*{}".format(ext))
-    voxfile = osp.join(voxeldir, "events.h5")
+
+def voxel_iterator(
+    voxeldir,
+    tss_file=None,
+    ext=".h5",
+    intrinsics=[320, 320, 320, 240],
+    stride=1,
+    timing=False,
+    scale=1.0,
+    max_events_loaded=1000000,
+    square=False
+):
+    """
+    Iterator that yields voxel grids and corresponding intrinsics/timestamps
+    from a large HDF5 event file, loading in chunks to fit into memory.
+    """
     fx, fy, cx, cy = intrinsics
+    voxfile = osp.join(voxeldir, "events.h5")
+    ts_path = osp.join(voxeldir, "timestamps.txt")
 
-    #timestamps are within the same folder of events.h5, with a line for each of the voxels
-    # in a .txt file called "timestamps.txt", with nanosecond resolution between the event voxels
+    if not osp.exists(ts_path):
+        raise FileNotFoundError(f"Missing timestamps file: {ts_path}")
 
-    if tss_file is None:
+    # Load timestamps and convert to float32
+    tss_imgs_us = np.loadtxt(ts_path, dtype="float32")
+    if len(tss_imgs_us.shape) == 0 or tss_imgs_us.size == 0:
+        raise ValueError(f"Timestamps file {ts_path} is empty or malformed.")
+    
+    # Remove the first timestamp (if required by convention)
+    tss_imgs_us = np.delete(tss_imgs_us, 0)
 
-        #### NEW LINES ####
-        #retrireve the file
-        ts_file = osp.join(voxeldir, "timestamps.txt")
-
-        #read the txt file 
-        tss_imgs_us = np.loadtxt(ts_file, dtype="float32")
-        
-        #remove the first element
-        tss_imgs_us = np.delete(tss_imgs_us, 0)
-
-
-        #### OLD LINES ####
-        #tss_imgs_us = np.arange(len(ts_file))  //original code
-    else:
-        tss_imgs_us = sorted(np.loadtxt(tss_file))
-
-    # voxfiles = voxfiles[::stride]
-    # tss_imgs_us = tss_imgs_us[::stride]
-
-
+    # Optional timing
     if timing:
         t0 = torch.cuda.Event(enable_timing=True)
         t1 = torch.cuda.Event(enable_timing=True)
         t0.record()
 
-    data_list = []
+    start_event_idx = 0
+    total_voxels_loaded = 0
+    chunk_idx = 0
 
-    #retrieve the voxels
-    print(f"Loading {voxfile} into h5 format")
-    all_voxels = h5_to_voxels_limit(voxfile, 5, 480, 640, max_events_loaded=max_events_loaded)
+    while True:
+        print(f"[Chunk {chunk_idx}] Loading {max_events_loaded} events from idx {start_event_idx}")
+        voxels, ts_us_list, next_event_idx = h5_to_voxels_limit(
+            scenedir=voxeldir,
+            nbins=5,
+            H=480,
+            W=640,
+            use_event_stack=False,
+            max_events_loaded=max_events_loaded,
+            start_event_idx=start_event_idx
+        )
 
-    # assert len(all_voxels) == len(tss_imgs_us)
-    #shorten tss_imgs_us to the number of voxels
-    tss_imgs_us = tss_imgs_us[:len(all_voxels)]
+        if not voxels:
+            print(f"[Chunk {chunk_idx}] No more voxels to process. Stopping.")
+            break
 
-    #here LOAD EVERY VOXEL GRID and the timestamps
-    for (ts_ns, voxel) in zip(tss_imgs_us, all_voxels):
-        #convert tss from nanoseconds to microseconds
-        ts_us = ts_ns/1e3
-        intrinsics = torch.as_tensor([fx, fy, cx, cy])
-        if scale != 1.0:
-            voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics, square=square)
-        
-        #append every data into the output list
-        data_list.append((voxel, intrinsics.squeeze(), ts_us))
+        for voxel, ts_us in zip(voxels, ts_us_list):
+            intrinsics_tensor = torch.as_tensor([fx, fy, cx, cy])
+            if scale != 1.0:
+                voxel, _, _, intrinsics_tensor = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics_tensor, square=square)
+            yield voxel.cuda(), intrinsics_tensor.cuda(), ts_us
 
+        total_voxels_loaded += len(voxels)
+        start_event_idx = next_event_idx
+        chunk_idx += 1
 
-    ### OLD LINES ###
-    # for (ts_us, voxfile) in zip(tss_imgs_us, voxfiles):
-    #         voxel = torch.from_numpy(voxel_read(voxfile))
-    #         intrinsics = torch.as_tensor([fx, fy, cx, cy])
-    #         if scale != 1.0:
-    #             voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics[None])
-    #         data_list.append((voxel, intrinsics.squeeze(), ts_us))
-
-        
     if timing:
         t1.record()
         torch.cuda.synchronize()
-        dt = t0.elapsed_time(t1)/1e3
-        print(f"Preloaded {len(data_list)} voxels in {dt} secs, e.g. {len(data_list)/dt} FPS")
-    print(f"Preloaded {len(data_list)} voxels, imstart={0}, imstop={-1}, stride={stride}, {voxeldir}")
+        dt = t0.elapsed_time(t1) / 1e3
+        print(f"[INFO] Loaded {total_voxels_loaded} voxel grids in {dt:.2f} sec → {total_voxels_loaded/dt:.2f} FPS")
 
-    for (voxel, intrinsics, ts_us) in data_list:
-        yield voxel.cuda(), intrinsics.cuda(), ts_us
 
+
+
+#
+#def voxel_iterator(voxeldir, tss_file=None, ext=".h5", intrinsics=[320, 320, 320, 240], stride=1, timing=False, scale=1.0, max_events_loaded=None, square=False):
+#    '''
+#    function similar to mvsec_iterator, where N voxel grids are returned, along with intrinsics and timestamps
+#    returns : list(voxels, intrinsics, timestamp of the voxels)
+#    '''
+#    
+#    # voxfiles = osp.join(voxeldir, "*{}".format(ext))
+#    voxfile = osp.join(voxeldir, "events.h5")
+#    fx, fy, cx, cy = intrinsics
+#
+#    #timestamps are within the same folder of events.h5, with a line for each of the voxels
+#    # in a .txt file called "timestamps.txt", with nanosecond resolution between the event voxels
+#
+#    if tss_file is None:
+#
+#        #### NEW LINES ####
+#        #retrireve the file
+#        ts_file = osp.join(voxeldir, "timestamps.txt")
+#
+#        #read the txt file 
+#        tss_imgs_us = np.loadtxt(ts_file, dtype="float32")
+#        
+#        #remove the first element
+#        tss_imgs_us = np.delete(tss_imgs_us, 0)
+#
+#
+#        #### OLD LINES ####
+#        #tss_imgs_us = np.arange(len(ts_file))  //original code
+#    else:
+#        tss_imgs_us = sorted(np.loadtxt(tss_file))
+#
+#    # voxfiles = voxfiles[::stride]
+#    # tss_imgs_us = tss_imgs_us[::stride]
+#
+#
+#    if timing:
+#        t0 = torch.cuda.Event(enable_timing=True)
+#        t1 = torch.cuda.Event(enable_timing=True)
+#        t0.record()
+#
+#    data_list = []
+#
+#    #retrieve the voxels
+#    print(f"Loading {voxfile} into h5 format")
+#    all_voxels = h5_to_voxels_limit(voxfile, 5, 480, 640, max_events_loaded=max_events_loaded)
+#
+#    # assert len(all_voxels) == len(tss_imgs_us)
+#    #shorten tss_imgs_us to the number of voxels
+#    tss_imgs_us = tss_imgs_us[:len(all_voxels)]
+#
+#    #here LOAD EVERY VOXEL GRID and the timestamps
+#    for (ts_ns, voxel) in zip(tss_imgs_us, all_voxels):
+#        #convert tss from nanoseconds to microseconds
+#        ts_us = ts_ns/1e3
+#        intrinsics = torch.as_tensor([fx, fy, cx, cy])
+#        if scale != 1.0:
+#            voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics, square=square)
+#        
+#        #append every data into the output list
+#        data_list.append((voxel, intrinsics.squeeze(), ts_us))
+#
+#
+#    ### OLD LINES ###
+#    # for (ts_us, voxfile) in zip(tss_imgs_us, voxfiles):
+#    #         voxel = torch.from_numpy(voxel_read(voxfile))
+#    #         intrinsics = torch.as_tensor([fx, fy, cx, cy])
+#    #         if scale != 1.0:
+#    #             voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics[None])
+#    #         data_list.append((voxel, intrinsics.squeeze(), ts_us))
+#
+#        
+#    if timing:
+#        t1.record()
+#        torch.cuda.synchronize()
+#        dt = t0.elapsed_time(t1)/1e3
+#        print(f"Preloaded {len(data_list)} voxels in {dt} secs, e.g. {len(data_list)/dt} FPS")
+#    print(f"Preloaded {len(data_list)} voxels, imstart={0}, imstop={-1}, stride={stride}, {voxeldir}")
+#
+#    for (voxel, intrinsics, ts_us) in data_list:
+#        yield voxel.cuda(), intrinsics.cuda(), ts_us
+#
 
 def read_video_data_from_list(imfiles, tss_us, intrinsics, return_dict, scale=1.0):
     fx, fy, cx, cy = intrinsics

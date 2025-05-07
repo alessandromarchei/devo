@@ -1,0 +1,174 @@
+[Thu  1 May 09:56:33 CEST 2025] Starting evaluation for patchifier_small_v3
+Running eval_tartan_evs.py with config...
+BUFFER_SIZE: 4096
+GRADIENT_BIAS: False
+KEYFRAME_INDEX: 4
+KEYFRAME_THRESH: 15.0
+MIXED_PRECISION: True
+MOTION_DAMPING: 0.5
+MOTION_MODEL: DAMPED_LINEAR
+NORM: std
+OPTIMIZATION_WINDOW: 10
+PATCHES_PER_FRAME: 96
+PATCH_LIFETIME: 13
+PATCH_SELECTOR: scorer
+REMOVAL_WINDOW: 22
+SCORER_EVAL_MODE: multi
+SCORER_EVAL_USE_GRID: True
+Eval on abandonedfactory/abandonedfactory/Easy/P011
+use_pyramid: True
+Using pyramid: True
+Loading from checkpoints/patchifier_small_v3/100000.pth
+Using mksmall model
+Using 196 context feature dimension
+Using 64 matching feature dimension
+Using MKSmallEncoder
+0it [00:00, ?it/s][Chunk 0] Loading 5000000 events from idx 0
+1it [00:00,  1.60it/s][Chunk 1] Loading 5000000 events from idx 5000000
+4it [00:00,  4.57it/s][Chunk 2] Loading 5000000 events from idx 10000000
+5it [00:01,  3.24it/s][Chunk 3] Loading 5000000 events from idx 15000000
+7it [00:01,  4.02it/s][Chunk 4] Loading 5000000 events from idx 20000000
+8it [00:02,  3.60it/s][Chunk 5] Loading 5000000 events from idx 25000000
+10it [00:02,  3.75it/s][Chunk 6] Loading 5000000 events from idx 30000000
+13it [00:03,  4.52it/s][Chunk 7] Loading 5000000 events from idx 35000000
+15it [00:03,  4.31it/s][Chunk 8] Loading 5000000 events from idx 40000000
+17it [00:04,  4.18it/s][Chunk 9] Loading 5000000 events from idx 45000000
+19it [00:04,  4.41it/s][Chunk 10] Loading 5000000 events from idx 50000000
+20it [00:04,  4.56it/s][Chunk 11] Loading 5000000 events from idx 55000000
+21it [00:05,  3.60it/s][Chunk 12] Loading 5000000 events from idx 60000000
+23it [00:05,  3.92it/s][Chunk 13] Loading 5000000 events from idx 65000000
+24it [00:06,  3.88it/s][Chunk 14] Loading 5000000 events from idx 70000000
+25it [00:06,  3.45it/s][Chunk 15] Loading 5000000 events from idx 75000000
+27it [00:06,  3.72it/s][Chunk 16] Loading 5000000 events from idx 80000000
+29it [00:07,  3.99it/s][Chunk 17] Loading 5000000 events from idx 85000000
+31it [00:07,  4.19it/s][Chunk 18] Loading 5000000 events from idx 90000000
+34it [00:08,  4.87it/s][Chunk 19] Loading 5000000 events from idx 95000000
+38it [00:08,  6.20it/s][Chunk 20] Loading 5000000 events from idx 100000000
+41it [00:09,  6.38it/s][Chunk 21] Loading 5000000 events from idx 105000000
+45it [00:09,  7.81it/s][Chunk 22] Loading 5000000 events from idx 110000000
+47it [00:09,  6.87it/s][Chunk 23] Loading 5000000 events from idx 115000000
+49it [00:10,  7.30it/s][Chunk 24] Loading 5000000 events from idx 120000000
+50it [00:10,  7.41it/s][Chunk 25] Loading 5000000 events from idx 125000000
+[Chunk 26] Loading 5000000 events from idx 130000000
+52it [00:10,  7.76it/s][Chunk 27] Loading 5000000 events from idx 135000000
+53it [00:10,  6.56it/s][Chunk 28] Loading 5000000 events from idx 140000000
+54it [00:11,  3.77it/s][Chunk 29] Loading 5000000 events from idx 145000000
+[INFO] No valid image timestamps found in this chunk (1.80e+09-1.82e+09)
+[Chunk 29] No more voxels to process. Stopping.
+54it [00:11,  4.69it/s]
+Warning: Model is not initialized. Using Identity.
+use_pyramid: True
+Using pyramid: True
+Loading from checkpoints/patchifier_small_v3/100000.pth
+Using mksmall model
+Using 196 context feature dimension
+Using 64 matching feature dimension
+Using MKSmallEncoder
+0it [00:00, ?it/s][Chunk 0] Loading 5000000 events from idx 0
+1it [00:00,  2.10it/s][Chunk 1] Loading 5000000 events from idx 5000000
+4it [00:00,  5.80it/s][Chunk 2] Loading 5000000 events from idx 10000000
+5it [00:01,  3.56it/s][Chunk 3] Loading 5000000 events from idx 15000000
+7it [00:01,  4.37it/s][Chunk 4] Loading 5000000 events from idx 20000000
+8it [00:02,  3.69it/s][Chunk 5] Loading 5000000 events from idx 25000000
+10it [00:02,  3.95it/s][Chunk 6] Loading 5000000 events from idx 30000000
+13it [00:03,  4.70it/s][Chunk 7] Loading 5000000 events from idx 35000000
+15it [00:03,  4.61it/s][Chunk 8] Loading 5000000 events from idx 40000000
+17it [00:03,  4.38it/s][Chunk 9] Loading 5000000 events from idx 45000000
+19it [00:04,  4.59it/s][Chunk 10] Loading 5000000 events from idx 50000000
+20it [00:04,  4.71it/s][Chunk 11] Loading 5000000 events from idx 55000000
+21it [00:05,  3.70it/s][Chunk 12] Loading 5000000 events from idx 60000000
+23it [00:05,  3.97it/s][Chunk 13] Loading 5000000 events from idx 65000000
+24it [00:05,  3.94it/s][Chunk 14] Loading 5000000 events from idx 70000000
+25it [00:06,  3.47it/s][Chunk 15] Loading 5000000 events from idx 75000000
+27it [00:06,  3.75it/s][Chunk 16] Loading 5000000 events from idx 80000000
+29it [00:07,  4.10it/s][Chunk 17] Loading 5000000 events from idx 85000000
+31it [00:07,  4.29it/s][Chunk 18] Loading 5000000 events from idx 90000000
+34it [00:07,  4.88it/s][Chunk 19] Loading 5000000 events from idx 95000000
+38it [00:08,  6.25it/s][Chunk 20] Loading 5000000 events from idx 100000000
+41it [00:08,  6.44it/s][Chunk 21] Loading 5000000 events from idx 105000000
+45it [00:09,  8.05it/s][Chunk 22] Loading 5000000 events from idx 110000000
+47it [00:09,  6.92it/s][Chunk 23] Loading 5000000 events from idx 115000000
+49it [00:09,  7.41it/s][Chunk 24] Loading 5000000 events from idx 120000000
+50it [00:09,  7.48it/s][Chunk 25] Loading 5000000 events from idx 125000000
+[Chunk 26] Loading 5000000 events from idx 130000000
+52it [00:10,  7.75it/s][Chunk 27] Loading 5000000 events from idx 135000000
+53it [00:10,  6.48it/s][Chunk 28] Loading 5000000 events from idx 140000000
+54it [00:11,  3.77it/s][Chunk 29] Loading 5000000 events from idx 145000000
+[INFO] No valid image timestamps found in this chunk (1.80e+09-1.82e+09)
+[Chunk 29] No more voxels to process. Stopping.
+54it [00:11,  4.84it/s]
+Warning: Model is not initialized. Using Identity.
+abandonedfactory/abandonedfactory/Easy/P011 [241.47902233138566, 242.00441945329402]
+Eval on abandonedfactory/abandonedfactory/Hard/P011
+use_pyramid: True
+Using pyramid: True
+Loading from checkpoints/patchifier_small_v3/100000.pth
+Using mksmall model
+Using 196 context feature dimension
+Using 64 matching feature dimension
+Using MKSmallEncoder
+0it [00:00, ?it/s][Chunk 0] Loading 5000000 events from idx 0
+1it [00:00,  3.75it/s][Chunk 1] Loading 5000000 events from idx 5000000
+2it [00:00,  4.14it/s][Chunk 2] Loading 5000000 events from idx 10000000
+3it [00:00,  3.42it/s][Chunk 3] Loading 5000000 events from idx 15000000
+[INFO] No valid image timestamps found in this chunk (1.09e+08-1.32e+08)
+[Chunk 3] No more voxels to process. Stopping.
+3it [00:00,  3.41it/s]
+Warning: Model is not initialized. Using Identity.
+Traceback (most recent call last):
+  File "evals/eval_evs/eval_tartan_evs.py", line 152, in <module>
+    val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
+  File "/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "evals/eval_evs/eval_tartan_evs.py", line 91, in evaluate
+    all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
+  File "/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 364, in log_results
+    evoGT = make_evo_traj(traj_GT, tss_GT_us)
+  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 310, in make_evo_traj
+    assert poses_N_x_7.shape[0] > 10
+AssertionError
+[Thu  1 May 09:56:59 CEST 2025] Finished evaluation for patchifier_small_v3
+-----------------------------------------------------
+[Thu  1 May 16:19:49 CEST 2025] Starting evaluation for patchifier_small_v3
+Running eval_tartan_evs.py with config...
+BUFFER_SIZE: 4096
+GRADIENT_BIAS: False
+KEYFRAME_INDEX: 4
+KEYFRAME_THRESH: 15.0
+MIXED_PRECISION: True
+MOTION_DAMPING: 0.5
+MOTION_MODEL: DAMPED_LINEAR
+NORM: std
+OPTIMIZATION_WINDOW: 10
+PATCHES_PER_FRAME: 96
+PATCH_LIFETIME: 13
+PATCH_SELECTOR: scorer
+REMOVAL_WINDOW: 22
+SCORER_EVAL_MODE: multi
+SCORER_EVAL_USE_GRID: True
+Eval on abandonedfactory/abandonedfactory/Easy/P011
+use_pyramid: True
+Using pyramid: True
+Loading from checkpoints/patchifier_small_v3/100000.pth
+Using mksmall model
+Using 196 context feature dimension
+Using 64 matching feature dimension
+Using MKSmallEncoder
+0it [00:00, ?it/s][Chunk 0] Loading 500000000 events from idx 0
+1it [01:12, 72.27s/it]2it [01:12, 29.90s/it]20it [01:12,  1.86s/it]32it [01:12,  1.01it/s]41it [01:12,  1.51it/s]50it [01:13,  2.21it/s]58it [01:13,  3.08it/s]66it [01:13,  4.28it/s]74it [01:13,  5.88it/s]81it [01:13,  7.72it/s]88it [01:13, 10.08it/s]94it [01:13, 12.62it/s]100it [01:13, 15.70it/s]106it [01:14, 19.25it/s]112it [01:14, 23.09it/s]117it [01:14, 26.50it/s]122it [01:14, 30.02it/s]127it [01:14, 33.42it/s]132it [01:14, 36.58it/s]137it [01:14, 39.28it/s]142it [01:14, 41.50it/s]147it [01:14, 43.29it/s][Chunk 1] Loading 500000000 events from idx 500000000
+147it [01:30, 43.29it/s]149it [02:04,  3.55s/it]154it [02:04,  2.35s/it]159it [02:04,  1.59s/it]164it [02:04,  1.09s/it]169it [02:04,  1.32it/s]174it [02:04,  1.88it/s]179it [02:04,  2.67it/s]184it [02:04,  3.74it/s]189it [02:04,  5.19it/s]194it [02:05,  7.09it/s]199it [02:05,  9.54it/s]204it [02:05, 12.56it/s]209it [02:05, 16.13it/s]214it [02:05, 20.11it/s]219it [02:05, 24.31it/s]224it [02:05, 28.51it/s]229it [02:05, 32.43it/s]234it [02:05, 35.77it/s]239it [02:06, 38.68it/s]244it [02:06, 41.04it/s]249it [02:06, 42.83it/s]254it [02:06, 44.24it/s]259it [02:06, 45.26it/s]264it [02:06, 45.98it/s]269it [02:06, 46.58it/s]274it [02:06, 46.84it/s]279it [02:06, 47.11it/s]284it [02:06, 47.36it/s]289it [02:07, 47.52it/s]294it [02:07, 47.62it/s]299it [02:07, 47.67it/s]304it [02:07, 47.75it/s]309it [02:07, 47.64it/s]314it [02:07, 47.75it/s]319it [02:07, 47.92it/s]324it [02:07, 48.05it/s]329it [02:07, 48.20it/s]334it [02:08, 48.38it/s]339it [02:08, 48.57it/s]344it [02:08, 48.68it/s]349it [02:08, 48.71it/s]354it [02:08, 48.75it/s]359it [02:08, 48.79it/s]364it [02:08, 48.87it/s]369it [02:08, 48.93it/s]374it [02:08, 48.98it/s]379it [02:08, 48.97it/s]384it [02:09, 48.88it/s]389it [02:09, 48.81it/s]394it [02:09, 48.75it/s]399it [02:09, 48.69it/s]404it [02:09, 48.66it/s]409it [02:09, 48.64it/s]414it [02:09, 48.66it/s]419it [02:09, 48.60it/s]424it [02:09, 48.58it/s]429it [02:09, 48.45it/s]434it [02:10, 48.41it/s]439it [02:10, 48.35it/s]444it [02:10, 48.23it/s]449it [02:10, 48.22it/s]454it [02:10, 48.24it/s]459it [02:10, 48.26it/s]464it [02:10, 48.26it/s]469it [02:10, 48.23it/s]474it [02:10, 48.27it/s]479it [02:11, 48.22it/s]484it [02:11, 48.02it/s]489it [02:11, 48.11it/s]494it [02:11, 48.19it/s]499it [02:11, 48.22it/s]504it [02:11, 48.11it/s]509it [02:11, 48.09it/s]514it [02:11, 48.03it/s]519it [02:11, 47.99it/s]524it [02:11, 47.95it/s]529it [02:12, 47.90it/s]534it [02:12, 47.92it/s]539it [02:12, 47.93it/s]544it [02:12, 47.94it/s]549it [02:12, 47.95it/s]554it [02:12, 47.95it/s]559it [02:12, 47.92it/s]564it [02:12, 47.92it/s]569it [02:12, 47.91it/s]574it [02:12, 47.79it/s]579it [02:13, 47.83it/s]584it [02:13, 47.81it/s]589it [02:13, 47.72it/s]594it [02:13, 47.81it/s]599it [02:13, 47.83it/s]604it [02:13, 47.86it/s]609it [02:13, 47.87it/s]614it [02:13, 47.87it/s]619it [02:13, 47.90it/s]624it [02:14, 47.97it/s]629it [02:14, 47.96it/s]634it [02:14, 47.93it/s]639it [02:14, 47.91it/s]644it [02:14, 47.99it/s]649it [02:14, 48.04it/s]654it [02:14, 48.00it/s]659it [02:14, 48.02it/s]664it [02:14, 48.05it/s]669it [02:14, 48.11it/s]674it [02:15, 47.97it/s]679it [02:15, 47.74it/s]684it [02:15, 47.60it/s]689it [02:15, 47.53it/s]694it [02:15, 47.52it/s]699it [02:15, 47.59it/s]704it [02:15, 47.64it/s]709it [02:15, 47.55it/s]714it [02:15, 47.56it/s]719it [02:16, 47.58it/s]724it [02:16, 47.60it/s]729it [02:16, 47.60it/s]734it [02:16, 47.61it/s]739it [02:16, 47.55it/s]744it [02:16, 47.52it/s]749it [02:16, 47.49it/s]754it [02:16, 47.50it/s]759it [02:16, 47.50it/s]764it [02:16, 47.37it/s][Chunk 2] Loading 500000000 events from idx 1000000000
+764it [02:30, 47.37it/s]766it [03:14,  4.24s/it]771it [03:14,  2.79s/it]776it [03:14,  1.88s/it]781it [03:15,  1.29s/it]786it [03:15,  1.12it/s]791it [03:15,  1.61it/s]796it [03:15,  2.29it/s]801it [03:15,  3.22it/s]806it [03:15,  4.49it/s]811it [03:15,  6.19it/s]816it [03:15,  8.40it/s]821it [03:15, 11.17it/s]826it [03:15, 14.54it/s]831it [03:16, 18.42it/s]836it [03:16, 22.65it/s]841it [03:16, 26.97it/s]846it [03:16, 31.11it/s]851it [03:16, 34.85it/s]856it [03:16, 38.09it/s]861it [03:16, 40.53it/s]866it [03:16, 42.58it/s]871it [03:16, 44.22it/s]876it [03:16, 45.34it/s]881it [03:17, 46.18it/s]886it [03:17, 46.78it/s]891it [03:17, 47.33it/s]896it [03:17, 47.59it/s]901it [03:17, 47.67it/s]906it [03:17, 47.78it/s]911it [03:17, 47.84it/s]916it [03:17, 47.88it/s]921it [03:17, 47.88it/s]926it [03:18, 47.94it/s]931it [03:18, 47.94it/s]936it [03:18, 47.82it/s]941it [03:18, 47.91it/s]946it [03:18, 47.89it/s]951it [03:18, 47.96it/s]956it [03:18, 47.95it/s]961it [03:18, 47.78it/s]966it [03:18, 47.65it/s]971it [03:18, 47.55it/s]976it [03:19, 47.52it/s]981it [03:19, 47.58it/s]986it [03:19, 47.75it/s]991it [03:19, 47.78it/s]996it [03:19, 47.86it/s]1001it [03:19, 47.92it/s]1006it [03:19, 47.68it/s]1011it [03:19, 47.81it/s]1016it [03:19, 47.86it/s]1021it [03:20, 48.01it/s]1026it [03:20, 48.25it/s]1031it [03:20, 48.40it/s]1036it [03:20, 48.50it/s]1041it [03:20, 48.73it/s]1046it [03:20, 48.63it/s]1051it [03:20, 48.64it/s]1056it [03:20, 48.60it/s]1061it [03:20, 48.61it/s]1066it [03:20, 48.54it/s]1071it [03:21, 48.28it/s]1076it [03:21, 48.41it/s]1081it [03:21, 48.50it/s][Chunk 3] Loading 500000000 events from idx 1500000000
+1081it [03:40, 48.50it/s]1082it [04:20,  4.72s/it]1087it [04:20,  3.03s/it]1092it [04:21,  2.01s/it]1097it [04:21,  1.36s/it]1102it [04:21,  1.07it/s]1107it [04:21,  1.55it/s]1112it [04:21,  2.21it/s]1117it [04:21,  3.12it/s]1122it [04:21,  4.36it/s]1127it [04:21,  6.02it/s]1132it [04:21,  8.18it/s]1137it [04:21, 10.92it/s]1142it [04:22, 14.23it/s]1147it [04:22, 18.04it/s]1152it [04:22, 22.21it/s]1157it [04:22, 26.47it/s]1162it [04:22, 30.59it/s]1167it [04:22, 34.31it/s]1172it [04:22, 37.38it/s]1177it [04:22, 39.89it/s]1182it [04:22, 41.91it/s]1187it [04:23, 43.50it/s]1192it [04:23, 44.71it/s]1197it [04:23, 45.56it/s]1202it [04:23, 46.11it/s]1207it [04:23, 46.47it/s]1212it [04:23, 46.75it/s]1217it [04:23, 46.93it/s]1222it [04:23, 47.13it/s]1227it [04:23, 47.24it/s]1232it [04:23, 47.17it/s]1237it [04:24, 47.13it/s]1242it [04:24, 47.10it/s]1247it [04:24, 46.79it/s]1252it [04:24, 46.81it/s]1257it [04:24, 46.82it/s]1262it [04:24, 46.83it/s]1267it [04:24, 46.85it/s]1272it [04:24, 46.95it/s]1277it [04:24, 47.02it/s]1282it [04:25, 47.09it/s]1287it [04:25, 47.17it/s]1292it [04:25, 47.23it/s]1297it [04:25, 47.27it/s]1302it [04:25, 47.36it/s]1307it [04:25, 47.35it/s]1312it [04:25, 47.36it/s]1317it [04:25, 47.15it/s]1322it [04:25, 46.99it/s]1327it [04:25, 46.94it/s]1332it [04:26, 47.00it/s]1337it [04:26, 46.97it/s]1342it [04:26, 47.00it/s]1347it [04:26, 47.06it/s]1352it [04:26, 47.03it/s]1357it [04:26, 46.97it/s]1362it [04:26, 46.91it/s]1367it [04:26, 46.91it/s]1372it [04:26, 46.87it/s]1377it [04:27, 46.87it/s]1382it [04:27, 46.95it/s]1387it [04:27, 46.59it/s]1392it [04:27, 46.76it/s]1397it [04:27, 46.83it/s]1402it [04:27, 46.97it/s][Chunk 4] Loading 500000000 events from idx 2000000000
+1402it [04:40, 46.97it/s]1404it [05:48,  5.96s/it]1409it [05:48,  3.92s/it]1414it [05:49,  2.64s/it]1419it [05:49,  1.80s/it]1424it [05:49,  1.24s/it]1429it [05:49,  1.16it/s]1434it [05:49,  1.65it/s]1439it [05:49,  2.33it/s]1444it [05:49,  3.28it/s]1449it [05:49,  4.56it/s]1454it [05:49,  6.27it/s]1459it [05:49,  8.48it/s]1464it [05:50, 11.25it/s]1469it [05:50, 14.59it/s]1474it [05:50, 18.41it/s]1479it [05:50, 22.52it/s][Chunk 5] Loading 500000000 events from idx 2500000000
+1479it [06:10, 22.52it/s]1481it [07:03,  5.41s/it]1486it [07:03,  3.56s/it]1491it [07:03,  2.39s/it]1496it [07:04,  1.64s/it]1501it [07:04,  1.13s/it]1506it [07:04,  1.27it/s]1511it [07:04,  1.81it/s]1516it [07:04,  2.56it/s]1521it [07:04,  3.59it/s]1526it [07:04,  4.98it/s]1531it [07:04,  6.82it/s]1536it [07:04,  9.19it/s]1541it [07:05, 12.12it/s]1546it [07:05, 15.60it/s]1551it [07:05, 19.51it/s]1556it [07:05, 23.67it/s]1561it [07:05, 27.80it/s]1566it [07:05, 31.72it/s]1571it [07:05, 35.12it/s]1576it [07:05, 38.04it/s]1581it [07:05, 40.43it/s]1586it [07:05, 42.26it/s]1591it [07:06, 43.65it/s]1596it [07:06, 44.67it/s]1601it [07:06, 45.42it/s]1606it [07:06, 45.97it/s]1611it [07:06, 46.30it/s]1616it [07:06, 46.60it/s]1621it [07:06, 46.83it/s]1626it [07:06, 47.03it/s]1631it [07:06, 47.15it/s]1636it [07:07, 47.30it/s]1641it [07:07, 47.43it/s]1646it [07:07, 47.48it/s][Chunk 6] Loading 500000000 events from idx 3000000000
+1646it [07:20, 47.48it/s]1649it [08:08,  4.18s/it]1654it [08:08,  2.82s/it]1659it [08:08,  1.93s/it]1664it [08:08,  1.33s/it]1669it [08:08,  1.08it/s]1674it [08:08,  1.54it/s]1679it [08:08,  2.19it/s]1684it [08:09,  3.07it/s]1689it [08:09,  4.28it/s]1694it [08:09,  5.90it/s]1699it [08:09,  8.02it/s]1704it [08:09, 10.70it/s]1709it [08:09, 13.95it/s]1714it [08:09, 17.71it/s]1719it [08:09, 21.83it/s]1724it [08:09, 26.09it/s]1729it [08:09, 30.20it/s]1734it [08:10, 33.96it/s]1739it [08:10, 37.21it/s]1744it [08:10, 39.92it/s]1749it [08:10, 41.96it/s]1754it [08:10, 43.59it/s]1759it [08:10, 44.71it/s]1764it [08:10, 45.41it/s]1769it [08:10, 45.97it/s]1774it [08:10, 46.31it/s]1779it [08:11, 46.62it/s]1784it [08:11, 46.88it/s]1789it [08:11, 46.97it/s]1794it [08:11, 47.11it/s]1799it [08:11, 47.27it/s]1804it [08:11, 47.30it/s]1809it [08:11, 47.33it/s]1814it [08:11, 47.37it/s]1819it [08:11, 47.38it/s]1824it [08:11, 47.44it/s]1829it [08:12, 47.48it/s]1834it [08:12, 47.56it/s]1839it [08:12, 47.48it/s]1844it [08:12, 47.46it/s]1849it [08:12, 47.23it/s][Chunk 7] Loading 500000000 events from idx 3500000000
+1849it [08:30, 47.23it/s]1850it [09:08,  4.45s/it]1855it [09:08,  2.85s/it]1860it [09:08,  1.89s/it]1865it [09:08,  1.28s/it]1870it [09:09,  1.14it/s]1875it [09:09,  1.64it/s]1880it [09:09,  2.33it/s]1885it [09:09,  3.29it/s]1890it [09:09,  4.59it/s]1895it [09:09,  6.32it/s]1900it [09:09,  8.56it/s]1905it [09:09, 11.36it/s]1910it [09:09, 14.74it/s]1915it [09:09, 18.59it/s]1920it [09:10, 22.76it/s]1925it [09:10, 26.98it/s]1930it [09:10, 31.02it/s]1935it [09:10, 34.65it/s]1940it [09:10, 37.73it/s]1945it [09:10, 40.24it/s]1950it [09:10, 42.20it/s]1955it [09:10, 43.69it/s]1960it [09:10, 44.80it/s]1965it [09:11, 45.64it/s]1970it [09:11, 46.24it/s]1975it [09:11, 46.76it/s]1980it [09:11, 46.99it/s]1985it [09:11, 47.26it/s]1990it [09:11, 47.41it/s]1995it [09:11, 47.55it/s]2000it [09:11, 47.61it/s]2005it [09:11, 47.72it/s]2010it [09:11, 47.79it/s]2015it [09:12, 47.82it/s]2020it [09:12, 47.85it/s]2025it [09:12, 47.91it/s]2030it [09:12, 47.98it/s]2035it [09:12, 48.01it/s]2040it [09:12, 48.13it/s]2045it [09:12, 48.30it/s]2050it [09:12, 48.36it/s]2055it [09:12, 48.39it/s]2060it [09:12, 48.53it/s]2065it [09:13, 48.56it/s]2070it [09:13, 48.48it/s]2075it [09:13, 48.23it/s]2080it [09:13, 48.20it/s]2085it [09:13, 48.09it/s]2090it [09:13, 48.07it/s]2095it [09:13, 48.03it/s]2100it [09:13, 48.05it/s]2105it [09:13, 48.01it/s]2110it [09:14, 48.01it/s]2115it [09:14, 47.98it/s]2120it [09:14, 48.02it/s]2125it [09:14, 48.04it/s]2130it [09:14, 48.08it/s]2135it [09:14, 48.14it/s]2140it [09:14, 48.15it/s]2145it [09:14, 48.13it/s]2150it [09:14, 48.10it/s]2155it [09:14, 48.09it/s]2160it [09:15, 48.03it/s]2165it [09:15, 48.02it/s]2170it [09:15, 48.07it/s]2175it [09:15, 48.13it/s]2180it [09:15, 48.12it/s]2185it [09:15, 48.23it/s]2190it [09:15, 48.26it/s]2195it [09:15, 48.31it/s][Chunk 8] Loading 500000000 events from idx 4000000000
+2195it [09:30, 48.31it/s]2196it [10:26,  5.60s/it]2201it [10:26,  3.59s/it]2206it [10:26,  2.38s/it]2211it [10:26,  1.61s/it]2216it [10:26,  1.10s/it]2221it [10:27,  1.31it/s]2226it [10:27,  1.87it/s]2231it [10:27,  2.65it/s]2236it [10:27,  3.73it/s]2241it [10:27,  5.17it/s]2246it [10:27,  7.09it/s]2251it [10:27,  9.56it/s]2256it [10:27, 12.62it/s]2261it [10:27, 16.25it/s]2266it [10:27, 20.35it/s]2271it [10:28, 24.70it/s]2276it [10:28, 29.03it/s][Chunk 9] Loading 500000000 events from idx 4500000000
+2276it [10:40, 29.03it/s]2281it [11:41,  4.42s/it]2286it [11:41,  3.10s/it]2291it [11:41,  2.18s/it]2296it [11:41,  1.53s/it]2301it [11:41,  1.08s/it]2306it [11:41,  1.32it/s]2311it [11:42,  1.86it/s]2316it [11:42,  2.61it/s]2321it [11:42,  3.64it/s]2326it [11:42,  5.03it/s]2331it [11:42,  6.87it/s]2336it [11:42,  9.24it/s]2341it [11:42, 12.18it/s]2346it [11:42, 15.66it/s]2351it [11:42, 19.58it/s]2356it [11:42, 23.75it/s]2361it [11:43, 27.91it/s][Chunk 10] Loading 500000000 events from idx 5000000000
+2361it [12:00, 27.91it/s]2362it [13:00,  6.18s/it]2367it [13:01,  3.96s/it]2372it [13:01,  2.62s/it]2377it [13:01,  1.77s/it]2382it [13:01,  1.21s/it]2387it [13:01,  1.19it/s]2392it [13:01,  1.70it/s]2397it [13:01,  2.41it/s]2402it [13:01,  3.39it/s]2407it [13:01,  4.71it/s]2412it [13:01,  6.47it/s]2417it [13:02,  8.74it/s]2422it [13:02, 11.57it/s]2427it [13:02, 14.94it/s][Chunk 11] Loading 500000000 events from idx 5500000000
+2427it [13:20, 14.94it/s]2430it [14:29,  6.00s/it]2435it [14:29,  4.04s/it]2440it [14:29,  2.76s/it]2445it [14:29,  1.90s/it]2450it [14:29,  1.32s/it]2455it [14:29,  1.08it/s]2460it [14:30,  1.54it/s]2465it [14:30,  2.18it/s]2470it [14:30,  3.06it/s]2475it [14:30,  4.26it/s]2480it [14:30,  5.86it/s][Chunk 12] Loading 500000000 events from idx 6000000000
+2480it [14:50,  5.86it/s]2483it [15:42,  5.06s/it]2488it [15:42,  3.41s/it]2493it [15:42,  2.33s/it]2498it [15:42,  1.61s/it]2503it [15:43,  1.12s/it]2508it [15:43,  1.28it/s]2513it [15:43,  1.81it/s]2518it [15:43,  2.55it/s]2523it [15:43,  3.57it/s]2528it [15:43,  4.93it/s]2533it [15:43,  6.73it/s]2538it [15:43,  9.02it/s]2543it [15:43, 11.84it/s]2548it [15:44, 15.17it/s]2553it [15:44, 18.91it/s]2558it [15:44, 22.87it/s]2563it [15:44, 26.89it/s]2568it [15:44, 30.73it/s][Chunk 13] Loading 500000000 events from idx 6500000000
+2568it [16:00, 30.73it/s][Thu  1 May 16:36:31 CEST 2025] Finished evaluation for patchifier_small_v3
+-----------------------------------------------------

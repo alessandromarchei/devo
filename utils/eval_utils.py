@@ -20,7 +20,7 @@ matplotlib.use('Agg')
 
 
 from devo.plot_utils import plot_trajectory, fig_trajectory
-from devo.plot_utils import save_trajectory_tum_format
+from devo.plot_utils import save_trajectory_tum_format, plot_trajectory_zx
 
 from utils.viz_utils import show_image, visualize_voxel
 
@@ -111,8 +111,10 @@ def run_voxel_norm_seq(voxeldir, cfg, network, viz=False, iterator=None, timing=
 
 
 @torch.no_grad()
-def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="original",**kwargs): 
-    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=viz, viz_flow=viz_flow, model=model, **kwargs)
+def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
+    
+    print(f"use_pyramid: {use_pyramid}")
+    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=viz, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
     
     for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
         if timing and i == 0:
@@ -415,11 +417,19 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
                         pdfname, align=True, correct_scale=True, max_diff_sec=max_diff_sec)
         shutil.copy(pdfname, f"{outfolder}/{scene_name}_Trial{trial+1:02d}_step_{train_step}_stride_{stride}.pdf")
 
+        pdfname_NOALIGN = f"{outfolder}/../{scene_name}_Trial{trial+1:02d}_exp_{expname}_step_{train_step}_stride_{stride}_noalign.pdf"
+
+        #plot the same trajectory but without the alignment
+        plot_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), 
+                        f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str} : without alignment",
+                        pdfname_NOALIGN, align=False, correct_scale=True, max_diff_sec=max_diff_sec)
+        shutil.copy(pdfname_NOALIGN, f"{outfolder}/{scene_name}_Trial{trial+1:02d}_step_{train_step}_stride_{stride}.pdf")
+
         # [DEBUG]
-        pdfname = f"{outfolder}/GT_{scene_name}_Trial{trial+1:02d}_exp_{expname}_step_{train_step}_stride_{stride}.pdf"
-        plot_trajectory((traj_GT, tss_GT_us/1e6), (traj_GT, tss_GT_us/1e6), 
-                        f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str}",
-                        pdfname, align=True, correct_scale=True, max_diff_sec=max_diff_sec)
+        #pdfname = f"{outfolder}/GT_{scene_name}_Trial{trial+1:02d}_exp_{expname}_step_{train_step}_stride_{stride}.pdf"
+        #plot_trajectory((traj_GT, tss_GT_us/1e6), (traj_GT, tss_GT_us/1e6), 
+        #                f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str}",
+        #                pdfname, align=True, correct_scale=True, max_diff_sec=max_diff_sec)
 
     if return_figure:
         fig = fig_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), f"{dataset_name} {scene_name.replace('_', ' ')} {res_str})",

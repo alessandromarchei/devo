@@ -8,6 +8,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from devo.data_readers.factory import dataset_factory
+import warnings
 
 from devo.lietorch import SE3
 from devo.logger import Logger
@@ -27,7 +28,7 @@ from utils.viz_utils import *
 from tqdm import tqdm
 
 DEBUG_PLOT_PATCHES = False
-NUM_WORKERS = 4
+NUM_WORKERS = 12
 
 #clear cache
 torch.cuda.empty_cache()
@@ -58,19 +59,70 @@ def image2gray(image):
     cv2.imshow('image', image / 255.0)
     cv2.waitKey()
 
-def kabsch_umeyama(A, B):
-    """ compute optimal scaling (SIM3) that minimizing RMSD between two sets of points """
-    n, m = A.shape
-    EA = torch.mean(A, axis=0)
-    EB = torch.mean(B, axis=0)
-    VarA = torch.mean((A - EA).norm(dim=1)**2)
+#def kabsch_umeyama(A, B):
+#    """ compute optimal scaling (SIM3) that minimizing RMSD between two sets of points """
+#    n, m = A.shape
+#    EA = torch.mean(A, axis=0)
+#    EB = torch.mean(B, axis=0)
+#    VarA = torch.mean((A - EA).norm(dim=1)**2)
+#
+#    H = ((A - EA).T @ (B - EB)) / n
+#    U, D, VT = torch.linalg.svd(H.cpu(), full_matrices=False)       #HERE ERROR SOMETIMES, does not converge
+#    #U, D, VT = torch.svd(H) instead of the above line
+#
+#    c = VarA / torch.trace(torch.diag(D))
+#    return c
 
-    H = ((A - EA).T @ (B - EB)) / n
-    U, D, VT = torch.linalg.svd(H.cpu(), full_matrices=False)
-    #U, D, VT = torch.svd(H) instead of the above line
 
-    c = VarA / torch.trace(torch.diag(D))
-    return c
+def kabsch_umeyama(A, B, default_scale=1.0):
+    """
+    Compute optimal SIM3 scale minimizing RMSD between point sets A and B.
+    If computation fails, a warning is emitted and default_scale is returned.
+    """
+    default_scale = torch.tensor(default_scale, dtype=A.dtype, device=A.device)  # <- aggiunta
+    try:
+        n, m = A.shape
+        EA = torch.mean(A, dim=0)
+        EB = torch.mean(B, dim=0)
+        VarA = torch.mean((A - EA).norm(dim=1)**2)
+        VarB = torch.mean((B - EB).norm(dim=1)**2)
+
+        if VarA < 1e-6 or VarB < 1e-6:
+            warnings.warn("Variance too low; using default scale.")
+            return default_scale
+
+        H = ((A - EA).T @ (B - EB)) / n
+
+        if torch.isnan(H).any() or torch.isinf(H).any() or H.norm() < 1e-6:
+            warnings.warn("Covariance matrix is invalid; using default scale.")
+            return default_scale
+
+        try:
+            U, D, VT = torch.linalg.svd(H.cpu(), full_matrices=False)
+        except RuntimeError as e:
+            warnings.warn(f"SVD failed: {e}. Trying torch.svd fallback.")
+            try:
+                U, S, V = torch.svd(H.cpu())
+                D = S
+                VT = V.T
+            except RuntimeError as e2:
+                warnings.warn(f"Fallback SVD also failed: {e2}. Using default scale.")
+                return default_scale
+
+        trace_D = torch.sum(D)
+        if trace_D < 1e-8:
+            warnings.warn("Trace too small; using default scale.")
+            return default_scale
+
+        c = VarA / trace_D
+        return c
+
+    except Exception as ex:
+        warnings.warn(f"Unhandled exception in kabsch_umeyama: {ex}. Using default scale.")
+        return default_scale
+
+
+
 
 
 def train(rank, args):
@@ -107,9 +159,9 @@ def train(rank, args):
         train_loader = DataLoader(db, batch_size=args.batch, shuffle=True, num_workers=NUM_WORKERS)
 
     # Initial VOnet
-    kwargs_net = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "dim": args.dim}
+    kwargs_net = {"ctx_feat_dim": args.ctx_feat_dim, "match_feat_dim": args.match_feat_dim, "dim": args.dim}
     net = VONet(**kwargs_net, patch_selector=args.patch_selector.lower()) if not args.evs else \
-    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, model=args.patchifier_model)
+    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, model=args.patchifier_model, use_pyramid=args.use_pyramid)
 
 
     net.train()
@@ -172,7 +224,7 @@ def train(rank, args):
                 optimizer.zero_grad(set_to_none=True) # TODO set_to_none=True
 
                 # print(f"scene_id: {scene_id}")
-                # visualize_voxel(images[0][0])
+                visualize_voxel(images[0][0])
 
                 
                 # fix poses to gt for first 1k steps
@@ -181,7 +233,12 @@ def train(rank, args):
                 so = total_steps < (args.first_gt_poses // args.gpu_num) and (args.checkpoint is None or args.checkpoint == "")
 
                 poses = SE3(poses).inv() # [simon]: this does c2w -> w2c (which dpvo predicts&stores internally)
+
+
+                #INFERENCE 
                 traj = net(images, poses, disps, intrinsics, M=1024, STEPS=args.iters, structure_only=so, plot_patches=DEBUG_PLOT_PATCHES, patches_per_image=args.patches_per_image)
+                
+                
                 # list [valid, p_ij, p_ij_gt, poses, poses_gt, kl] of iters (update operator)
                 if DEBUG_PLOT_PATCHES:
                     patch_data = traj.pop()
@@ -198,6 +255,13 @@ def train(rank, args):
                     if args.patch_selector == SelectionMethod.SCORER:
                         (v, x, y, P1, P2, kl, scores, v_full, x_full, y_full, ba_weights, kk, dij) = data
                     else:
+                        #valid, coords, coords_gt, Gs[:,:n], Ps[:,:n], kl
+                        # v = valid
+                        # x = coords
+                        # y = coords_gt
+                        # P1 = ABSOLUTE ESTIMATED POSE (WORLD COORDINATE)
+                        # P2 = ABSOLUTE GT POSE (WORLD COORDINATE)
+                        # kl = 0
                         (v, x, y, P1, P2, kl) = data
                     valid = (v > 0.5).reshape(-1) 
                     e = (x - y).norm(dim=-1) # residual (p_ij - p_ij_gt)
@@ -237,8 +301,8 @@ def train(rank, args):
                     P1 = P1.inv() # because of (SE3(poses).inv())
                     P2 = P2.inv() # w2c => c2w
 
-                    t1 = P1.matrix()[...,:3,3] # predicted translation # TODO with detach()?
-                    t2 = P2.matrix()[...,:3,3] # gt translation # TODO with detach()?
+                    t1 = P1.matrix()[...,:3,3] #ABSOLUTE  predicted translation # TODO with detach()?
+                    t2 = P2.matrix()[...,:3,3] #ABSOLUTE  gt translation # TODO with detach()?
 
                     s = kabsch_umeyama(t2[0], t1[0]).detach().clamp(max=10.0) # how to handle batch greater than 1?
                     P1 = P1.scale(s.view(1, 1))
@@ -293,9 +357,28 @@ def train(rank, args):
 
 
                 #SAVING CHECKPOINTS AND EVALUATION ON TARTANEVENT
-                if total_steps % args.save_checkpoint_step == 0:
+                if total_steps % args.eval_step == 0:
                     torch.cuda.empty_cache()
-
+                        
+                    if args.eval:
+                        print("Evaluating...")
+                        if args.evs:
+                            from evals.eval_evs.eval_tartan_evs import evaluate as eval_tartan_evs
+                            val_results, val_figures = eval_tartan_evs(None, args, net.module if args.ddp else net, total_steps,
+                                                                    args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
+                                                                    scale=args.scale, expname=args.name, **kwargs_net)
+                        else:
+                            from evals.eval_rgb.eval_tartan import evaluate as eval_tartan
+                            val_results, val_figures = eval_tartan(None, args, net.module if args.ddp else net, total_steps,
+                                                                args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
+                                                                scale=args.scale, expname=args.name)
+                        logger.write_dict(val_results)
+                        logger.write_figures(val_figures)
+                        
+                    torch.cuda.empty_cache()
+                    net.train()
+                
+                if total_steps % args.checkpoint_step == 0:
                     if rank == 0:
                         PATH = 'checkpoints/%s/%06d.pth' % (args.name, args.gpu_num * total_steps)
                         torch.save({
@@ -303,23 +386,6 @@ def train(rank, args):
                             'model_state_dict': net.module.state_dict() if args.ddp else net.state_dict(),
                             'optimizer_state_dict': optimizer.state_dict(),
                             'scheduler_state_dict': scheduler.state_dict()}, PATH)
-                        
-                        if args.eval:
-                            print("Evaluating...")
-                            if args.evs:
-                                from evals.eval_evs.eval_tartan_evs import evaluate as eval_tartan_evs
-                                val_results, val_figures = eval_tartan_evs(None, args, net.module if args.ddp else net, total_steps,
-                                                                        args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
-                                                                        scale=args.scale, expname=args.name, **kwargs_net)
-                            else:
-                                from evals.eval_rgb.eval_tartan import evaluate as eval_tartan
-                                val_results, val_figures = eval_tartan(None, args, net.module if args.ddp else net, total_steps,
-                                                                   args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
-                                                                   scale=args.scale, expname=args.name)
-                            logger.write_dict(val_results)
-                            logger.write_figures(val_figures)
-                    torch.cuda.empty_cache()
-                    net.train()
                 
                 if args.profiler:
                     prof.step()
@@ -400,19 +466,29 @@ if __name__ == '__main__':
     parser.add_argument('--port', default="12348", help='free port for master node')
     parser.add_argument('--profiler', action='store_true', help='enable autograd profiler')
     parser.add_argument('--scale', type=float, default=1.0, help='reduce computation')
-    parser.add_argument('--dim_inet', type=int, default=384, help='channel dimension of hidden state')
-    parser.add_argument('--dim_fnet', type=int, default=128, help='channel dimension of last layer fnet')
+    parser.add_argument('--ctx_feat_dim', type=int, default=384, help='channel dimension of hidden state')
+    parser.add_argument('--match_feat_dim', type=int, default=128, help='channel dimension of last layer fnet')
     parser.add_argument('--dim', type=int, default=32, help='channel dimension of first layer in extractor')
     parser.add_argument('--patches_per_image', type=int, default=80, help='number of patches per image')
     parser.add_argument('--patch_selector', type=str, default="random", help='name of patch selector (random, gradient, scorer)')
     parser.add_argument('--norm', type=str, default="rescale", help='name of norm (evs only) (none, rescale, standard)')
     parser.add_argument('--randaug', action='store_true', help='enable randAug (evs only)')
     parser.add_argument('--max_events_loaded', type=int, default=10000, help='max number of events to load (evs only)')
-    parser.add_argument('--save_checkpoint_step', type=int, default=1000, help='save checkpoint every N steps')
+    parser.add_argument('--eval_step', type=int, default=1000, help='save checkpoint every N steps')
     parser.add_argument('--tensorboard_update_step', type=int, default=100, help='tensorboard update step')
     parser.add_argument('--square', action='store_true', help='use square scaling')
     parser.add_argument('--patchifier_model', type=str, default="original", help='patchifier model (evs only) (resnet18, resnet50)')
     parser.add_argument('--first_gt_poses', type=int, default=1000, help='first N steps with GT poses, then switch to predicted poses for loss')
+    parser.add_argument('--checkpoint_step', type=int, default=1000, help='checkpoint step')
+    parser.add_argument(
+        '--use_pyramid',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use pyramid (default: True)'
+    )
+    parser.add_argument('--precomputed_inputs', type=bool, default=False, help='use precomputed inputs (default: False)')
+    parser.add_argument('--event_representation', type=str, default='stack', help='event representation (default: stack)')
+    
 
     args = parser.parse_known_args()[0]
     assert_config(args)

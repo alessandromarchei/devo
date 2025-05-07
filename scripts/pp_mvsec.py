@@ -84,7 +84,7 @@ def process_seq_mvsec(infilesh5, side="left"):
                 # continue
 
         # creating rectify map
-        with open(os.path.join(outdir, "../outdoor_night_calib/camchain-imucam-outdoor_night.yaml"), 'r') as file:
+        with open(os.path.join(outdir, "../outdoor_day_calib/camchain-imucam-outdoor_day.yaml"), 'r') as file:
             all_intr = yaml.safe_load(file)
 
         camID = "cam0" if side == "left" else "cam1"

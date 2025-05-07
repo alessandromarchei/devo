@@ -4,7 +4,6 @@ hospital/hospital/Easy/P005
 hospital/hospital/Hard/P047
 office/office/Easy/P000
 seasonsforest/seasonsforest/Easy/P002
-carwelding/carwelding/Easy/P007
 seasonsforest/seasonsforest/Hard/P006
 seasonsforest/seasonsforest/Easy/P001
 seasonsforest_winter/seasonsforest_winter/Easy/P006

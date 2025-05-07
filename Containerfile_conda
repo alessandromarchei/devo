@@ -1,0 +1,36 @@
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# Install Miniconda
+RUN apt-get update && apt-get install -y wget git bzip2 ca-certificates libglib2.0-0 libsm6 libxext6 libxrender-dev
+
+# Use ARM64-compatible installer
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    rm /tmp/miniconda.sh && \
+    $CONDA_DIR/bin/conda clean -afy
+
+RUN apt-get update && apt-get install -y python3-pyqt5 pkg-config libhdf5-dev
+
+# Create clean Python 3.10 environment (called devo)
+RUN conda create -n devo python=3.10 -y
+
+# Activate env, install pip packages (you must use `bash -c` to run with conda)
+COPY requirements.txt /tmp/requirements.txt
+RUN bash -c "source activate devo && pip install -r /tmp/requirements.txt"
+
+# Add conda env to PATH for later use
+ENV PATH=$CONDA_DIR/envs/devo/bin:$PATH
+ENV CONDA_DEFAULT_ENV=devo
+
+# Copy your codebase
+COPY . /workspace
+WORKDIR /workspace
+
+# Optional: install DEVO package
+RUN pip install .
+
+CMD ["/bin/bash"]

@@ -15,7 +15,7 @@ from utils.viz_utils import viz_flow_inference
 @torch.no_grad()
 def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
              trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, viz_flow=False, scale=1.0,
-             rpg_eval=True, expname="", **kwargs):
+             rpg_eval=True, expname="", use_pyramid=True, **kwargs):
     dataset_name = "tartanair_evs"
 
     if config is None:
@@ -59,9 +59,12 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
                     
                 kwargs.update({"scale": scale, "H": nH, "W": nW})
             
-            traj_est, tstamps, flowdata = run_voxel(scene_path, config, net, viz=viz,
-                                                 iterator=voxel_iterator(scene_path, timing=timing, stride=stride, scale=scale, max_events_loaded=args.max_events_loaded, square=args.square),
-                                                 timing=timing, **kwargs, viz_flow=viz_flow)
+            traj_est, tstamps, flowdata = run_voxel(scene_path, config, net, viz=viz, 
+                                iterator=voxel_iterator(scene_path, timing=timing, stride=stride, scale=scale, max_events_loaded=args.max_events_loaded, square=args.square),
+                                timing=timing, viz_flow=viz_flow, use_pyramid=use_pyramid, model=args.model, **kwargs)
+
+            #traj ESTIMATE are ABSOLUTE POSES 
+            #TRAJ EST starts from 0 0 0 0 0 0 1
 
             PERM = [1, 2, 0, 4, 5, 3, 6] # ned -> xyz
             # events between two adjacent frames t-1 and t are accumulated in event voxel t -> ignore first pose (t=0)
@@ -87,7 +90,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args)
             all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                                                                    plot=plot, save=save, return_figure=return_figure, rpg_eval=rpg_eval, stride=stride,
-                                                                   expname=expname)
+                                                                   expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name)
             
             if viz_flow:
                 viz_flow_inference(outfolder, flowdata)
@@ -108,10 +111,10 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default="config/default.yaml")
-    parser.add_argument('--datapath', default='', help='path to dataset directory')
+    parser.add_argument('--datapath', default='/usr/scratch/badile43/amarchei/TartanEvent', help='path to dataset directory')
     parser.add_argument('--weights', default="DEVO.pth")
-    parser.add_argument('--val_split', type=str, default="splits/tartan/tartan_val.txt")
-    parser.add_argument('--trials', type=int, default=5)
+    parser.add_argument('--val_split', type=str, default="splits/tartan/tartan_default_val.txt")
+    parser.add_argument('--trials', type=int, default=1)
     parser.add_argument('--plot', action="store_true")
     parser.add_argument('--save_trajectory', action="store_true")
     parser.add_argument('--return_figs', action="store_true")
@@ -125,7 +128,17 @@ if __name__ == '__main__':
     parser.add_argument('--dim_fnet', type=int, default=128, help='channel dimension of last layer fnet')
     parser.add_argument('--dim', type=int, default=32, help='channel dimension of first layer in extractor')
     parser.add_argument('--rpg_eval', action="store_true", help='advanced eval')
-
+    parser.add_argument('--max_events_loaded', type=int, default=50000000, help='max events loaded in memory')
+    parser.add_argument('--square', action="store_true", help='use square images')
+    parser.add_argument('--model', type=str, default='DEVO', help='model name')
+    parser.add_argument('--save_csv', action="store_true")
+    parser.add_argument('--csv_name', type=str, default="")
+    parser.add_argument(
+        '--use_pyramid',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use pyramid (default: True)'
+    )
     args = parser.parse_args()
     assert_eval_config(args)
 
@@ -135,10 +148,10 @@ if __name__ == '__main__':
 
     torch.manual_seed(1234)
     
-    kwargs = {"scale": args.scale, "dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "dim": args.dim}
+    kwargs = {"scale": args.scale, "dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet}
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                         plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz, timing=args.timing, \
-                        stride=args.stride, **kwargs, viz_flow=args.viz_flow, rpg_eval=args.rpg_eval, expname=args.expname)
+                        stride=args.stride, viz_flow=args.viz_flow, rpg_eval=args.rpg_eval, expname=args.expname, use_pyramid=args.use_pyramid, **kwargs)
     
     print("val_results= \n")
     for k in val_results:

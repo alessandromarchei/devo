@@ -71,18 +71,43 @@ def scene_in_split(scene_path, train_split, verbose=True):
         #print(f"Not adding {rel_id}, since it is not in requested split.") if verbose else None
         return False
 
-def check_train_val_split(train, val, strict=True, name=None):
+#def check_train_val_split(train, val, strict=True, name=None):
+#    assert len(train) > 0
+#    assert len(val) > 0
+#    if strict:
+#        assert len(set(train).intersection(set(val))) == 0
+#    else:
+#        intersect = set(train).intersection(set(val))
+#        for s in intersect:
+#            if name is None:
+#                print(f"\nWARNING: {s} is in both train and val split!!!\n")
+#            else:
+#                print(f"\nWARNING: {s} is in both train and {name}-val split!!!\n")
+
+def check_train_val_split(train, val, strict=True, name=None, auto_fix=True):
     assert len(train) > 0
     assert len(val) > 0
+
+    train_set = set(train)
+    val_set = set(val)
+
+    intersect = train_set.intersection(val_set)
+
     if strict:
-        assert len(set(train).intersection(set(val))) == 0
+        assert len(intersect) == 0
     else:
-        intersect = set(train).intersection(set(val))
-        for s in intersect:
-            if name is None:
-                print(f"\nWARNING: {s} is in both train and val split!!!\n")
-            else:
-                print(f"\nWARNING: {s} is in both train and {name}-val split!!!\n")
+        if intersect:
+            for s in intersect:
+                if name is None:
+                    print(f"\nWARNING: {s} is in both train and val split!!!\n")
+                else:
+                    print(f"\nWARNING: {s} is in both train and {name}-val split!!!\n")
+            if auto_fix:
+                val = [v for v in val if v not in train_set]
+                print(f"\n[INFO] Removed {len(intersect)} overlapping scenes from validation split.\n")
+
+    return train, val
+
 
 def load_splitfile(splitfile):
     with open(splitfile, 'r') as f:
@@ -484,7 +509,101 @@ def h5_to_voxels_indexed(scenedir, nbins=5, H=640, W=480, use_event_stack=False,
 #     return data_list
 
 
-def h5_to_voxels_limit(scenedir, nbins=5, H=640, W=480, use_event_stack=False, max_events_loaded=1000000):
+#def h5_to_voxels_limit(scenedir, nbins=5, H=640, W=480, use_event_stack=False, max_events_loaded=1000000):
+#    import os.path as osp
+#    import glob
+#    import h5py
+#    import numpy as np
+#
+#    # Load .h5 file
+#    if not scenedir.endswith('.h5'):
+#        h5in = glob.glob(os.path.join(scenedir, "*.h5"))
+#        root_path = scenedir
+#    else:
+#        h5in = [scenedir]
+#        root_path = os.path.dirname(scenedir)
+#
+#    assert len(h5in) == 1, f"Expected 1 .h5 file, found {len(h5in)}"
+#    datain = h5py.File(h5in[0], 'r')
+#
+#    # Load or synthesize timestamps
+#    ts_path = os.path.join(root_path, "timestamps.txt")
+#    try:
+#        tss_imgs_ns = np.loadtxt(ts_path)
+#        if tss_imgs_ns.size == 0:
+#            raise ValueError("Empty timestamps file.")
+#    except Exception:
+#        # Fallback: count number of images
+#        images_folder = os.path.join(root_path, "images_left")
+#        try:
+#            all_files = sorted(os.listdir(images_folder))
+#            num_images = len(all_files)
+#            if num_images < 2:
+#                raise ValueError(f"Found too few images ({num_images}) in {images_folder}")
+#            N_synthetic = num_images - 1
+#            spacing_ns = 33_333_333.33  # 33.33ms in nanoseconds
+#            tss_imgs_ns = np.arange(N_synthetic) * spacing_ns
+#            print(f"[WARN] Using synthetic timestamps for {root_path} (timestamps.txt missing or empty, based on {num_images} images)")
+#        except Exception as e:
+#            print(f"[ERROR] Cannot synthesize timestamps from {images_folder}: {e}")
+#            raise RuntimeError(f"Could not get timestamps for scene {root_path}")
+#
+#    if tss_imgs_ns.max() < 1e6:
+#        tss_imgs_ns *= 1e9  # ensure timestamps are in ns
+#
+#    # Get total number of events
+#    total_events = datain["events"]["x"].shape[0]
+#    max_events = min(max_events_loaded, total_events)
+#
+#    # Load only the first N events
+#    x = datain["events"]["x"][:max_events]
+#    y = datain["events"]["y"][:max_events]
+#    p = datain["events"]["p"][:max_events]
+#    t_us = datain["events"]["t"][:max_events]
+#    t = t_us * 1  # convert to ns
+#    p[p == 0] = -1
+#
+#    # Build event indices for voxel grid timestamps
+#    event_idxs = np.searchsorted(t, tss_imgs_ns, side='left')
+#    event_idxs = np.clip(event_idxs, 0, max_events)
+#
+#    # Only keep timestamps that fall within the loaded events
+#    valid_idx_mask = event_idxs < max_events
+#    event_idxs = event_idxs[valid_idx_mask]
+#    tss_imgs_ns = tss_imgs_ns[valid_idx_mask]
+#
+#    evidx_left = 0
+#    data_list = []
+#
+#    for img_i in range(len(event_idxs)):
+#        evid_nextimg = event_idxs[img_i]
+#
+#        x_batch = x[evidx_left:evid_nextimg]
+#        y_batch = y[evidx_left:evid_nextimg]
+#        p_batch = p[evidx_left:evid_nextimg]
+#        t_batch = t[evidx_left:evid_nextimg]
+#
+#        evidx_left = evid_nextimg
+#
+#        if len(x_batch) == 0:
+#            continue
+#
+#        if not use_event_stack:
+#            voxel = to_voxel_grid(xs=x_batch, ys=y_batch, ts=t_batch, ps=p_batch, H=H, W=W, nb_of_time_bins=nbins)
+#        else:
+#            voxel = to_event_stack(xs=x_batch, ys=y_batch, ts=t_batch, ps=p_batch, H=H, W=W, nb_of_time_bins=nbins)
+#
+#        data_list.append(voxel)
+#
+#    datain.close()
+#    return data_list
+#
+
+def h5_to_voxels_limit(
+    scenedir, nbins=5, H=640, W=480,
+    use_event_stack=False, max_events_loaded=1000000,
+    start_event_idx=0
+):
     import os.path as osp
     import glob
     import h5py
@@ -508,47 +627,56 @@ def h5_to_voxels_limit(scenedir, nbins=5, H=640, W=480, use_event_stack=False, m
         if tss_imgs_ns.size == 0:
             raise ValueError("Empty timestamps file.")
     except Exception:
-        # Fallback: count number of images
         images_folder = os.path.join(root_path, "images_left")
-        try:
-            all_files = sorted(os.listdir(images_folder))
-            num_images = len(all_files)
-            if num_images < 2:
-                raise ValueError(f"Found too few images ({num_images}) in {images_folder}")
-            N_synthetic = num_images - 1
-            spacing_ns = 33_333_333.33  # 33.33ms in nanoseconds
-            tss_imgs_ns = np.arange(N_synthetic) * spacing_ns
-            print(f"[WARN] Using synthetic timestamps for {root_path} (timestamps.txt missing or empty, based on {num_images} images)")
-        except Exception as e:
-            print(f"[ERROR] Cannot synthesize timestamps from {images_folder}: {e}")
-            raise RuntimeError(f"Could not get timestamps for scene {root_path}")
+        all_files = sorted(os.listdir(images_folder))
+        N_synthetic = len(all_files) - 1
+        spacing_ns = 33_333_333.33
+        tss_imgs_ns = np.arange(N_synthetic) * spacing_ns
+        print(f"[WARN] Using synthetic timestamps for {root_path} (based on {N_synthetic+1} images)")
 
     if tss_imgs_ns.max() < 1e6:
         tss_imgs_ns *= 1e9  # ensure timestamps are in ns
 
     # Get total number of events
     total_events = datain["events"]["x"].shape[0]
-    max_events = min(max_events_loaded, total_events)
+    end_event_idx = min(start_event_idx + max_events_loaded, total_events)
 
-    # Load only the first N events
-    x = datain["events"]["x"][:max_events]
-    y = datain["events"]["y"][:max_events]
-    p = datain["events"]["p"][:max_events]
-    t_us = datain["events"]["t"][:max_events]
+    # Slice events from start to end
+    x = datain["events"]["x"][start_event_idx:end_event_idx]
+    y = datain["events"]["y"][start_event_idx:end_event_idx]
+    p = datain["events"]["p"][start_event_idx:end_event_idx]
+    t_us = datain["events"]["t"][start_event_idx:end_event_idx]
     t = t_us * 1  # convert to ns
+
+
+    #END HERE IF THE INDEX IS OUT OF BOUNDS, prevent errors
+
+    if len(t) == 0:
+        datain.close()
+        return [], [], end_event_idx
+
+
+
     p[p == 0] = -1
 
-    # Build event indices for voxel grid timestamps
-    event_idxs = np.searchsorted(t, tss_imgs_ns, side='left')
-    event_idxs = np.clip(event_idxs, 0, max_events)
+    # Determine valid image timestamps for this chunk
+    t_min = t[0]
+    t_max = t[-1]
+    ts_chunk_mask = (tss_imgs_ns >= t_min) & (tss_imgs_ns <= t_max)
+    tss_chunk_ns = tss_imgs_ns[ts_chunk_mask]
 
-    # Only keep timestamps that fall within the loaded events
-    valid_idx_mask = event_idxs < max_events
-    event_idxs = event_idxs[valid_idx_mask]
-    tss_imgs_ns = tss_imgs_ns[valid_idx_mask]
+    if len(tss_chunk_ns) == 0:
+        print(f"[INFO] No valid image timestamps found in this chunk ({t_min:.2e}-{t_max:.2e})")
+        datain.close()
+        return [], [], end_event_idx
+
+    # Find index ranges of each voxel
+    event_idxs = np.searchsorted(t, tss_chunk_ns, side='left')
+    event_idxs = np.clip(event_idxs, 0, len(t))
 
     evidx_left = 0
     data_list = []
+    tss_list = []
 
     for img_i in range(len(event_idxs)):
         evid_nextimg = event_idxs[img_i]
@@ -564,16 +692,15 @@ def h5_to_voxels_limit(scenedir, nbins=5, H=640, W=480, use_event_stack=False, m
             continue
 
         if not use_event_stack:
-            voxel = to_voxel_grid(xs=x_batch, ys=y_batch, ts=t_batch, ps=p_batch, H=H, W=W, nb_of_time_bins=nbins)
+            voxel = to_voxel_grid(x_batch, y_batch, t_batch, p_batch, H, W, nbins)
         else:
-            voxel = to_event_stack(xs=x_batch, ys=y_batch, ts=t_batch, ps=p_batch, H=H, W=W, nb_of_time_bins=nbins)
+            voxel = to_event_stack(x_batch, y_batch, t_batch, p_batch, H, W, nbins)
 
         data_list.append(voxel)
+        tss_list.append(tss_chunk_ns[img_i] / 1e3)  # convert to µs
 
     datain.close()
-    return data_list
-
-
+    return data_list, tss_list, end_event_idx
 
 
 # def h5_to_voxels_indexed(scenedir, nbins=5, H=640, W=480, use_event_stack=False, indexes=None, chunk_size=1000000):
