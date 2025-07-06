@@ -36,19 +36,30 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             datapath_val = os.path.join(datapath, scene)
 
             # run the slam system
-            traj_est, tstamps, flowdata = run_voxel(datapath_val, config, net, viz=viz, 
+            traj_est, tstamps, flowdata, max_nedges = run_voxel(datapath_val, config, net, viz=viz, 
                                           iterator=hku_evs_iterator(datapath_val, side=side, stride=stride, timing=timing, H=H, W=W),
-                                          timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model, **kwargs)
+                                          timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model, 
+                                          **kwargs)
 
             # load  traj
             tss_traj_us, traj_hf = load_gt_us(os.path.join(datapath_val, f"gt_stamped_{side}.txt"))
 
+            if train_step is None:
+                try:
+                    train_step = int(net.split("/")[-1].split(".")[0])
+                except:
+                    train_step = 240000
+                if train_step == 0:
+                    train_step = 1
+                print("train_step", train_step)
+            
             # do evaluation 
             data = (traj_hf, tss_traj_us, traj_est, tstamps)
-            hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args)
+            hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args, max_nedges)
             all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                                                                    plot=plot, save=save, return_figure=return_figure, stride=stride,
-                                                                   expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name)
+                                                                   expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name,
+                                                                   outdir=args.outdir)
             
             if viz_flow:
                 viz_flow_inference(outfolder, flowdata)
@@ -92,6 +103,19 @@ if __name__ == '__main__':
         default=True,
         help='use pyramid (default: True)'
     )
+    parser.add_argument(
+        '--use_softagg',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use softagg (default: True)'
+    )
+    parser.add_argument(
+        '--use_tempconv',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use tempconv (default: True)'
+    )
+    parser.add_argument('--outdir', type=str, default=None, help='path to save plots')
 
     args = parser.parse_args()
     assert_eval_config(args)
@@ -104,7 +128,7 @@ if __name__ == '__main__':
 
     args.save_trajectory = True
     args.plot = True
-    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_pyramid": args.use_pyramid}
+    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_pyramid": args.use_pyramid, "use_softagg": args.use_softagg, "use_tempconv": args.use_tempconv}
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz,timing=args.timing, \
                         stride=args.stride, side=args.side, viz_flow=args.viz_flow,**kwargs)

@@ -514,6 +514,50 @@ def voxel_iterator(
 
 
 
+def voxel_iterator_preprocessed(voxeldir, tss_file=None, ext=".npy", intrinsics=[320, 320, 320, 240], stride=1, timing=False, scale=1.0, representation="stack"):
+    
+    if representation == "stack":
+        folder = "event_frames"
+    elif representation == "voxel":
+        folder = "event_voxel"
+
+    if "badile43" in voxeldir:
+        voxeldir = voxeldir.replace("badile43", "badile44")
+
+
+    voxfiles = sorted(glob.glob(osp.join(voxeldir, "{}/*{}".format(folder, ext))))
+    fx, fy, cx, cy = intrinsics
+
+    if tss_file is None:
+        tss_imgs_us = np.arange(len(voxfiles))
+    else:
+        tss_imgs_us = sorted(np.loadtxt(tss_file))
+
+    voxfiles = voxfiles[::stride]
+    tss_imgs_us = tss_imgs_us[::stride]
+
+    if timing:
+        t0 = torch.cuda.Event(enable_timing=True)
+        t1 = torch.cuda.Event(enable_timing=True)
+        t0.record()
+
+    data_list = []
+    for (ts_us, voxfile) in zip(tss_imgs_us, voxfiles):
+        voxel = torch.from_numpy(np.load(voxfile))
+        intrinsics = torch.as_tensor([fx, fy, cx, cy])
+        if scale != 1.0:
+            voxel, _, _, intrinsics = transform_rescale(scale, voxels=voxel, intrinsics=intrinsics[None])
+        data_list.append((voxel, intrinsics.squeeze(), ts_us))
+
+    if timing:
+        t1.record()
+        torch.cuda.synchronize()
+        dt = t0.elapsed_time(t1)/1e3
+        print(f"Preloaded {len(data_list)} voxels in {dt} secs, e.g. {len(data_list)/dt} FPS")
+    print(f"Preloaded {len(data_list)} voxels, imstart={0}, imstop={-1}, stride={stride}, {voxeldir}")
+
+    for (voxel, intrinsics, ts_us) in data_list:
+        yield voxel.cuda(), intrinsics.cuda(), ts_us
 
 #
 #def voxel_iterator(voxeldir, tss_file=None, ext=".h5", intrinsics=[320, 320, 320, 240], stride=1, timing=False, scale=1.0, max_events_loaded=None, square=False):

@@ -7,7 +7,7 @@ import glob
 import esim_torch
 import torch
 import h5py
-import tensorflow as tf
+#import tensorflow as tf
 import time
 import sys
 import hdf5plugin
@@ -171,10 +171,12 @@ def convert_sequence(root, stereo="left"):
         return       
     print(f"Converting {root} to {upimgs} and {evs_dir}")  
 
-    gpus = tf.config.experimental.list_physical_devices("GPU")
-    tf.config.set_logical_device_configuration(
-        gpus[0], [tf.config.LogicalDeviceConfiguration(memory_limit=40000)]
-    )
+
+    #commented out to avoid memory issues, and since i am not using TENSORFLOW
+    # gpus = tf.config.experimental.list_physical_devices("GPU")
+    # tf.config.set_logical_device_configuration(
+    #     gpus[0], [tf.config.LogicalDeviceConfiguration(memory_limit=40000)]
+    # )
 
     if not os.path.exists(upimgs):
         cmd = f"python upsampling/upsample.py --input_dir={root} --output_dir={upimgs}"
@@ -218,6 +220,7 @@ def convert_sequence(root, stereo="left"):
     
     image_files = sorted(glob.glob(os.path.join(upimgs, "imgs/*.png")))
     tss_ns = (np.loadtxt(os.path.join(upimgs, "timestamps.txt"), dtype=np.float64)*1e9).astype(np.int64)
+    print(f"tss_ns: {tss_ns[0]}ns to {tss_ns[-1]}ns")
     tss_ns = torch.from_numpy(tss_ns).cuda()
     fps_imgs_s = np.loadtxt(os.path.join(img_dir, "../fps.txt"), dtype=np.float64).item()
     N_images = len(glob.glob(os.path.join(img_dir, "*.png")))
@@ -340,7 +343,7 @@ def convert_sequence(root, stereo="left"):
 
 def main():
     parser = argparse.ArgumentParser(description="Raw to png images in dir")
-    parser.add_argument("--dirsfile", help="Input raw dir.", default="/DIRECTORY/test.txt")
+    parser.add_argument("--dirsfile", help="Input raw dir.", default="scripts/rgb_paths.txt")
 
     args = parser.parse_args()
     assert ".txt" in args.dirsfile

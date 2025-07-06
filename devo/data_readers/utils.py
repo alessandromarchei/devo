@@ -22,13 +22,13 @@ def get_scene_path(dataroot, scene, modality="image_left"):
 
 def save_scene_info(scene_info, name):
     cur_path = os.path.dirname(os.path.abspath(__file__))
-    fgraph_dest_dir = os.path.join(cur_path, '../../fgraph')
+    fgraph_dest_dir = os.path.join(cur_path, '../../fgraphs_DEVO')
     if not os.path.exists(fgraph_dest_dir):
         os.makedirs(fgraph_dest_dir)
     os.chmod(fgraph_dest_dir, 0o777)
     
     fname = os.path.join(fgraph_dest_dir, f'{name}.pickle')
-
+    print(f"Saving scene info to {fname}")
     with open(fname, 'wb') as cachefile:
         pickle.dump((scene_info,), cachefile)
     os.chmod(fgraph_dest_dir, 0o555)

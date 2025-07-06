@@ -709,7 +709,7 @@ def visualize_N_voxels(voxels_in, EPS=1e-3, idx_plot_vox=[0]):
         voxels = voxels.to(device)
 
 
-def visualize_voxel(*voxel_in, EPS=1e-3, save=False, folder="results/voxels"):
+def visualize_voxel(*voxel_in, EPS=1e-3, save=False, folder="results/voxels", index=None):
     # cmaps
     colors = ['red', 'white', 'blue']
     cmap = plt.cm.colors.ListedColormap(colors)
@@ -736,12 +736,61 @@ def visualize_voxel(*voxel_in, EPS=1e-3, save=False, folder="results/voxels"):
             ax.grid(False)
     if save:
         os.makedirs(folder, exist_ok=True)
-        str = datetime.today().strftime('%Y-%m-%d_%H:%M:%S.%f')
+        if index is not None:
+            string = "voxel_" + str(index)
+        else:
+            string = datetime.today().strftime('%Y-%m-%d_%H:%M:%S.%f')
         plt.axis('off')
-        plt.savefig(f'{folder}/{str}.png', bbox_inches='tight', transparent=True, pad_inches=0)
+        plt.savefig(f'{folder}/{string}.png', bbox_inches='tight', transparent=True, pad_inches=0)
     else:    
         plt.show()
     plt.close()
+
+def save_event_frame_png(voxel_in, save=False, folder="results/event_frames", index=None):
+    """
+    Sums a 5-channel image pixel-wise to create a single frame with color coding:
+    - Red for negative polarity events
+    - Green for positive polarity events
+    - Black for no event
+    Saves or displays the result as a PNG image.
+    Args:
+        voxel_in (torch.Tensor or np.ndarray): Input image of shape (5, H, W).
+        save (bool): Whether to save the image.
+        folder (str): Directory to save the image.
+        index (int or None): Index for naming the file.
+    """
+    if isinstance(voxel_in, torch.Tensor):
+        if voxel_in.device != 'cpu':
+            voxel_in = voxel_in.detach().cpu()
+        voxel_np = voxel_in.numpy()
+    else:
+        voxel_np = voxel_in
+
+    # Sum across channels (axis 0), shape becomes (H, W)
+    summed_frame = voxel_np.sum(axis=0)
+
+    # Create color image (H, W, 3)
+    H, W = summed_frame.shape
+    color_img = np.zeros((H, W, 3), dtype=np.uint8)
+
+    # Red: negative polarity, Green: positive polarity, Black: no event
+    color_img[summed_frame < 0] = [255, 0, 0]   # Red
+    color_img[summed_frame > 0] = [0, 255, 0]   # Green
+    color_img[summed_frame == 0] = [0, 0, 0]    # Black
+
+    if save:
+        os.makedirs(folder, exist_ok=True)
+        if index is not None:
+            string = f"ev_{index}"
+        else:
+            string = datetime.today().strftime('%Y-%m-%d_%H:%M:%S.%f')
+        out_path = os.path.join(folder, f"{string}.png")
+        cv2.imwrite(out_path, cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR))
+    else:
+        plt.figure(figsize=(10, 10))
+        plt.axis('off')
+        plt.imshow(color_img)
+        plt.show()
 
 
 # visualize inverse depth map  cmap='plasma'

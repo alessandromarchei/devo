@@ -13,7 +13,7 @@ from . import altcorr
 from . import lietorch
 from .lietorch import SE3
 
-from .extractor import BasicEncoder, BasicEncoder4Evs, MKBigEncoder, MKSmallEncoder
+from .extractor import *
 from .blocks import GradientClip, GatedResidual, SoftAgg
 from .selector import Scorer, SelectionMethod, PatchSelector
 
@@ -25,15 +25,20 @@ autocast = torch.cuda.amp.autocast
 import matplotlib.pyplot as plt
 
 from utils.voxel_utils import std, rescale, voxel_augment
-from utils.viz_utils import visualize_voxel, visualize_N_voxels, visualize_scorer_map
+#from utils.viz_utils import visualize_voxel, visualize_N_voxels, visualize_scorer_map
 
 DIM = 384 # default 384
 
 class Update(nn.Module):
-    def __init__(self, p, dim=DIM, use_pyramid=True):
+    def __init__(self, p, dim=DIM, use_pyramid=True, use_softagg=True, use_tempconv=True):
         super(Update, self).__init__()
         self.dim = dim
+        self.use_pyramid = use_pyramid
+        self.use_softagg = use_softagg
+        self.use_tempconv = use_tempconv
 
+        self.max_nedges = 0
+        
         self.c1 = nn.Sequential(
             nn.Linear(dim, dim),
             nn.ReLU(inplace=True),
@@ -43,11 +48,13 @@ class Update(nn.Module):
             nn.Linear(dim, dim),
             nn.ReLU(inplace=True),
             nn.Linear(dim, dim))
-        
+
         self.norm = nn.LayerNorm(dim, eps=1e-3)
+
 
         self.agg_kk = SoftAgg(dim)
         self.agg_ij = SoftAgg(dim)
+
 
         self.gru = nn.Sequential(
             nn.LayerNorm(dim, eps=1e-3),
@@ -94,19 +101,26 @@ class Update(nn.Module):
 
     def forward(self, net, inp, corr, flow, ii, jj, kk):
         """ update operator """
+
+        if self.max_nedges < net.shape[1]:
+            self.max_nedges = net.shape[1]
+            
+            
         net = net + inp + self.corr(corr)
         net = self.norm(net) # (b,edges,384)
 
-        
         ix, jx = fastba.neighbors(kk, jj)
         mask_ix = (ix >= 0).float().reshape(1, -1, 1)
         mask_jx = (jx >= 0).float().reshape(1, -1, 1)
-
+        
+        #apply the temporal convolution to the features
         net = net + self.c1(mask_ix * net[:,ix])
         net = net + self.c2(mask_jx * net[:,jx])
 
+        #default configuration
         net = net + self.agg_kk(net, kk)
         net = net + self.agg_ij(net, ii*12345 + jj)
+
 
         net = self.gru(net)
         patch_flow=self.d(net)
@@ -114,6 +128,136 @@ class Update(nn.Module):
 
         return net, (patch_flow, confidence_weigths, None)
 
+
+
+class Update_small(nn.Module):
+    def __init__(self, p, dim=DIM, use_pyramid=True, use_softagg=True, use_tempconv=True):
+        super(Update_small, self).__init__()
+        self.dim = dim
+        self.use_pyramid = use_pyramid
+        self.use_softagg = use_softagg
+        self.use_tempconv = use_tempconv
+        self.max_nedges = 0
+        # if self.use_tempconv:
+        self.c1 = nn.Sequential(
+            nn.Linear(dim, dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(dim, dim))
+
+        self.c2 = nn.Sequential(
+            nn.Linear(dim, dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(dim, dim))
+        # else:
+        #     #skip the temporal convolution in this case
+        #     self.c1 = nn.Identity()
+        #     self.c2 = nn.Identity()
+            
+        self.norm = nn.LayerNorm(dim, eps=1e-3)
+
+        if self.use_softagg:
+            self.agg_kk = SoftAgg(dim)
+            self.agg_ij = SoftAgg(dim)
+        else:
+            self.agg_kk = nn.Identity()
+            self.agg_ij = nn.Identity()
+
+        if use_tempconv:
+            self.gru = nn.Sequential(
+                nn.LayerNorm(dim, eps=1e-3),
+                GatedResidual(dim),
+                nn.LayerNorm(dim, eps=1e-3),
+                GatedResidual(dim),
+            )
+        else:
+            self.gru = nn.Sequential(
+                nn.LayerNorm(dim, eps=1e-3),
+                nn.Linear(dim, dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+                nn.LayerNorm(dim, eps=1e-3),
+                nn.Linear(dim, dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+            )
+            
+
+        if(use_pyramid == False) :
+            #SMALLER VERSION : ONLY THE HIGH RESOLUTION MATCHING FEATURES ARE USED (1/4 ON, 1/16 NOT ADDED) --> NOT PYRAMID.
+            # only half the features are used
+            self.corr = nn.Sequential(
+                nn.Linear(49*p*p, dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+                nn.LayerNorm(dim, eps=1e-3),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+            )
+        else:
+            # DEFAULT CASE, with matching features downsampled at 1/4 and 1/16 and stacked toghether, with output flattened = 2*49*p*p
+            self.corr = nn.Sequential(
+                nn.Linear(2*49*p*p, dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+                nn.LayerNorm(dim, eps=1e-3),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim, dim),
+        )
+
+
+
+        self.d = nn.Sequential(
+            nn.ReLU(inplace=False),
+            nn.Linear(dim, 2),
+            GradientClip())
+
+        self.w = nn.Sequential(
+            nn.ReLU(inplace=False),
+            nn.Linear(dim, 2),
+            GradientClip(),
+            nn.Sigmoid())
+
+
+    def forward(self, net, inp, corr, flow, ii, jj, kk):
+        """ update operator """
+
+        if self.max_nedges < net.shape[1]:
+            self.max_nedges = net.shape[1]
+            
+        net = net + inp + self.corr(corr)
+        net = self.norm(net) # (b,edges,384)
+
+
+        #temporarily move the use_tempconv to use or not the GRU block, since we saw that removing the temporal convolution leads to really bad results
+        # if self.use_tempconv:
+        #     ix, jx = fastba.neighbors(kk, jj)
+        #     mask_ix = (ix >= 0).float().reshape(1, -1, 1)
+        #     mask_jx = (jx >= 0).float().reshape(1, -1, 1)
+            
+        #     #apply the temporal convolution to the features
+        #     net = net + self.c1(mask_ix * net[:,ix])
+        #     net = net + self.c2(mask_jx * net[:,jx])
+
+        ix, jx = fastba.neighbors(kk, jj)
+        mask_ix = (ix >= 0).float().reshape(1, -1, 1)
+        mask_jx = (jx >= 0).float().reshape(1, -1, 1)
+        
+        #apply the temporal convolution to the features
+        net = net + self.c1(mask_ix * net[:,ix])
+        net = net + self.c2(mask_jx * net[:,jx])
+
+        if self.use_softagg:
+            #default configuration
+            net = net + self.agg_kk(net, kk)
+            net = net + self.agg_ij(net, ii*12345 + jj)
+
+
+
+        net = self.gru(net)
+        patch_flow=self.d(net)
+        confidence_weigths = self.w(net)
+
+        return net, (patch_flow, confidence_weigths, None)
 
 
 class Patchifier(nn.Module):
@@ -169,6 +313,87 @@ class Patchifier(nn.Module):
                 output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
                 norm_fn="none",
             )
+
+        elif self.model == "noskip":
+            print("Using no skip")
+            self.matching_feat_encoder = BasicEncoder4Evs_noskip(
+                bins=self.evs_bins,
+                output_dim=self.match_feat_dim,       #MATCHING FEATURE DIMENSION
+                dim=dim,
+                norm_fn="instance",
+            )
+
+            self.ctx_feat_encoder = BasicEncoder4Evs_noskip(
+                bins=self.evs_bins,
+                dim=dim,
+                output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
+                norm_fn="none",
+            )
+        
+        elif self.model == "gradual":
+            print("Using gradual encoder")
+            self.matching_feat_encoder = GradualEncoder(
+                in_channels=self.evs_bins,
+                output_dim=self.match_feat_dim,       #MATCHING FEATURE DIMENSION
+                dim=16,
+                norm_fn="instance",
+            )
+
+            self.ctx_feat_encoder = GradualEncoder(
+                in_channels=self.evs_bins,
+                dim=16,
+                output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
+                norm_fn="none",
+            )
+
+        elif self.model == "gradual_halved":
+            print("Using gradual_halved encoder")
+            self.matching_feat_encoder = GradualEncoder_halved(
+                in_channels=self.evs_bins,
+                output_dim=self.match_feat_dim,       #MATCHING FEATURE DIMENSION
+                dim=16,
+                norm_fn="instance",
+            )
+
+            self.ctx_feat_encoder = GradualEncoder_halved(
+                in_channels=self.evs_bins,
+                dim=16,
+                output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
+                norm_fn="none",
+            )
+        
+        elif self.model == "mobilenet":
+            print("Using mobilenet encoder")
+            self.matching_feat_encoder = MobileEncoder(
+                in_channels=self.evs_bins,
+                output_dim=self.match_feat_dim,       #MATCHING FEATURE DIMENSION
+                dim=dim,
+                norm_fn="instance",
+            )
+
+            self.ctx_feat_encoder = MobileEncoder(
+                in_channels=self.evs_bins,
+                dim=dim,
+                output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
+                norm_fn="none",
+            )
+
+        elif self.model == "original_bn":
+            print("Using DEVO with batch normalization")
+            self.matching_feat_encoder = BasicEncoder4Evs(
+                bins=self.evs_bins,
+                output_dim=self.match_feat_dim,       #MATCHING FEATURE DIMENSION
+                dim=dim,
+                norm_fn="batch",
+            )
+
+            self.ctx_feat_encoder = BasicEncoder4Evs(
+                bins=self.evs_bins,
+                dim=dim,
+                output_dim=self.ctx_feat_dim,       #CONTEXT FEATURE DIMENSION
+                norm_fn="none",
+            )
+
         elif self.model == "DEVO":
             print("Using DEVO original, for evaluation only")
             self.fnet = BasicEncoder4Evs(output_dim=self.match_feat_dim, dim=dim, norm_fn='instance') # matching-feature extractor
@@ -412,9 +637,8 @@ class CorrBlock:
 
 
 class eVONet(nn.Module):
-    def __init__(self, P=3, use_viewer=False, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER, norm="std2", randaug=False, model="DEVO", use_pyramid=True): 
+    def __init__(self, P=3, use_viewer=False, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER, norm="std2", randaug=False, args=None, model="DEVO", use_pyramid=True, use_tempconv=True, use_softagg=True):
         super(eVONet, self).__init__()
-        print(f"Using {model} model")
         print(f"Using {ctx_feat_dim} context feature dimension")
         print(f"Using {match_feat_dim} matching feature dimension")
         self.P = P
@@ -423,16 +647,32 @@ class eVONet(nn.Module):
         self.patch_selector = patch_selector
         self.model = model
         self.use_pyramid = use_pyramid
+        self.use_tempconv = use_tempconv
+        self.use_softagg = use_softagg
+
+        if args is not None:
+            self.use_pyramid = args.use_pyramid
+            self.use_tempconv = args.use_tempconv
+            self.use_softagg = args.use_softagg
+            self.model = args.patchifier_model
+
+        print(f"Using pyramid : {self.use_pyramid}")
+        print(f"Using temporal conv : {self.use_tempconv}")
+        print(f"Using softagg : {self.use_softagg}")
+        print(f"Using patchifier model : {self.model}")
+
 
         self.patchify = Patchifier(patch_size=self.P, ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=dim, patch_selector=patch_selector, model=self.model)
-        self.update = Update(self.P, self.ctx_feat_dim, use_pyramid=self.use_pyramid)
-        
+        if self.use_softagg == False or self.use_tempconv == False:
+            self.update = Update_small(self.P, self.ctx_feat_dim, use_pyramid=self.use_pyramid, use_softagg=self.use_softagg, use_tempconv=self.use_tempconv)
+        else:
+            self.update = Update(self.P, self.ctx_feat_dim, use_pyramid=self.use_pyramid)
+
+
         self.dim = dim # dim of the first layer in extractor
         self.RES = 4.0
         self.norm = norm
         self.randaug = randaug
-        
-
 
     @autocast(enabled=False)
     def forward(self, images, poses, disps, intrinsics, M=1024, STEPS=12, P=1, structure_only=False, plot_patches=False, patches_per_image=80):

@@ -1,8 +1,8 @@
 ### DEVO Config File for HKU ###
 
 # VO config (increase for better accuracy)
-PATCHES_PER_FRAME: 44
-REMOVAL_WINDOW: 10
+PATCHES_PER_FRAME: 96
+REMOVAL_WINDOW: 22
 OPTIMIZATION_WINDOW: 10
 PATCH_LIFETIME: 13
 
@@ -15,7 +15,6 @@ MOTION_DAMPING: 0.5
 
 # maybe use mixed precision for inference
 MIXED_PRECISION: True
-
 # Select between random, gradient, scorer
 PATCH_SELECTOR: 'scorer'
 # Normalizer (only evs): none, rescale, standard (std)

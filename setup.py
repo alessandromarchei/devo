@@ -1,6 +1,6 @@
 import os.path as osp
 from setuptools import setup, find_packages
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CppExtension
 
 ROOT = osp.dirname(osp.abspath(__file__))
 

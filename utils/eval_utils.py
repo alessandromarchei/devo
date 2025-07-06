@@ -16,13 +16,11 @@ import shutil
 from scipy.spatial.transform import Rotation as R
 from tabulate import tabulate
 import matplotlib
-matplotlib.use('Agg')
-
 
 from devo.plot_utils import plot_trajectory, fig_trajectory
 from devo.plot_utils import save_trajectory_tum_format, plot_trajectory_zx
 
-from utils.viz_utils import show_image, visualize_voxel
+from utils.viz_utils import show_image, visualize_voxel, save_event_frame_png
 
 from evo.tools import file_interface
 import evo.main_ape as main_ape
@@ -70,6 +68,43 @@ def run_rgb(imagedir, cfg, network, viz=False, iterator=None, timing=False, H=48
 
 
 @torch.no_grad()
+def run_voxel_debug(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
+    
+    print(f"use_pyramid: {use_pyramid}")
+    from devo.devo_debug import DEVO
+    
+    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=False, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
+    
+    for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
+        if timing and i == 0:
+            t0 = torch.cuda.Event(enable_timing=True)
+            t1 = torch.cuda.Event(enable_timing=True)
+            t0.record()
+
+        if viz: 
+            # import matplotlib.pyplot as plt
+            # plt.switch_backend('Qt5Agg')
+            visualize_voxel(voxel.detach().cpu(), save=True, index=i)
+        
+        with Timer("DEVO", enabled=timing):
+            slam(t, voxel, intrinsics, scale=scale)
+
+    for _ in range(12):
+        slam.update()
+
+    poses, tstamps, max_nedges = slam.terminate()
+
+    if timing:
+        t1.record()
+        torch.cuda.synchronize()
+        dt = t0.elapsed_time(t1)/1e3
+        print(f"{voxeldir}\nDEVO Network {i+1} frames in {dt} sec, e.g. {(i+1)/dt} FPS")
+    
+    flowdata = slam.flow_data if viz_flow else None
+    return poses, tstamps, flowdata, max_nedges
+
+
+@torch.no_grad()
 def run_voxel_norm_seq(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, N_norm=15, **kwargs): 
     slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=viz, viz_flow=viz_flow, **kwargs)
     
@@ -114,7 +149,8 @@ def run_voxel_norm_seq(voxeldir, cfg, network, viz=False, iterator=None, timing=
 def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
     
     print(f"use_pyramid: {use_pyramid}")
-    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=viz, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
+
+    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=False, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
     
     for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
         if timing and i == 0:
@@ -125,7 +161,7 @@ def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=
         if viz: 
             # import matplotlib.pyplot as plt
             # plt.switch_backend('Qt5Agg')
-            visualize_voxel(voxel.detach().cpu())
+            visualize_voxel(voxel.detach().cpu(), save=True, index=i)
         
         with Timer("DEVO", enabled=timing):
             slam(t, voxel, intrinsics, scale=scale)
@@ -133,7 +169,97 @@ def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=
     for _ in range(12):
         slam.update()
 
-    poses, tstamps = slam.terminate()
+    poses, tstamps, max_nedges = slam.terminate()
+
+    if timing:
+        t1.record()
+        torch.cuda.synchronize()
+        dt = t0.elapsed_time(t1)/1e3
+        print(f"{voxeldir}\nDEVO Network {i+1} frames in {dt} sec, e.g. {(i+1)/dt} FPS")
+    
+    flowdata = slam.flow_data if viz_flow else None
+    return poses, tstamps, flowdata, max_nedges
+
+
+
+@torch.no_grad()
+def run_voxel_advanced(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
+    
+    print(f"use_pyramid: {use_pyramid}")
+    skip_start = kwargs.get("skip_start", 0)
+    skip_end = kwargs.get("skip_end", 0)
+
+    data_list = list(iterator)
+    total_len = len(data_list)
+    print(f"Total frames in iterator: {total_len}, skipping first {skip_start} and last {skip_end} frames")
+    
+    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=False, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
+    
+    for i, (voxel, intrinsics, t) in enumerate(tqdm(data_list)):
+        if i < skip_start or i >= (total_len - skip_end):
+            #print(f"Skipping frame {i} at timestamp {t}, total frames: {total_len}")
+            continue
+
+        if timing and i == 0:
+            t0 = torch.cuda.Event(enable_timing=True)
+            t1 = torch.cuda.Event(enable_timing=True)
+            t0.record()
+        
+        with Timer("DEVO", enabled=timing):
+            slam(t, voxel, intrinsics, scale=scale)
+
+    for _ in range(12):
+        slam.update()
+
+    poses, tstamps, max_nedges = slam.terminate()
+
+    if timing:
+        t1.record()
+        torch.cuda.synchronize()
+        dt = t0.elapsed_time(t1)/1e3
+        print(f"{voxeldir}\nDEVO Network {i+1} frames in {dt} sec, e.g. {(i+1)/dt} FPS")
+    
+    flowdata = slam.flow_data if viz_flow else None
+    return poses, tstamps, flowdata, max_nedges
+
+
+@torch.no_grad()
+def save_sequence(iterator=None,  save=True): 
+        
+    for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
+        print(f"Saving voxel {i} at {t}")
+        if save:
+            save_event_frame_png(voxel.detach().cpu(), save=True, folder="event_frames", index=i)
+
+
+
+
+
+@torch.no_grad()
+def run_voxel_validation(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
+    
+    print(f"use_pyramid: {use_pyramid}")
+
+    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=False, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
+    
+    for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
+        if timing and i == 0:
+            t0 = torch.cuda.Event(enable_timing=True)
+            t1 = torch.cuda.Event(enable_timing=True)
+            t0.record()
+
+        if viz: 
+            # import matplotlib.pyplot as plt
+            # plt.switch_backend('Qt5Agg')
+            visualize_voxel(voxel.detach().cpu(), save=True, index=i)
+        
+        with Timer("DEVO", enabled=timing):
+            slam(t, voxel, intrinsics, scale=scale)
+
+    for _ in range(12):
+        slam.update()
+
+    poses, tstamps, _ = slam.terminate()
 
     if timing:
         t1.record()
@@ -143,6 +269,7 @@ def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=
     
     flowdata = slam.flow_data if viz_flow else None
     return poses, tstamps, flowdata
+
 
 
 def assert_eval_config(args):
@@ -191,6 +318,14 @@ def make_outfolder(outdir, dataset_name, expname, scene_name, trial, train_step,
     outfolder = os.path.abspath(outfolder)
     os.makedirs(outfolder, exist_ok=True)
     return outfolder
+
+def make_outfolder_outdir(outdir, dataset_name, expname, scene_name, trial, cfg):
+    outfolder = os.path.join(f"{outdir}/{dataset_name}/{expname}/{scene_name}_trial_{trial}_cfg_{cfg['PATCHES_PER_FRAME']}_{cfg['REMOVAL_WINDOW']}_{cfg['PATCH_LIFETIME']}")
+
+    outfolder = os.path.abspath(outfolder)
+    os.makedirs(outfolder, exist_ok=True)
+    return outfolder
+
 
 def run_rpg_eval(outfolder, traj_ref, tss_ref_us, traj_est, tstamps):
     p = f"{outfolder}/"
@@ -319,20 +454,20 @@ def make_evo_traj(poses_N_x_7, tss_us):
 @torch.no_grad()            
 def log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                 plot=False, save=True, return_figure=False, rpg_eval=True, stride=1, 
-                calib1_eds=None, camID_tumvie=None, outdir=None, expname="", max_diff_sec=0.01, save_csv=False, cfg=None, name=None):
+                calib1_eds=None, camID_tumvie=None, outdir=None, expname="", max_diff_sec=0.01, save_csv=False, cfg=None, name=None, step=None):
     # results: dict of (scene, list of results)
     # all_results: list of all raw_results
 
     # unpack data
     traj_GT, tss_GT_us, traj_est, tss_est_us = data
-    train_step, net, dataset_name, scene, trial, cfg, args = hyperparam
+    train_step, net, dataset_name, scene, trial, cfg, args, max_nedges = hyperparam
 
     ####### SINCE EVALUATION DATA HAS BEEN SHORTENED DUE TO MEMORY ISSUES,
     ####### THE GT DATA should be truncated as the traj_est length
     ####### ONLY FOR TARTANAIR DATASET
-    if 'tartan' in dataset_name.lower():
-        traj_GT = traj_GT[:len(traj_est)]
-        tss_GT_us = tss_GT_us[:len(traj_est)]
+    # if 'tartan' in dataset_name.lower():
+    #     traj_GT = traj_GT[:len(traj_est)]
+    #     tss_GT_us = tss_GT_us[:len(traj_est)]
     
 
     # create folders
@@ -344,7 +479,11 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
     scene_name = '_'.join(scene.split('/')[1:]).title() if "/P0" in scene else scene.title()
     if outdir is None:
         outdir = "results"
-    outfolder = make_outfolder(outdir, dataset_name, expname, scene_name, trial, train_step, stride, calib1_eds, camID_tumvie)
+
+    if outdir is None:
+        outfolder = make_outfolder(outdir, dataset_name, expname, scene_name, trial, train_step, stride, calib1_eds, camID_tumvie)
+    else:
+        outfolder = make_outfolder_outdir(outdir, dataset_name, expname, scene_name, trial, cfg)
 
     # save cfg & args to outfolder
     if cfg is not None:
@@ -400,7 +539,7 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
                 name = "out_eval.csv"
             with open(name, "a") as f:
                 f.write(
-                    f"{'mvsec'},{scene_name},{cfg['PATCHES_PER_FRAME']},{cfg['OPTIMIZATION_WINDOW']},{cfg['REMOVAL_WINDOW']},{cfg['PATCH_LIFETIME']},{ate_score},{R_rmse_deg},{MPE}\n")
+                    f"{'mvsec'},{scene_name},{cfg['PATCHES_PER_FRAME']},{cfg['OPTIMIZATION_WINDOW']},{cfg['REMOVAL_WINDOW']},{cfg['PATCH_LIFETIME']},{max_nedges},{ate_score},{R_rmse_deg},{MPE}\n")
 
 
 
@@ -409,27 +548,26 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
     else:
         res_str = f"\nATE[cm]: {ate_score:.03f} | MPE[%/m]: {MPE:.03f}"
 
-    if plot:
+    if plot and outdir is None:
         Path(f"{outfolder}/").mkdir(exist_ok=True)
         pdfname = f"{outfolder}/../{scene_name}_Trial{trial+1:02d}_exp_{expname}_step_{train_step}_stride_{stride}.pdf"
         plot_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), 
                         f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str}",
                         pdfname, align=True, correct_scale=True, max_diff_sec=max_diff_sec)
         shutil.copy(pdfname, f"{outfolder}/{scene_name}_Trial{trial+1:02d}_step_{train_step}_stride_{stride}.pdf")
-
-        pdfname_NOALIGN = f"{outfolder}/../{scene_name}_Trial{trial+1:02d}_exp_{expname}_step_{train_step}_stride_{stride}_noalign.pdf"
-
-        #plot the same trajectory but without the alignment
-        plot_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), 
-                        f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str} : without alignment",
-                        pdfname_NOALIGN, align=False, correct_scale=True, max_diff_sec=max_diff_sec)
-        shutil.copy(pdfname_NOALIGN, f"{outfolder}/{scene_name}_Trial{trial+1:02d}_step_{train_step}_stride_{stride}.pdf")
-
         # [DEBUG]
         #pdfname = f"{outfolder}/GT_{scene_name}_Trial{trial+1:02d}_exp_{expname}_step_{train_step}_stride_{stride}.pdf"
         #plot_trajectory((traj_GT, tss_GT_us/1e6), (traj_GT, tss_GT_us/1e6), 
         #                f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str}",
         #                pdfname, align=True, correct_scale=True, max_diff_sec=max_diff_sec)
+    
+    elif plot and outdir is not None:
+        Path(f"{outfolder}/").mkdir(exist_ok=True)
+        pdfname = f"{outfolder}/{scene_name}_Trial{trial+1:02d}_exp_{expname}_cfg_{cfg['PATCHES_PER_FRAME']}_{cfg['REMOVAL_WINDOW']}_{cfg['PATCH_LIFETIME']}.pdf"
+        plot_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), 
+                        f"{dataset_name} {expname} {scene_name.replace('_', ' ')} Trial #{trial+1} {res_str}",
+                        pdfname, align=True, correct_scale=True, max_diff_sec=max_diff_sec)
+        shutil.copy(pdfname, f"{outfolder}/{scene_name}_Trial{trial+1:02d}_cfg_{cfg['PATCHES_PER_FRAME']}_{cfg['REMOVAL_WINDOW']}_{cfg['PATCH_LIFETIME']}.pdf")
 
     if return_figure:
         fig = fig_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), f"{dataset_name} {scene_name.replace('_', ' ')} {res_str})",

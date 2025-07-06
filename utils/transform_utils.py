@@ -60,11 +60,15 @@ def transform_rescale(scale, voxels, disps=None, poses=None, intrinsics=None, sq
 
     # Scale translation part of poses
     if poses is not None:
-        poses = transform_rescale_poses(scale_x, scale_y, poses)
+        if not square or (scale_x == scale_y):
+            poses = transform_rescale_poses(scale_x, poses)
+        else:
+            # Apply non-uniform scaling to the poses
+            poses = transform_rescale_poses_xy(scale_x, scale_y, poses)
 
     return voxels, disps, poses, intrinsics
 
-def transform_rescale_poses(scale_x, scale_y, poses):
+def transform_rescale_poses_xy(scale_x, scale_y, poses):
     """
     Rescale SE3 poses by applying non-uniform scaling to the X and Y translation components.
     Rotation remains unchanged.
@@ -115,9 +119,9 @@ def transform_rescale_poses(scale_x, scale_y, poses):
 
 #     return voxels, disps, poses, intrinsics
 
-# def transform_rescale_poses(scale, poses):
-#     s = torch.tensor(scale)
-#     poses = SE3(poses).scale(s).data
-#     return poses
+def transform_rescale_poses(scale, poses):
+    s = torch.tensor(scale)
+    poses = SE3(poses).scale(s).data
+    return poses
 
 

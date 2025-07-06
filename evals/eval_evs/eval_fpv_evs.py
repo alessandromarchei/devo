@@ -14,7 +14,7 @@ H, W = 260, 346
 
 @torch.no_grad()
 def evaluate(config, args, net, train_step=None, datapath="", split_file=None, 
-             trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, viz_flow=False):
+             trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, side='left', viz_flow=False, use_pyramid=True,**kwargs):
     dataset_name = "fpv_evs"
 
     if config is None:
@@ -34,7 +34,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             for trial in range(trials):
             
                 # run the slam system
-                traj_est, tstamps, flowdata = run_voxel(datapath_val, config, net, viz=viz, 
+                traj_est, tstamps, flowdata, max_nedges = run_voxel(datapath_val, config, net, viz=viz, 
                                           iterator=fpv_evs_iterator(datapath_val, stride=stride, timing=timing, H=H, W=W, tss_gt_us=None),
                                           timing=timing, H=H, W=W, viz_flow=viz_flow)
             
@@ -57,12 +57,12 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
                 # run the slam system
                 traj_est, tstamps, flowdata = run_voxel(datapath_val, config, net, viz=viz, 
                                             iterator=fpv_evs_iterator(datapath_val, stride=stride, timing=timing, H=H, W=W, tss_gt_us=tss_traj_us),
-                                            timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model)
+                                            timing=timing, H=H, W=W, viz_flow=viz_flow, model=args.model, use_pyramid=args.use_pyramid, **kwargs)
 
 
                 # do evaluation 
                 data = (traj_hf, tss_traj_us, traj_est, tstamps)
-                hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args)
+                hyperparam = (train_step, net, dataset_name, scene, trial, cfg, args, max_nedges)
                 all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                                                                    plot=plot, save=save, return_figure=return_figure, stride=stride,
                                                                    expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default="config/eval_fpv.yaml")
-    parser.add_argument('--datapath', default='', help='path to dataset directory')
+    parser.add_argument('--datapath', default='/usr/scratch/badile13/amarchei/fpv/', help='path to dataset directory')
     parser.add_argument('--weights', default="DEVO.pth")
     parser.add_argument('--val_split', type=str, default="splits/fpv/fpv_val.txt")
     parser.add_argument('--trials', type=int, default=5)
@@ -101,7 +101,14 @@ if __name__ == '__main__':
     parser.add_argument('--save_csv', action="store_true")
     parser.add_argument('--csv_name', type=str, default="")
     parser.add_argument('--model', type=str, default="DEVO")
-
+    parser.add_argument(
+        '--use_pyramid',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use pyramid (default: True)'
+    )
+    parser.add_argument('--dim_inet', type=int, default=384, help='channel dimension of hidden state')
+    parser.add_argument('--dim_fnet', type=int, default=128, help='channel dimension of last layer fnet')
     args = parser.parse_args()
     assert_eval_config(args)
 
@@ -113,9 +120,12 @@ if __name__ == '__main__':
 
     args.save_trajectory = True
     args.plot = True
+        # args.save_trajectory = True
+    # args.plot = True
+    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet}
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz, timing=args.timing, \
-                        stride=args.stride, viz_flow=args.viz_flow)
+                        stride=args.stride, viz_flow=args.viz_flow, use_pyramid=args.use_pyramid, **kwargs)
     
     print("val_results= \n")
     for k in val_results:

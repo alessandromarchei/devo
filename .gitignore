@@ -169,7 +169,8 @@ movies/
 results/*
 TartanAirEVS.pickle
 keyframes.txt
-
+*.xls
+*.xlsx
 
 #remove pickle files
 *.pickle
@@ -184,4 +185,12 @@ Cointainerfile*
 
 results/
 
+test_randomness
 
+pickles
+
+Containerfile
+
+dataloader_stats
+media
+h5_converter

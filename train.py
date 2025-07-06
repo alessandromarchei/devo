@@ -23,21 +23,39 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from utils.viz_utils import plot_patch_following_all, plot_patch_following, plot_patch_depths_all
-from utils.viz_utils import *
 from tqdm import tqdm
 
+import sys
+import os
+import argparse
+import yaml
+from types import SimpleNamespace
+
+
 DEBUG_PLOT_PATCHES = False
-NUM_WORKERS = 12
+NUM_WORKERS = 16
 
 #clear cache
 torch.cuda.empty_cache()
 
 
-# FIRST_GT_POSES = 1000 # first N steps with GT poses, then switch to predicted poses for loss
+
+def dict2namespace(d):
+    return argparse.Namespace(**d)
+
+def load_config(path):
+    with open(path, 'r') as f:
+        cfg_dict = yaml.safe_load(f)
+    return dict2namespace(cfg_dict)
+
 
 def setup_ddp(rank, args):
     os.environ['MASTER_ADDR'] = 'localhost'
+
+    #if args.port is an integer, convert it to string
+    if isinstance(args.port, int):
+        args.port = str(args.port)
+
     os.environ['MASTER_PORT'] = args.port
         
     dist.init_process_group(                                   
@@ -58,6 +76,7 @@ def image2gray(image):
     image = image.mean(dim=0).cpu().numpy()
     cv2.imshow('image', image / 255.0)
     cv2.waitKey()
+
 
 #def kabsch_umeyama(A, B):
 #    """ compute optimal scaling (SIM3) that minimizing RMSD between two sets of points """
@@ -138,14 +157,14 @@ def train(rank, args):
         db = dataset_factory(['tartan_evs'], datapath=args.datapath, n_frames=args.n_frames,
                              fgraph_pickle=args.fgraph_pickle, train_split=args.train_split,
                              val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale, args=args)
-    elif args.e2vid:
-        db = dataset_factory(['tartan_e2vid'], datapath=args.datapath, n_frames=args.n_frames,
-                             fgraph_pickle=args.fgraph_pickle, train_split=args.train_split,
-                             val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)  
-    elif args.evs and args.e2vid:
-        db = dataset_factory(['tartan'], datapath=args.datapath, n_frames=args.n_frames,
-                             fgraph_pickle=args.fgraph_pickle, train_split=args.train_split, 
-                             val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)
+    # elif args.e2vid:
+    #     db = dataset_factory(['tartan_e2vid'], datapath=args.datapath, n_frames=args.n_frames,
+    #                          fgraph_pickle=args.fgraph_pickle, train_split=args.train_split,
+    #                          val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)  
+    # elif args.evs and args.e2vid:
+    #     db = dataset_factory(['tartan'], datapath=args.datapath, n_frames=args.n_frames,
+    #                          fgraph_pickle=args.fgraph_pickle, train_split=args.train_split, 
+    #                          val_split=args.val_split, strict_split=False, sample=True, return_fname=True, scale=args.scale)
     else:
         #raise error
         raise ValueError("Unknown dataset")
@@ -154,18 +173,22 @@ def train(rank, args):
     if args.ddp:
         train_sampler = torch.utils.data.distributed.DistributedSampler(
             db, shuffle=True, num_replicas=args.gpu_num, rank=rank)
-        train_loader = DataLoader(db, batch_size=args.batch, sampler=train_sampler, num_workers=NUM_WORKERS)
+        train_loader = DataLoader(db, batch_size=args.batch, sampler=train_sampler, num_workers=NUM_WORKERS, pin_memory=True)
     else:
-        train_loader = DataLoader(db, batch_size=args.batch, shuffle=True, num_workers=NUM_WORKERS)
+        train_loader = DataLoader(db, batch_size=args.batch, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
 
     # Initial VOnet
     kwargs_net = {"ctx_feat_dim": args.ctx_feat_dim, "match_feat_dim": args.match_feat_dim, "dim": args.dim}
     net = VONet(**kwargs_net, patch_selector=args.patch_selector.lower()) if not args.evs else \
-    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, model=args.patchifier_model, use_pyramid=args.use_pyramid)
+    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, args=args)
 
 
     net.train()
     net.cuda()
+
+    # if args.torch_compile:
+    #     net = torch.compile(net)
+
     P = net.P # patch size (squared)
         
     if args.ddp:
@@ -176,8 +199,57 @@ def train(rank, args):
         args.lr, args.steps, pct_start=0.01, cycle_momentum=False, anneal_strategy='linear')
     
     total_steps = 0
-    if args.checkpoint is not None and args.checkpoint != '':
-        print(f"Loading from {args.checkpoint}")
+    if args.checkpoint is not None and args.checkpoint == True:
+        print(f"Loading from last checkpoint file in checkpoints/{args.name}/")
+
+        checkpoint_files = [f for f in os.listdir(f'checkpoints/{args.name}') if f.endswith('.pth')]
+
+        print(f"checkpoint_files: {checkpoint_files}")
+
+        if len(checkpoint_files) == 0:
+            print("No checkpoint files found, starting from scratch.")
+            total_steps = 0
+            #exit from the if block
+            
+        else:
+            #the name of the checkpint is like this  005000.pth  015000.pth  025000.pth  035000.pth  045000.pth  055000.pth  065000.pth  075000.pth 
+            #extract the latest and highest number from the checkpoint files
+            last_checkpoint = max(checkpoint_files, key=lambda x: int(x.split('.')[0]))
+
+            last_checkpoint = f'checkpoints/{args.name}/{last_checkpoint}'
+            print(f"Loading last checkpoint file: {last_checkpoint}")
+
+
+            checkpoint = torch.load(last_checkpoint)
+            model = net.module if args.ddp else net
+            if 'model_state_dict' in checkpoint:
+                model.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                # legacy
+                new_state_dict = OrderedDict()
+                for k, v in checkpoint.items():
+                    new_state_dict[k.replace('module.', '')] = v
+                # with RGB pretraining
+                update_dict = { k: v for k, v in new_state_dict.items() if k in model.state_dict() and model.state_dict()[k].shape == v.shape }
+                print(update_dict.keys())
+                state = model.state_dict()
+                state.update(update_dict)
+                # keys with different shape: ['patchify.fnet.conv1.weight', 'patchify.inet.conv1.weight']
+                # corresponding values: [torch.Size([32, 3, 7, 7]), torch.Size([32, 3, 7, 7])]
+                model.load_state_dict(state, strict=False)
+            if 'optimizer_state_dict' in checkpoint:
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if 'scheduler_state_dict' in checkpoint:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            if 'steps' in checkpoint:
+                total_steps = checkpoint['steps']
+                print(f"Resuming from {total_steps} steps within single GPU")
+                if args.ddp:
+                    total_steps_debug = total_steps * args.gpu_num
+                    print(f"Resuming from {total_steps_debug} globally across {args.gpu_num} GPUs")
+
+    elif args.checkpoint is not None and args.checkpoint != '':
+        print(f"Loading SPECIFIC checkpoint file from {args.checkpoint}")
         checkpoint = torch.load(args.checkpoint)
         model = net.module if args.ddp else net
         if 'model_state_dict' in checkpoint:
@@ -201,10 +273,25 @@ def train(rank, args):
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         if 'steps' in checkpoint:
             total_steps = checkpoint['steps']
+            print(f"Resuming from {total_steps} steps within single GPU")
+            if args.ddp:
+                total_steps_debug = total_steps * args.gpu_num
+                print(f"Resuming from {total_steps_debug} globally across {args.gpu_num} GPUs")
 
     if rank == 0:
         print("Rank 0 : initialize logger")
         logger = Logger(args.name, scheduler, args.gpu_num * total_steps, args.gpu_num, args.tensorboard_update_step, args_config=args)
+
+
+    #check if the checkpoint path contains a number in the last file name
+    # if args.checkpoint is not None and args.checkpoint != '':
+    #     checkpoint_path = args.checkpoint.split("/")[-1]
+    #     checkpoint_path = checkpoint_path.split(".")[0]
+    #     if checkpoint_path.isdigit():
+    #         checkpoint_path = int(checkpoint_path)
+            
+    #         total_steps = checkpoint_path
+    #         print(f"Starting from {total_steps} steps")
 
 
     with torch.profiler.profile(
@@ -220,16 +307,20 @@ def train(rank, args):
         while True:
             for data_blob in tqdm(train_loader):
                 scene_id = data_blob.pop()
+
                 images, poses, disps, intrinsics = [x.cuda().float() for x in data_blob] # images: (B,n_frames,C,H,W), poses: (B,n_frames,7), disps: (B,n_frames,H,W) (all float32)
+                
+                
                 optimizer.zero_grad(set_to_none=True) # TODO set_to_none=True
 
                 # print(f"scene_id: {scene_id}")
-                visualize_voxel(images[0][0])
+                #visualize_voxel(images[0][0])
 
                 
                 # fix poses to gt for first 1k steps
                 ##### POSES = GT for the first N STEPS #####
                 ##### ONLY TRAIN ON THE DEPTHS #####
+                #print(f"total_steps: {total_steps}, scene_id: {scene_id}, poses.shape: {poses.shape}, disps.shape: {disps.shape}")
                 so = total_steps < (args.first_gt_poses // args.gpu_num) and (args.checkpoint is None or args.checkpoint == "")
 
                 poses = SE3(poses).inv() # [simon]: this does c2w -> w2c (which dpvo predicts&stores internally)
@@ -320,10 +411,10 @@ def train(rank, args):
                     if not so and i >= 2:
                         loss += args.pose_weight * pose_loss
 
-                if rank == 0 and DEBUG_PLOT_PATCHES:
-                    plot_patch_following_all(images, patch_data, evs=args.evs, outdir=f"../viz/patches_all/name_{args.name}/step_{total_steps}/")
-                    plot_patch_following(images, patch_data, evs=args.evs, outdir=f"../viz/patches/name_{args.name}/step_{total_steps}/")
-                    plot_patch_depths_all(images, patch_data, disps, evs=args.evs, outdir=f"../viz/patches_depths_all/name_{args.name}/step_{total_steps}/")
+                # if rank == 0 and DEBUG_PLOT_PATCHES:
+                #     plot_patch_following_all(images, patch_data, evs=args.evs, outdir=f"../viz/patches_all/name_{args.name}/step_{total_steps}/")
+                #     plot_patch_following(images, patch_data, evs=args.evs, outdir=f"../viz/patches/name_{args.name}/step_{total_steps}/")
+                #     plot_patch_depths_all(images, patch_data, disps, evs=args.evs, outdir=f"../viz/patches_depths_all/name_{args.name}/step_{total_steps}/")
                 
                 if torch.isnan(loss):
                     print(f"nan at {total_steps}: {scene_id}")
@@ -363,17 +454,26 @@ def train(rank, args):
                     if args.eval:
                         print("Evaluating...")
                         if args.evs:
-                            from evals.eval_evs.eval_tartan_evs import evaluate as eval_tartan_evs
-                            val_results, val_figures = eval_tartan_evs(None, args, net.module if args.ddp else net, total_steps,
-                                                                    args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
-                                                                    scale=args.scale, expname=args.name, **kwargs_net)
-                        else:
-                            from evals.eval_rgb.eval_tartan import evaluate as eval_tartan
-                            val_results, val_figures = eval_tartan(None, args, net.module if args.ddp else net, total_steps,
-                                                                args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
-                                                                scale=args.scale, expname=args.name)
-                        logger.write_dict(val_results)
-                        logger.write_figures(val_figures)
+                            if "tartan" in args.val_split:
+                                #default : use tartan air for validation set
+                                from evals.eval_evs.eval_tartan_evs import evaluate as eval_tartan_evs
+                                val_results, val_figures = eval_tartan_evs(None, args, net.module if args.ddp else net, total_steps,
+                                                                        args.datapath, args.val_split, return_figure=True, plot=True, rpg_eval=False,
+                                                                        scale=args.scale, expname=args.name, **kwargs_net)
+                            if "mvsec" in args.val_split:
+                                #use mvsec as validation set, if we are using the full training set of tartanair
+                                from evals.eval_evs.eval_mvsec_evs_validation import evaluate as eval_mvsec_evs
+                                #for compatibility, add the state args.model that is args.patchifier_model
+                                args.model = args.patchifier_model
+                                trials = 3
+                                mvsec_datapath = "/capstor/scratch/cscs/amarchei/mvsec/indoor_flying"
+                                val_results, val_figures = eval_mvsec_evs(None, args, net.module if args.ddp else net, total_steps,
+                                                                        mvsec_datapath, args.val_split, trials, return_figure=True, plot=False, rpg_eval=False,
+                                                                        expname=args.name, **kwargs_net)
+
+                        if rank == 0:
+                            logger.write_dict(val_results)
+                            logger.write_figures(val_figures)
                         
                     torch.cuda.empty_cache()
                     net.train()
@@ -404,7 +504,6 @@ def train(rank, args):
 
 
 def assert_config(args):
-    assert os.path.isfile(args.config)
     assert os.path.isdir(args.datapath)
     
     assert args.gpu_num > 0 and args.gpu_num <= 10
@@ -418,7 +517,7 @@ def assert_config(args):
     assert args.n_frames > 7 and args.n_frames < 100 #  The first 8 frames are used for initialization while the next n_frames-8 frames are added one at a time
     assert args.pose_weight >= 0 and args.pose_weight <= 100 and args.flow_weight >= 0 and args.flow_weight <= 100
 
-    if args.checkpoint is not None and args.checkpoint != '':
+    if args.checkpoint is not None and args.checkpoint != '' and args.checkpoint != True:
         assert os.path.isfile(args.checkpoint)
         assert ".pth" in args.checkpoint or ".pt" in args.checkpoint 
     if args.fgraph_pickle is not None and args.fgraph_pickle != '':
@@ -431,87 +530,28 @@ def assert_config(args):
     if args.ddp:
         assert DEBUG_PLOT_PATCHES == False
 
-    if args.e2vid:
-        assert args.evs == False
 
 if __name__ == '__main__':
-    import configargparse
-    parser = configargparse.ArgumentParser()
-    parser.add_argument(
-        '-c', '--config',
-        default='config/DEVO_base.conf',
-        is_config_file=True,
-        help='config file path',
-    )
-    parser.add_argument('--name', '--expname', default='bla', help='name your experiment')
-    parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint to restore')
-    parser.add_argument('--fgraph_pickle', type=str, default="TartanAirEVS.pickle", help='precomputed frame graph (copied to expdir)')
-    parser.add_argument('--datapath', default='', help='path to dataset directory')
-    parser.add_argument('--batch', type=int, default=1)
-    parser.add_argument('--steps', type=int, default=240000, help='total steps')
-    parser.add_argument('--iters', type=int, default=18, help='iterations of update operator per edge in patch graph') # default: 18
-    parser.add_argument('--lr', type=float, default=0.00008)
-    parser.add_argument('--clip', type=float, default=10.0)
-    parser.add_argument('--n_frames', type=int, default=15)
-    parser.add_argument('--pose_weight', type=float, default=10.0)
-    parser.add_argument('--flow_weight', type=float, default=0.1)
-    parser.add_argument('--scores_weight', type=float, default=0.05)
-    parser.add_argument('--evs', action='store_true', help='event-based DPVO')
-    parser.add_argument('--e2vid', action='store_true', help='baseline on e2v reconstruction')
-    parser.add_argument('--eval', action='store_true', help='enable eval on TartanAir')
-    parser.add_argument('--train_split', type=str, default="splits/tartan/tartan_train.txt", help='train seqs (line separated).')
-    parser.add_argument('--val_split', type=str, default="splits/tartan/tartan_default_val.txt", help='val seqs (line separated)')
-    parser.add_argument('--ddp', action='store_true', help='use multi-gpu')
-    parser.add_argument('--gpu_num', type=int, default=1, help='distributed over more gpus')
-    parser.add_argument('--port', default="12348", help='free port for master node')
-    parser.add_argument('--profiler', action='store_true', help='enable autograd profiler')
-    parser.add_argument('--scale', type=float, default=1.0, help='reduce computation')
-    parser.add_argument('--ctx_feat_dim', type=int, default=384, help='channel dimension of hidden state')
-    parser.add_argument('--match_feat_dim', type=int, default=128, help='channel dimension of last layer fnet')
-    parser.add_argument('--dim', type=int, default=32, help='channel dimension of first layer in extractor')
-    parser.add_argument('--patches_per_image', type=int, default=80, help='number of patches per image')
-    parser.add_argument('--patch_selector', type=str, default="random", help='name of patch selector (random, gradient, scorer)')
-    parser.add_argument('--norm', type=str, default="rescale", help='name of norm (evs only) (none, rescale, standard)')
-    parser.add_argument('--randaug', action='store_true', help='enable randAug (evs only)')
-    parser.add_argument('--max_events_loaded', type=int, default=10000, help='max number of events to load (evs only)')
-    parser.add_argument('--eval_step', type=int, default=1000, help='save checkpoint every N steps')
-    parser.add_argument('--tensorboard_update_step', type=int, default=100, help='tensorboard update step')
-    parser.add_argument('--square', action='store_true', help='use square scaling')
-    parser.add_argument('--patchifier_model', type=str, default="original", help='patchifier model (evs only) (resnet18, resnet50)')
-    parser.add_argument('--first_gt_poses', type=int, default=1000, help='first N steps with GT poses, then switch to predicted poses for loss')
-    parser.add_argument('--checkpoint_step', type=int, default=1000, help='checkpoint step')
-    parser.add_argument(
-        '--use_pyramid',
-        type=lambda x: x.lower() == 'true',
-        default=True,
-        help='use pyramid (default: True)'
-    )
-    parser.add_argument('--precomputed_inputs', type=bool, default=False, help='use precomputed inputs (default: False)')
-    parser.add_argument('--event_representation', type=str, default='stack', help='event representation (default: stack)')
-    
-
-    args = parser.parse_known_args()[0]
+    config_path = sys.argv[1] if len(sys.argv) > 1 else 'config/DEVO_base_update.yaml'
+    args = load_config(config_path)
     assert_config(args)
-    print("----------")
-    print("Print config")
-    print(args)
-    print("----------")
-    print(parser.format_values())
-    print("----------")
-    args.steps = args.steps // args.gpu_num 
-    
+
+    print("----- CONFIGURATION -----")
+    for k, v in vars(args).items():
+        print(f"{k}: {v}")
+    print("-------------------------")
+
+    os.makedirs(f'checkpoints/{args.name}', exist_ok=True)
+
+    #add different names to the variables for portability
+
     os.system("nvidia-smi")
-    print(torch.version.cuda)
+    print(f"CUDA Version: {torch.version.cuda}")
 
-    cmd = "echo $HOSTNAME"
-    os.system(cmd)
+    os.system("ulimit -n 2000000")
 
-    cmd = "ulimit -n 2000000"
-    os.system(cmd)
+    args.steps = args.steps // args.gpu_num
 
-    if not os.path.isdir(f'checkpoints/{args.name}'):
-        os.makedirs(f'checkpoints/{args.name}')
-    
     if args.ddp:
         mp.spawn(train, nprocs=args.gpu_num, args=(args,))
     else:

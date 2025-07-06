@@ -15,32 +15,36 @@ from . import projective_ops as pops
 
 autocast = torch.cuda.amp.autocast
 Id = SE3.Identity(1, device="cuda")
+Id_pose = torch.tensor([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], dtype=torch.float32, device="cuda").view(1,7)
 
-from utils.viz_utils import visualize_voxel
 
 
 class DEVO:
     def __init__(self, cfg, network, evs=False, ht=480, wd=640, viz=False, viz_flow=False, ctx_feat_dim=384, match_feat_dim=128, dim=32, model=None, pyramid=True,**kwargs):
         
         #timing file should be like : itming_log_npatches_remwindow_optwindow
-        self.timing_log_file = "timing_log_{}_{}_{}.csv".format(cfg.PATCHES_PER_FRAME, cfg.REMOVAL_WINDOW, cfg.OPTIMIZATION_WINDOW)
         # with open(self.timing_log_file, mode='a', newline='') as file:
         #     writer = csv.writer(file)
         #     writer.writerow(["iteration", "total_time_ms", "ba_time_ms"])
         self.cfg = cfg
         self.evs = evs
+        self.iteration = 0
+
+        self.ctx_feat_dim = ctx_feat_dim
+        self.ctx_feat_dim = kwargs.get("dim_inet", self.ctx_feat_dim)  # default to False
+
+        self.match_feat_dim = match_feat_dim
+        self.match_feat_dim = kwargs.get("dim_fnet", self.match_feat_dim)
 
 
-        self.ctx_feat_dim = kwargs.get("dim_inet", ctx_feat_dim)
-        self.match_feat_dim = kwargs.get("dim_fnet", match_feat_dim)
-
-        
         self.dim = dim
         # TODO add patch_selector
 
         self.model = model
-        self.use_pyramid = kwargs.get("use_pyramid", pyramid)
-        print(f"Using pyramid: {self.use_pyramid}")
+        self.use_pyramid = pyramid
+        self.use_tempconv = kwargs.get("use_tempconv", True)  # default to False
+        self.use_softagg = kwargs.get("use_softagg", True)  # default to False
+
 
         self.load_weights(network)
         self.is_initialized = False
@@ -118,16 +122,20 @@ class DEVO:
         if viz:
             self.start_viewer()
 
+        self.last_pose_index = 0
+
 
 
     def load_weights(self, network):
         # load network from checkpoint file
         if isinstance(network, str):
             print(f"Loading from {network}")
+            #get tempconv from kwargs
+
             checkpoint = torch.load(network)
             # TODO infer ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim
             self.network = VONet(patch_selector=self.cfg.PATCH_SELECTOR) if not self.evs else \
-                eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid)
+                eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid, use_tempconv= self.use_tempconv, use_softagg=self.use_softagg)
             if 'model_state_dict' in checkpoint:
                 self.network.load_state_dict(checkpoint['model_state_dict'])
             else:
@@ -198,19 +206,28 @@ class DEVO:
         return self.gmap_.view(1, self.mem * self.M, self.match_feat_dim, 3, 3)
 
     def get_pose(self, t):
-        if t in self.traj:
-            return SE3(self.traj[t])
-
-        t0, dP = self.delta[t]
-        return dP * self.get_pose(t0)
+        try:
+            if t in self.traj:
+                return SE3(self.traj[t])
+            
+            t0, dP = self.delta[t]
+            return dP * self.get_pose(t0)
+        except RecursionError:
+            print(f"RecursionError: {t} not found in trajectory. Returning identity pose.")
+            return Id_pose
 
     def terminate(self):
         """ interpolate missing poses """
         # print("keyframes", self.n)
         self.traj = {}
+
+        #mapping poses inside the pose list (end of run) ==> voxel indexes of corresponding keyframes.
+        #self.traj = dict: key = timestamp, value = pose at that index
         for i in range(self.n):
             self.traj[self.tstamps_[i].item()] = self.poses_[i]
 
+
+        #interpolate the poses between keyframes.
         if self.is_initialized:
             poses = [self.get_pose(t) for t in range(self.counter)]
             poses = lietorch.stack(poses, dim=0)
@@ -226,14 +243,16 @@ class DEVO:
         if self.viewer is not None:
             self.viewer.join()
 
-        return poses, tstamps
-    
+        return poses, tstamps, self.network.update.max_nedges
+        
+            
     def corr(self, coords, indicies=None):
         """ local correlation volume """
         ii, jj = indicies if indicies is not None else (self.kk, self.jj)
         ii1 = ii % (self.M * self.mem)
         jj1 = jj % (self.mem)
 
+        #dump_corr_inputs("test/corr_input_0.txt", self.gmap, self.pyramid, 0, coords, ii1, jj1)
         # compute the correlation operation with PATCHES FROM MATCHING FEATURES
         corr1 = altcorr.corr(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
         
@@ -242,6 +261,7 @@ class DEVO:
             corr_volume = corr1.reshape(1, len(ii), -1)
         else:
             # otherwise, use both corr1 and corr2
+            #dump_corr_inputs("test/corr_input_1.txt", self.gmap, self.pyramid, 1, coords, ii1, jj1)
             corr2 = altcorr.corr(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
             # stack together the two correlation volumes
             corr_volume = torch.stack([corr1, corr2], -1).reshape(1, len(ii), -1)
@@ -352,29 +372,26 @@ class DEVO:
         lmbda = torch.as_tensor([1e-4], device="cuda")
         weight = weight.float()
             
-            # [DEBUG]
-            # dij = (self.ii - self.jj).abs()
-            # k = (dij > 0) & (dij <= 4)
-            # print("BA weights mean", weight[0, k].mean().item())
-            # print("BA weights std", weight[0, k].std().item())
-            # print("BA weights max", weight[0, k].max().item())
-            # print("BA weights min", weight[0, k].min().item())
-            # [DEBUG]
         target = coords[...,self.P//2,self.P//2] + delta.float()
-
-
-        # start_ba = time.time()
 
         with Timer("BA", enabled=self.enable_timing):
             t0 = self.n - self.cfg.OPTIMIZATION_WINDOW if self.is_initialized else 1
             t0 = max(t0, 1)
 
+            #dump_ba_inputs("test/ba_input.txt", self.poses, self.patches, self.intrinsics,
+            #            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
             try:
-                fastba.BA(self.poses, self.patches, self.intrinsics, 
-                    target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                fastba.BA(self.poses, self.patches, self.intrinsics,
+                        target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
             except:
                 print("Warning BA failed...")
-            
+
+            #find the length of the valid poses. skip the first one since it is the identity pose.
+            #trasnform a torch tensor of poses into a list of poses
+            self.poses_np = (self.poses.data.cpu().numpy().tolist())[0]
+            self.last_pose_index = self.poses_np[1:].index([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+
             points = pops.point_cloud(SE3(self.poses), self.patches[:, :self.m], self.intrinsics, self.ix[:self.m])
             points = (points[...,1,1,:3] / points[...,1,1,3:]).reshape(-1, 3)
             self.points_[:len(points)] = points[:]
@@ -382,21 +399,7 @@ class DEVO:
         # self._ba_time_ms = (time.time() - start_ba) * 1000
 
 
-    def flow_viz_step(self):
-        # [DEBUG]
-        # dij = (self.ii - self.jj).abs()
-        # assert (dij==0).sum().item() == len(torch.unique(self.kk)) 
-        # [DEBUG]
 
-        coords_est = pops.transform(SE3(self.poses), self.patches, self.intrinsics, self.ii, self.jj, self.kk) # p_ij (B,close_edges,P,P,2)
-        self.flow_data[self.counter-1] = {"ii": self.ii, "jj": self.jj, "kk": self.kk,\
-                                          "coords_est": coords_est, "img": self.image_, "n": self.n}
-
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(self.image_)
-        # plt.show()
-                
     def __edges_all(self):
         return flatmeshgrid(
             torch.arange(0, self.m, device="cuda"),
@@ -421,6 +424,7 @@ class DEVO:
     def __call__(self, tstamp, image, intrinsics, scale=1.0):
         """ track new frame """
         # start_total = time.time()
+        self.iteration += 1
 
         if (self.n+1) >= self.N:
             raise Exception(f'The buffer size is too small. You can increase it using "--buffer {self.N*2}"')
@@ -436,13 +440,6 @@ class DEVO:
         else:
             image = image[None,None]
 
-            # [DEBUG]
-            # import matplotlib
-            # matplotlib.use('Qt5Agg')
-            # visualize_voxel(image[0][0].detach().cpu(), EPS=1e-3)
-            # i2 = image[image!=0]
-            # print("stats before norm", i2.min().item(), i2.max().item(), i2.mean().item(), i2.std().item(), i2.median().item())
-            
             if self.n == 0:
                 nonzero_ev = (image != 0.0)
                 zero_ev = ~nonzero_ev
@@ -453,7 +450,9 @@ class DEVO:
                 if num_nonzeros / (num_zeros + num_nonzeros) < 2e-2: # TODO eval hyperparam (add to config.py)
                     #print(f"skip voxel at {tstamp} due to lack of events!")
                     return
-
+                else:
+                    self.initial_valid_voxel = self.iteration - 1
+                
             b, n, v, h, w = image.shape
             flatten_image = image.view(b,n,-1)
             
@@ -496,21 +495,9 @@ class DEVO:
 
             image = flatten_image.view(b,n,v,h,w)
 
-            # [DEBUG]
-            # import matplotlib
-            # matplotlib.use('Qt5Agg')
-            # visualize_voxel(image[0][0].detach().cpu(), EPS=1e-3)
-            # i2 = image[image!=0]
-            # print(f"stats after norm={self.cfg.NORM}", i2.min().item(), i2.max().item(), i2.mean().item(), i2.std().item(), i2.median().item())
-
         if image.shape[-1] == 346:
             image = image[..., 1:-1] # hack for MVSEC, FPV,...
     
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(image.detach().cpu().numpy()[0, 0, :1, ...].transpose(1, 2, 0))
-        # plt.show()
-
         # TODO patches with depth is available (val)
         with autocast(enabled=self.cfg.MIXED_PRECISION):
             fmap, gmap, imap, patches, _, clr = \
@@ -592,13 +579,3 @@ class DEVO:
         elif self.is_initialized:
             self.update()
             self.keyframe()
-
-        # total_time_ms = (time.time() - start_total) * 1000
-        # ba_time_ms = getattr(self, '_ba_time_ms', -1)
-        # with open(self.timing_log_file, mode='a', newline='') as file:
-        #     writer = csv.writer(file)
-        #     writer.writerow([self.counter, total_time_ms, ba_time_ms])
-
-
-        if self.viz_flow:
-            self.flow_viz_step()

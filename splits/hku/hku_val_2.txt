@@ -1,0 +1,5 @@
+HKU_HDR_circle
+HKU_HDR_slow
+hku_hdr_tran_rota
+hku_hdr_agg
+hku_dark_normal

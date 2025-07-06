@@ -2,7 +2,7 @@ import pickle
 import os
 import os.path as osp
 
-from .tartan import TartanAir, TartanAirEVS, TartanAirE2VID
+from .tartan import TartanAir, TartanAirEVS, TartanAirE2VID, TartanAirEVS_fake
 
 
 def dataset_factory(dataset_list, **kwargs):
@@ -14,6 +14,7 @@ def dataset_factory(dataset_list, **kwargs):
         'tartan': (TartanAir, ),
         'tartan_evs': (TartanAirEVS, ),
         'tartan_e2vid':  (TartanAirE2VID, ),
+        'tartan_evs_fake': (TartanAirEVS_fake, ),
     }
     
     if not all(x in dataset_map for x in dataset_list):

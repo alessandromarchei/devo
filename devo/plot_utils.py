@@ -42,13 +42,22 @@ def plot_trajectory(pred_traj, gt_traj=None, title="", filename="", align=True, 
     ax = plot.prepare_axis(fig, plot_mode)
     ax.set_title(title)
 
+
+    # Helper to convert axis string (like 'xz') to indices
+    def axis_indices(mode_str):
+        axis_map = {'x': 0, 'y': 1, 'z': 2}
+        return [axis_map[mode_str[0]], axis_map[mode_str[1]]]
+    
+
     if gt_traj is not None:
         plot.traj(ax, plot_mode, gt_traj, '--', 'gray', "Ground Truth")
 
         # Highlight the starting point of the ground truth
         start_gt = gt_traj.positions_xyz[0]
-        ax.plot(start_gt[2], start_gt[0], marker='o', color='red', markersize=5, label='GT Start')
+        idx1, idx2 = axis_indices(plot_mode.name.lower())
+        ax.plot(start_gt[idx1], start_gt[idx2], marker='o', color='red', markersize=5, label='GT Start')
 
+        
     plot.traj(ax, plot_mode, pred_traj, '-', 'blue', "Predicted")
     plot_collection.add_figure("traj (error)", fig)
     plot_collection.export(filename, confirm_overwrite=False)
