@@ -1,161 +1,0 @@
-[Thu  1 May 09:56:59 CEST 2025] Starting evaluation for patchifier_small_v4
-Running eval_tartan_evs.py with config...
-BUFFER_SIZE: 4096
-GRADIENT_BIAS: False
-KEYFRAME_INDEX: 4
-KEYFRAME_THRESH: 15.0
-MIXED_PRECISION: True
-MOTION_DAMPING: 0.5
-MOTION_MODEL: DAMPED_LINEAR
-NORM: std
-OPTIMIZATION_WINDOW: 10
-PATCHES_PER_FRAME: 96
-PATCH_LIFETIME: 13
-PATCH_SELECTOR: scorer
-REMOVAL_WINDOW: 22
-SCORER_EVAL_MODE: multi
-SCORER_EVAL_USE_GRID: True
-Eval on abandonedfactory/abandonedfactory/Easy/P011
-use_pyramid: True
-Using pyramid: True
-Loading from checkpoints/patchifier_small_v4/100000.pth
-Using mksmall model
-Using 96 context feature dimension
-Using 32 matching feature dimension
-Using MKSmallEncoder
-0it [00:00, ?it/s][Chunk 0] Loading 5000000 events from idx 0
-1it [00:00,  1.61it/s][Chunk 1] Loading 5000000 events from idx 5000000
-4it [00:00,  4.59it/s][Chunk 2] Loading 5000000 events from idx 10000000
-5it [00:01,  3.32it/s][Chunk 3] Loading 5000000 events from idx 15000000
-7it [00:01,  4.02it/s][Chunk 4] Loading 5000000 events from idx 20000000
-8it [00:02,  3.46it/s][Chunk 5] Loading 5000000 events from idx 25000000
-10it [00:02,  3.66it/s][Chunk 6] Loading 5000000 events from idx 30000000
-13it [00:03,  4.40it/s][Chunk 7] Loading 5000000 events from idx 35000000
-15it [00:03,  4.21it/s][Chunk 8] Loading 5000000 events from idx 40000000
-17it [00:04,  4.09it/s][Chunk 9] Loading 5000000 events from idx 45000000
-19it [00:04,  4.34it/s][Chunk 10] Loading 5000000 events from idx 50000000
-20it [00:04,  4.49it/s][Chunk 11] Loading 5000000 events from idx 55000000
-21it [00:05,  3.55it/s][Chunk 12] Loading 5000000 events from idx 60000000
-23it [00:05,  3.74it/s][Chunk 13] Loading 5000000 events from idx 65000000
-24it [00:06,  3.78it/s][Chunk 14] Loading 5000000 events from idx 70000000
-25it [00:06,  3.36it/s][Chunk 15] Loading 5000000 events from idx 75000000
-27it [00:07,  3.66it/s][Chunk 16] Loading 5000000 events from idx 80000000
-29it [00:07,  4.04it/s][Chunk 17] Loading 5000000 events from idx 85000000
-31it [00:07,  4.18it/s][Chunk 18] Loading 5000000 events from idx 90000000
-34it [00:08,  4.85it/s][Chunk 19] Loading 5000000 events from idx 95000000
-38it [00:08,  6.18it/s][Chunk 20] Loading 5000000 events from idx 100000000
-41it [00:09,  6.41it/s][Chunk 21] Loading 5000000 events from idx 105000000
-45it [00:09,  7.82it/s][Chunk 22] Loading 5000000 events from idx 110000000
-47it [00:10,  6.87it/s][Chunk 23] Loading 5000000 events from idx 115000000
-49it [00:10,  7.33it/s][Chunk 24] Loading 5000000 events from idx 120000000
-50it [00:10,  7.43it/s][Chunk 25] Loading 5000000 events from idx 125000000
-[Chunk 26] Loading 5000000 events from idx 130000000
-52it [00:10,  7.74it/s][Chunk 27] Loading 5000000 events from idx 135000000
-53it [00:10,  6.54it/s][Chunk 28] Loading 5000000 events from idx 140000000
-54it [00:11,  3.84it/s][Chunk 29] Loading 5000000 events from idx 145000000
-[INFO] No valid image timestamps found in this chunk (1.80e+09-1.82e+09)
-[Chunk 29] No more voxels to process. Stopping.
-54it [00:11,  4.66it/s]
-Warning: Model is not initialized. Using Identity.
-use_pyramid: True
-Using pyramid: True
-Loading from checkpoints/patchifier_small_v4/100000.pth
-Using mksmall model
-Using 96 context feature dimension
-Using 32 matching feature dimension
-Using MKSmallEncoder
-0it [00:00, ?it/s][Chunk 0] Loading 5000000 events from idx 0
-1it [00:00,  2.12it/s][Chunk 1] Loading 5000000 events from idx 5000000
-4it [00:00,  5.68it/s][Chunk 2] Loading 5000000 events from idx 10000000
-5it [00:01,  3.74it/s][Chunk 3] Loading 5000000 events from idx 15000000
-7it [00:01,  4.43it/s][Chunk 4] Loading 5000000 events from idx 20000000
-8it [00:02,  3.69it/s][Chunk 5] Loading 5000000 events from idx 25000000
-10it [00:02,  3.93it/s][Chunk 6] Loading 5000000 events from idx 30000000
-13it [00:02,  4.76it/s][Chunk 7] Loading 5000000 events from idx 35000000
-15it [00:03,  4.51it/s][Chunk 8] Loading 5000000 events from idx 40000000
-17it [00:04,  4.26it/s][Chunk 9] Loading 5000000 events from idx 45000000
-19it [00:04,  4.46it/s][Chunk 10] Loading 5000000 events from idx 50000000
-20it [00:04,  4.59it/s][Chunk 11] Loading 5000000 events from idx 55000000
-21it [00:05,  3.63it/s][Chunk 12] Loading 5000000 events from idx 60000000
-23it [00:05,  3.83it/s][Chunk 13] Loading 5000000 events from idx 65000000
-24it [00:05,  3.84it/s][Chunk 14] Loading 5000000 events from idx 70000000
-25it [00:06,  3.43it/s][Chunk 15] Loading 5000000 events from idx 75000000
-27it [00:06,  3.77it/s][Chunk 16] Loading 5000000 events from idx 80000000
-29it [00:07,  4.08it/s][Chunk 17] Loading 5000000 events from idx 85000000
-31it [00:07,  4.39it/s][Chunk 18] Loading 5000000 events from idx 90000000
-34it [00:07,  5.10it/s][Chunk 19] Loading 5000000 events from idx 95000000
-38it [00:08,  6.56it/s][Chunk 20] Loading 5000000 events from idx 100000000
-41it [00:08,  6.66it/s][Chunk 21] Loading 5000000 events from idx 105000000
-45it [00:09,  8.06it/s][Chunk 22] Loading 5000000 events from idx 110000000
-47it [00:09,  7.08it/s][Chunk 23] Loading 5000000 events from idx 115000000
-49it [00:09,  7.57it/s][Chunk 24] Loading 5000000 events from idx 120000000
-50it [00:09,  7.66it/s][Chunk 25] Loading 5000000 events from idx 125000000
-[Chunk 26] Loading 5000000 events from idx 130000000
-52it [00:10,  7.96it/s][Chunk 27] Loading 5000000 events from idx 135000000
-53it [00:10,  6.57it/s][Chunk 28] Loading 5000000 events from idx 140000000
-54it [00:11,  3.79it/s][Chunk 29] Loading 5000000 events from idx 145000000
-[INFO] No valid image timestamps found in this chunk (1.80e+09-1.82e+09)
-[Chunk 29] No more voxels to process. Stopping.
-54it [00:11,  4.83it/s]
-Warning: Model is not initialized. Using Identity.
-abandonedfactory/abandonedfactory/Easy/P011 [238.98069644296694, 242.88211313408453]
-Eval on abandonedfactory/abandonedfactory/Hard/P011
-use_pyramid: True
-Using pyramid: True
-Loading from checkpoints/patchifier_small_v4/100000.pth
-Using mksmall model
-Using 96 context feature dimension
-Using 32 matching feature dimension
-Using MKSmallEncoder
-0it [00:00, ?it/s][Chunk 0] Loading 5000000 events from idx 0
-1it [00:00,  3.84it/s][Chunk 1] Loading 5000000 events from idx 5000000
-2it [00:00,  4.17it/s][Chunk 2] Loading 5000000 events from idx 10000000
-3it [00:00,  3.45it/s][Chunk 3] Loading 5000000 events from idx 15000000
-[INFO] No valid image timestamps found in this chunk (1.09e+08-1.32e+08)
-[Chunk 3] No more voxels to process. Stopping.
-3it [00:00,  3.44it/s]
-Warning: Model is not initialized. Using Identity.
-Traceback (most recent call last):
-  File "evals/eval_evs/eval_tartan_evs.py", line 152, in <module>
-    val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
-  File "/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
-    return func(*args, **kwargs)
-  File "evals/eval_evs/eval_tartan_evs.py", line 91, in evaluate
-    all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
-  File "/home/amarchei/.conda/envs/devo/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
-    return func(*args, **kwargs)
-  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 364, in log_results
-    evoGT = make_evo_traj(traj_GT, tss_GT_us)
-  File "/home/amarchei/Desktop/repos/DEVO/utils/eval_utils.py", line 310, in make_evo_traj
-    assert poses_N_x_7.shape[0] > 10
-AssertionError
-[Thu  1 May 09:57:25 CEST 2025] Finished evaluation for patchifier_small_v4
------------------------------------------------------
-[Thu  1 May 16:36:31 CEST 2025] Starting evaluation for patchifier_small_v4
-Running eval_tartan_evs.py with config...
-BUFFER_SIZE: 4096
-GRADIENT_BIAS: False
-KEYFRAME_INDEX: 4
-KEYFRAME_THRESH: 15.0
-MIXED_PRECISION: True
-MOTION_DAMPING: 0.5
-MOTION_MODEL: DAMPED_LINEAR
-NORM: std
-OPTIMIZATION_WINDOW: 10
-PATCHES_PER_FRAME: 96
-PATCH_LIFETIME: 13
-PATCH_SELECTOR: scorer
-REMOVAL_WINDOW: 22
-SCORER_EVAL_MODE: multi
-SCORER_EVAL_USE_GRID: True
-Eval on abandonedfactory/abandonedfactory/Easy/P011
-use_pyramid: True
-Using pyramid: True
-Loading from checkpoints/patchifier_small_v4/100000.pth
-Using mksmall model
-Using 96 context feature dimension
-Using 32 matching feature dimension
-Using MKSmallEncoder
-0it [00:00, ?it/s][Chunk 0] Loading 500000000 events from idx 0
-[Thu  1 May 16:36:43 CEST 2025] Finished evaluation for patchifier_small_v4
------------------------------------------------------

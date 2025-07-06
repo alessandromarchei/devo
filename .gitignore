@@ -155,6 +155,9 @@ cache
 *.zip
 data
 figures/*.pdf
+logs/
+*.mp4
+*.pdf
 
 rsync*
 models/*
@@ -166,3 +169,19 @@ movies/
 results/*
 TartanAirEVS.pickle
 keyframes.txt
+
+
+#remove pickle files
+*.pickle
+*.pkl
+
+assets/
+fgraph/
+
+profile
+
+Cointainerfile*
+
+results/
+
+
