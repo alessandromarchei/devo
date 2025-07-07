@@ -11,8 +11,14 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     ext_modules=[
-        CUDAExtension('cuda_ba_double',
-            sources=['devo/fastba/ba_double.cpp', 'devo/fastba/ba_cuda_double.cu'],
+        CUDAExtension('cuda_ba_trunc',
+            sources=['devo/fastba/ba_trunc.cpp', 'devo/fastba/ba_cuda_trunc.cu'],
+            extra_compile_args={
+                'cxx':  ['-O3'], 
+                'nvcc': ['-O3'],
+            }),
+        CUDAExtension('cuda_ba_trunc_double',
+            sources=['devo/fastba/ba_trunc_double.cpp', 'devo/fastba/ba_cuda_double_trunc.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
@@ -21,4 +27,3 @@ setup(
     cmdclass={
         'build_ext': BuildExtension
     })
-

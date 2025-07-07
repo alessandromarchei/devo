@@ -7,6 +7,7 @@ from utils.eval_utils import assert_eval_config, run_voxel_advanced, run_voxel
 from utils.eval_utils import log_results, write_raw_results, compute_median_results
 # from utils.viz_utils import viz_flow_inference
 
+
 H, W = 260, 346
 
 @torch.no_grad()

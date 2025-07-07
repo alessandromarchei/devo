@@ -31,4 +31,6 @@ _C.MOTION_DAMPING = 0.5
 
 _C.MIXED_PRECISION = True
 
+_C.BA_PRECISION = 'double'  # 'float32', 'double', 'float32'
+
 cfg = _C

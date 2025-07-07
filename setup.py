@@ -32,6 +32,12 @@ setup(
                 'devo/lietorch/src/lietorch_gpu.cu',
                 'devo/lietorch/src/lietorch_cpu.cpp'],
             extra_compile_args={'cxx': ['-O3'], 'nvcc': ['-O3'],}),
+        CUDAExtension('cuda_ba_double',
+            sources=['devo/fastba/ba_double.cpp', 'devo/fastba/ba_cuda_double.cu'],
+            extra_compile_args={
+                'cxx':  ['-O3'], 
+                'nvcc': ['-O3'],
+            })
     ],
     cmdclass={
         'build_ext': BuildExtension

@@ -1,7 +1,7 @@
 # ======= SET ALL SEEDS AND DETERMINISM FIRST =======
 
 import os
-#os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 import torch
 import numpy as np
 import random
@@ -12,11 +12,11 @@ np.random.seed(seed)
 random.seed(seed)
 torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
-#torch.use_deterministic_algorithms(True)
-#torch.backends.cudnn.deterministic = True
-#torch.backends.cudnn.benchmark = False
-#torch.backends.cuda.matmul.allow_tf32 = False
-#torch.backends.cudnn.allow_tf32 = False
+torch.use_deterministic_algorithms(True)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
 
 # # Optional for extra safety
 #torch.use_deterministic_algorithms(True, warn_only=True)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default="config/eval_mvsec.yaml")
     parser.add_argument('--datapath', default='/usr/scratch/badile13/amarchei/mvsec/indoor_flying', help='path to dataset directory')
-    parser.add_argument('--weights', default="DEVO.pth")
+    parser.add_argument('--weights', default="checkpoints/DEVO.pth")
     parser.add_argument('--val_split', type=str, default="splits/mvsec/mvsec_val.txt")
     parser.add_argument('--trials', type=int, default=2)
     parser.add_argument('--plot', action="store_true")

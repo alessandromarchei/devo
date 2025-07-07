@@ -503,7 +503,6 @@ class Patchifier(nn.Module):
 
         x += 1
         y += 1
-        
         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
         
         scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
