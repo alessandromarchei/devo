@@ -194,3 +194,6 @@ Containerfile
 dataloader_stats
 media
 h5_converter
+
+evals/backup
+*.csv
