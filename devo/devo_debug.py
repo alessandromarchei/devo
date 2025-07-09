@@ -479,9 +479,30 @@ class DEVO:
                     self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
                 
                 elif self.cfg.BA_PRECISION == "truncate":
-                    decimal_places = 7
+                    decimal_places = 9
                     fastba.BA_trunc(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2, decimal_places=decimal_places)
+                elif self.cfg.BA_PRECISION == "det_fp32":
+                    #deterministic float32
+                    fastba.BA_det(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                elif self.cfg.BA_PRECISION == "debug":
+                    #uncomment for using double precision
+                    self.poses_ = self.poses_.to(dtype=torch.float64, device=self.poses_.device)
+                    self.patches_ = self.patches_.to(dtype=torch.float64, device=self.patches_.device)
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float64, device=self.intrinsics_.device)
+
+                    target = target.to(dtype=torch.float64, device=target.device)
+                    weight = weight.to(dtype=torch.float64, device=weight.device)
+                    lmbda = lmbda.to(dtype=torch.float64, device=lmbda.device)
+                    
+                    fastba.BA_debug(self.poses, self.patches, self.intrinsics,
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+                    #now convert everything back to float32
+                    self.poses_ = self.poses_.to(dtype=torch.float32, device=self.poses_.device)
+                    self.patches_ = self.patches_.to(dtype=torch.float32, device=self.patches_.device)  
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
                 elif self.cfg.BA_PRECISION == "truncate_double":
                     decimal_places = 13
                     #uncomment for using double precision

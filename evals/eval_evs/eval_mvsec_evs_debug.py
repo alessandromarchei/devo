@@ -2,6 +2,7 @@
 
 import os
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import torch
 import numpy as np
 import random

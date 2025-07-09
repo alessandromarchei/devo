@@ -508,7 +508,7 @@ class Patchifier(nn.Module):
         scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
 
         #save the coordinates in the range (H//4, W//4) with the dump function
-        coords_path = f"mvsec2_coords/coords_{self.iteration}.npz"
+        coords_path = f"test_randomness/mvsec3_coords/coords_{self.iteration}.npz"
         #save coordinates to a file txt
         #with open(f"mvsec4_coords/coords_{self.iteration}.txt", "w") as f:
         #    for i in range(coords.shape[0]):
@@ -518,8 +518,8 @@ class Patchifier(nn.Module):
         #dump_extracted_coords_npz(path=coords_path,coords=coords)
 
         #load coordinates from the file
-        #coords = np.load(coords_path)["coords"]
-        #coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
+        coords = np.load(coords_path)["coords"]
+        coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
 
         #FMAP : MATCHING FEATURE MAP (1/4 RESOLUTION)
         #IMAP : CONTEXT FEATURE MAP (1/4 RESOLUTION)

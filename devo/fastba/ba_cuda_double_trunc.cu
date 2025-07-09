@@ -44,7 +44,7 @@ void round_tensor(torch::Tensor& tensor, int decimal_places) {
     int64_t numel = tensor_flat.numel();
 
     round_tensor_kernel_anyshape<<<NUM_BLOCKS(numel), NUM_THREADS>>>(data_ptr, numel, factor);
-
+    
     cudaDeviceSynchronize();
 
     //std::cout << "[output] Shape: " << tensor.sizes()
