@@ -11,8 +11,9 @@
   for (size_t i = blockIdx.x * blockDim.x + threadIdx.x; i<n; i += blockDim.x * gridDim.x)
 
 
-#define NUM_THREADS 256
-#define NUM_BLOCKS(batch_size) ((batch_size + NUM_THREADS - 1) / NUM_THREADS)
+// FORCED SINGLE THREAD EXECUTION
+#define NUM_THREADS 1
+#define NUM_BLOCKS(batch_size) 1
 
 
 __device__ void
@@ -295,15 +296,11 @@ __global__ void reprojection_residuals_and_hessian(
         for (int j=0; j<6; j++) {
           if (ix >= 0)
             atomicAdd(&B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
-            __threadfence()
           if (jx >= 0)
             atomicAdd(&B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
-            __threadfence()
           if (ix >= 0 && jx >= 0) {
             atomicAdd(&B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
-            __threadfence()
             atomicAdd(&B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
-            __threadfence();
           }
         }
       }
@@ -311,25 +308,19 @@ __global__ void reprojection_residuals_and_hessian(
       for (int i=0; i<6; i++) {
         if (ix >= 0)
           atomicAdd(&E[6*ix+i][k], -w * Jz * Ji[i]);
-          __threadfence();
         if (jx >= 0)
           atomicAdd(&E[6*jx+i][k],  w * Jz * Jj[i]);
-          __threadfence();
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
           atomicAdd(&v[6*ix+i], -w * r * Ji[i]);
-          __threadfence();
         if (jx >= 0)
           atomicAdd(&v[6*jx+i],  w * r * Jj[i]);
-          __threadfence();
       }
 
       atomicAdd(&C[k], w * Jz * Jz);
-      __threadfence();
       atomicAdd(&u[k], w *  r * Jz);
-      __threadfence();
     }
 
     {
@@ -345,15 +336,11 @@ __global__ void reprojection_residuals_and_hessian(
         for (int j=0; j<6; j++) {
           if (ix >= 0)
             atomicAdd(&B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
-            __threadfence();
           if (jx >= 0)
             atomicAdd(&B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
-            __threadfence();
           if (ix >= 0 && jx >= 0) {
             atomicAdd(&B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
-            __threadfence();
             atomicAdd(&B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
-            __threadfence();
           }
         }
       }
@@ -361,25 +348,19 @@ __global__ void reprojection_residuals_and_hessian(
       for (int i=0; i<6; i++) {
         if (ix >= 0)
           atomicAdd(&E[6*ix+i][k], -w * Jz * Ji[i]);
-          __threadfence();
         if (jx >= 0)
           atomicAdd(&E[6*jx+i][k],  w * Jz * Jj[i]);
-          __threadfence();
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
           atomicAdd(&v[6*ix+i], -w * r * Ji[i]);
-          __threadfence();  
         if (jx >= 0)
           atomicAdd(&v[6*jx+i],  w * r * Jj[i]);
-          __threadfence();  
       }
 
       atomicAdd(&C[k], w * Jz * Jz);
-      __threadfence();
       atomicAdd(&u[k], w *  r * Jz);
-      __threadfence();
     }
   }
 }

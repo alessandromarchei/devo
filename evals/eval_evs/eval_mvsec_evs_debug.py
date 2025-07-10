@@ -20,7 +20,7 @@ torch.backends.cuda.matmul.allow_tf32 = False
 torch.backends.cudnn.allow_tf32 = False
 
 # # Optional for extra safety
-#torch.use_deterministic_algorithms(True, warn_only=True)
+torch.use_deterministic_algorithms(True, warn_only=True)
 
 from devo.config import cfg
 

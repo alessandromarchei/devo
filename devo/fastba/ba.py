@@ -5,6 +5,8 @@ import cuda_ba_trunc
 import cuda_ba_trunc_double
 import cuda_ba_det
 import cuda_ba_debug
+import cuda_ba_single_thread
+import cuda_ba_red
 
 neighbors = cuda_ba.neighbors
 reproject = cuda_ba.reproject
@@ -26,3 +28,9 @@ def BA_det(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1
 
 def BA_debug(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_debug.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_single_thread(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_single_thread.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_red(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_red.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)

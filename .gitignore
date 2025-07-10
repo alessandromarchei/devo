@@ -197,3 +197,5 @@ h5_converter
 
 evals/backup
 *.csv
+
+*.nfs*

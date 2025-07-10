@@ -37,6 +37,12 @@ setup(
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
+            }),
+        CUDAExtension('cuda_ba_single_thread',
+            sources=['devo/fastba/ba_single_thread.cpp', 'devo/fastba/ba_cuda_singlethread.cu'],
+            extra_compile_args={
+                'cxx':  ['-O3'], 
+                'nvcc': ['-O3'],
             })
     ],
     cmdclass={

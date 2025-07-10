@@ -1,0 +1,295 @@
+#include <torch/extension.h>
+#include <vector>
+#include <iostream>
+
+#include <ATen/ATen.h>
+#include <ATen/NativeFunctions.h>
+#include <ATen/Parallel.h>
+
+
+
+
+void print_tensor_stats(const torch::Tensor& tensor, const std::string& name) {
+  std::cout << name << " - Size: " << tensor.sizes() 
+            << ", Mean : " << tensor.mean().item<float>()
+            << ", Std: " << tensor.std().item<float>()
+            << ", Min: " << tensor.min().item<float>()
+            << ", Max: " << tensor.max().item<float>() << std::endl;
+}
+
+__device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float, 1, at::RestrictPtrTraits, int32_t>& accessor, const char* name) {
+    float sum = 0.0f;
+    float min_v = 1e10f;
+    float max_v = -1e10f;
+    int count = accessor.size(0);
+
+    for (int i = 0; i < accessor.size(0); i++) {
+        float val = accessor[i];
+        sum += val;
+        if (val < min_v) min_v = val;
+        if (val > max_v) max_v = val;
+    }
+
+    float mean = sum / (count > 0 ? count : 1);
+    printf("%s -> Size: [%d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
+           name, accessor.size(0), mean, min_v, max_v);
+}
+
+__device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float, 2, at::RestrictPtrTraits, int32_t>& accessor, const char* name) {
+    float sum = 0.0f;
+    float min_v = 1e10f;
+    float max_v = -1e10f;
+    int count = accessor.size(0) * accessor.size(1);
+
+    for (int i = 0; i < accessor.size(0); i++) {
+        for (int j = 0; j < accessor.size(1); j++) {
+            float val = accessor[i][j];
+            sum += val;
+            if (val < min_v) min_v = val;
+            if (val > max_v) max_v = val;
+        }
+    }
+
+    float mean = sum / (count > 0 ? count : 1);
+    printf("%s -> Size: [%d, %d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
+           name, accessor.size(0), accessor.size(1), mean, min_v, max_v);
+}
+
+__device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float, 3, at::RestrictPtrTraits, int32_t>& accessor, const char* name) {
+    float sum = 0.0f;
+    float min_v = 1e10f;
+    float max_v = -1e10f;
+    int count = accessor.size(0) * accessor.size(1) * accessor.size(2);
+
+    for (int i = 0; i < accessor.size(0); i++) {
+        for (int j = 0; j < accessor.size(1); j++) {
+            for (int k = 0; k < accessor.size(2); k++) {
+                float val = accessor[i][j][k];
+                sum += val;
+                if (val < min_v) min_v = val;
+                if (val > max_v) max_v = val;
+            }
+        }
+    }
+
+    float mean = sum / (count > 0 ? count : 1);
+    printf("%s -> Size: [%d, %d, %d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
+           name, accessor.size(0), accessor.size(1), accessor.size(2), mean, min_v, max_v);
+}
+
+
+__device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float, 1, at::RestrictPtrTraits, int64_t>& accessor, const char* name) {
+    float sum = 0.0f;
+    float min_v = 1e10f;
+    float max_v = -1e10f;
+    int count = accessor.size(0);
+
+    for (int i = 0; i < accessor.size(0); i++) {
+        float val = accessor[i];
+        sum += val;
+        if (val < min_v) min_v = val;
+        if (val > max_v) max_v = val;
+    }
+
+    float mean = sum / (count > 0 ? count : 1);
+    printf("%s -> Size: [%d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
+           name, accessor.size(0), mean, min_v, max_v);
+}
+
+__device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float, 2, at::RestrictPtrTraits, int64_t>& accessor, const char* name) {
+    float sum = 0.0f;
+    float min_v = 1e10f;
+    float max_v = -1e10f;
+    int count = accessor.size(0) * accessor.size(1);
+
+    for (int i = 0; i < accessor.size(0); i++) {
+        for (int j = 0; j < accessor.size(1); j++) {
+            float val = accessor[i][j];
+            sum += val;
+            if (val < min_v) min_v = val;
+            if (val > max_v) max_v = val;
+        }
+    }
+
+    float mean = sum / (count > 0 ? count : 1);
+    printf("%s -> Size: [%d, %d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
+           name, accessor.size(0), accessor.size(1), mean, min_v, max_v);
+}
+
+__device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float, 3, at::RestrictPtrTraits, int64_t>& accessor, const char* name) {
+    float sum = 0.0f;
+    float min_v = 1e10f;
+    float max_v = -1e10f;
+    int count = accessor.size(0) * accessor.size(1) * accessor.size(2);
+
+    for (int i = 0; i < accessor.size(0); i++) {
+        for (int j = 0; j < accessor.size(1); j++) {
+            for (int k = 0; k < accessor.size(2); k++) {
+                float val = accessor[i][j][k];
+                sum += val;
+                if (val < min_v) min_v = val;
+                if (val > max_v) max_v = val;
+            }
+        }
+    }
+
+    float mean = sum / (count > 0 ? count : 1);
+    printf("%s -> Size: [%d, %d, %d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
+           name, accessor.size(0), accessor.size(1), accessor.size(2), mean, min_v, max_v);
+}
+
+
+
+/* apply a block reduction on a array of blockDim.x elements on a thread block (blockDim.x >= 64) */
+
+__device__ void block_reduce(float *smem, *float &partial_sum)
+{
+    /* data a loaded in shared memory before calling the function */
+
+    /*
+        Apply the pairwise method also called a tree reduction. The
+        number of active threads is halved between iteration.
+    */
+    for (offset = blockDim.x / 2; offset > 0; offset  /= 2) {
+        /* the number of active threads is halved after each iteration */
+        if (threadIdx.x < offset)
+            smem[threadIdx.x] += smem[threadIdx.x + offset];
+        /*  synchronization barrier */
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0)
+        partial_sum = smem[0];
+}
+
+
+__device__ void block_reduce(double *smem, *double &partial_sum)
+{
+    /* data a loaded in shared memory before calling the function */
+
+    /*
+        Apply the pairwise method also called a tree reduction. The
+        number of active threads is halved between iteration.
+    */
+    for (offset = blockDim.x / 2; offset > 0; offset  /= 2) {
+        /* the number of active threads is halved after each iteration */
+        if (threadIdx.x < offset)
+            smem[threadIdx.x] += smem[threadIdx.x + offset];
+        /*  synchronization barrier */
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0)
+        partial_sum = smem[0];
+}
+
+
+
+__device__ int retirementCount = 0;
+
+__global__ void reduce_gpu_sptr(double *sdata, int size, double *res) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    extern __shared__ double smem[];
+
+    /* Split the data in smaller chunk. The block only only on one chunk */
+    if (tid >= size)
+        smem[threadIdx.x] = 0.0;
+    else
+        smem[threadIdx.x] = data[tid];
+
+    /* Wait for all thread to update shared memory */
+    __syncthreads();
+
+    /* apply the block reduction */
+    double partial_sum = 0.0;
+    block_reduce(smem, partial_sum);
+
+    if (threadIdx.x == 0)
+        partial_results[blockIdx.x] = partial_sum;
+
+    __threadfences();
+
+    bool __shared__ amLast = false;
+    if (threadIdx.x == 0) {
+        int prev = atomicInc(&retirementCount, gridSize.x);
+        amLast = (prev == (gridDim.x - 1));
+    }
+    __syncthreads();
+
+    if (amLast) {
+        if (threadIdx.x == 0) {
+            double sum = 0;
+            for (int i = 0; i < gridDim.x; i++)
+                sum += res[i];
+            res[0] = sum;
+        }
+    }
+}
+
+
+
+__global__ void reduce_gpu_sptr(float *sdata, int size, float *res) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    extern __shared__ float smem[];
+
+    /* Split the data in smaller chunk. The block only only on one chunk */
+    if (tid >= size)
+        smem[threadIdx.x] = 0.0;
+    else
+        smem[threadIdx.x] = data[tid];
+
+    /* Wait for all thread to update shared memory */
+    __syncthreads();
+
+    /* apply the block reduction */
+    float partial_sum = 0.0;
+    block_reduce(smem, partial_sum);
+
+    if (threadIdx.x == 0)
+        partial_results[blockIdx.x] = partial_sum;
+
+    __threadfences();
+
+    bool __shared__ amLast = false;
+    if (threadIdx.x == 0) {
+        int prev = atomicInc(&retirementCount, gridSize.x);
+        amLast = (prev == (gridDim.x - 1));
+    }
+    __syncthreads();
+
+    if (amLast) {
+        if (threadIdx.x == 0) {
+            float sum = 0;
+            for (int i = 0; i < gridDim.x; i++)
+                sum += res[i];
+            res[0] = sum;
+        }
+    }
+}
+
+// Deterministic sum along dim 0 on CPU
+torch::Tensor reduce_cpu(const torch::Tensor& input) {
+    // Move to CPU if needed
+    torch::Tensor input_cpu = input;
+    if (input.device().is_cuda()) {
+        input_cpu = input.cpu();
+    }
+
+    // Initialize output tensor with zeros, same shape as one slice
+    torch::Tensor out = torch::zeros_like(input_cpu[0]);
+
+    // Fixed-order loop: sum slices one by one
+    const int64_t num = input_cpu.size(0);
+    for (int64_t i = 0; i < num; ++i) {
+        out += input_cpu[i];
+    }
+
+    // Move back to original device if needed
+    if (input.device().is_cuda()) {
+        out = out.to(input.device());
+    }
+
+    return out;
+}
