@@ -1,4 +1,6 @@
 import os
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import torch
 from devo.config import cfg
 
@@ -8,6 +10,22 @@ from utils.eval_utils import log_results, write_raw_results, compute_median_resu
 # from utils.viz_utils import viz_flow_inference
 import numpy as np
 import random
+
+
+seed = 1234
+torch.manual_seed(seed)
+np.random.seed(seed)
+random.seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.use_deterministic_algorithms(True, warn_only=True)
+#torch.use_deterministic_algorithms(True)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
+
+
 
 H, W = 260, 346
 

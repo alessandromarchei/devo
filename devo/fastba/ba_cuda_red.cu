@@ -291,16 +291,6 @@ __global__ void reprojection_residuals_and_hessian(
     auto local_C = C[tid];
     auto local_u = u[tid];
 
-    //if(tid == 0)
-    //{
-    //  printf("TID 0: tensors\n");
-    //  //print here the tensor stats
-    //  print_accessor_stats(B, "B");
-    //  print_accessor_stats(E, "E");
-    //  print_accessor_stats(C, "C");
-    //  print_accessor_stats(v, "v");
-    //  print_accessor_stats(u, "u");
-    //}
 
 
     __shared__ float fx, fy, cx, cy;
@@ -356,89 +346,6 @@ __global__ void reprojection_residuals_and_hessian(
       ix = ix - t0;
       jx = jx - t0;
 
-/*
-      {
-        const float r = target[n][0] - x1;
-        const float w = mask * weight[n][0];
-
-        float Jz = fx * (tij[0] * d - tij[2] * (X * d2));
-        float Ji[6], Jj[6] = {fx*W*d, 0, fx*-X*W*d2, fx*-X*Y*d2, fx*(1+X*X*d2), fx*-Y*d};
-
-        adjSE3(tij, qij, Jj, Ji);
-
-        for (int i=0; i<6; i++) {
-          for (int j=0; j<6; j++) {
-            if (ix >= 0)
-              local_B[6*ix+i][6*ix+j] += w * Ji[i] * Ji[j];
-            if (jx >= 0)
-              local_B[6*jx+i][6*jx+j] += w * Ji[i] * Ji[j];
-            if (ix >= 0 && jx >= 0) {
-              local_B[6*ix+i][6*jx+j] -= w * Ji[i] * Jj[j];
-              local_B[6*jx+i][6*ix+j] -= w * Jj[i] * Ji[j];
-            }
-          }
-        }
-
-        for (int i=0; i<6; i++) {
-          if (ix >= 0)
-            local_E[6*ix+i][k] -= w * Jz * Ji[i];
-          if (jx >= 0)
-            local_E[6*jx+i][k] +=  w * Jz * Jj[i];
-        }
-
-        for (int i=0; i<6; i++) {
-          if (ix >= 0)
-            local_v[6*ix+i] -= w * r * Ji[i];
-          if (jx >= 0)
-            local_v[6*jx+i] +=  w * r * Jj[i];
-        }
-        
-        local_C[k] += w * Jz * Jz;
-        local_u[k] += w * r * Jz;
-      }
-
-      {
-        const float r = target[n][1] - y1;
-        const float w = mask * weight[n][1];
-        
-        float Jz = fy * (tij[1] * d - tij[2] * (Y * d2));
-        float Ji[6], Jj[6] = {0, fy*W*d, fy*-Y*W*d2, fy*(-1-Y*Y*d2), fy*(X*Y*d2), fy*X*d};
-        
-        adjSE3(tij, qij, Jj, Ji);
-
-        for (int i=0; i<6; i++) {
-          for (int j=0; j<6; j++) {
-            if (ix >= 0)
-              local_B[6*ix+i][6*ix+j] += w * Ji[i] * Ji[j];
-            if (jx >= 0)
-              local_B[6*jx+i][6*jx+j] += w * Jj[i] * Jj[j];
-            if (ix >= 0 && jx >= 0) {
-              local_B[6*ix+i][6*jx+j] -= w * Ji[i] * Jj[j];
-              local_B[6*jx+i][6*ix+j] -= w * Jj[i] * Ji[j];
-            }
-          }
-        }
-
-        for (int i=0; i<6; i++) {
-          if (ix >= 0)
-            local_E[6*ix+i][k] -= w * Jz * Ji[i];
-          if (jx >= 0)
-            local_E[6*jx+i][k] +=  w * Jz * Jj[i];
-        }
-
-        for (int i=0; i<6; i++) {
-          if (ix >= 0)
-            local_v[6*ix+i] -= w * r * Ji[i];
-          if (jx >= 0)
-            local_v[6*jx+i] +=  w * r * Jj[i];
-        }
-        
-        local_C[k] += w * Jz * Jz;
-        local_u[k] += w * r * Jz;
-      }
-    }
-  */
-  
     {
       const float r = target[n][0] - x1;
       const float w = mask * weight[n][0];
@@ -664,6 +571,7 @@ std::vector<torch::Tensor> cuda_ba(
     //print_tensor_stats(v, "v");
     //print_tensor_stats(u, "u");
 
+    //auto start_hessian = std::chrono::high_resolution_clock::now();
     //change the packet tensor to 64 pointers
     reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS_PER_BLOCK>>>(
       poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
@@ -685,6 +593,9 @@ std::vector<torch::Tensor> cuda_ba(
     
     cudaDeviceSynchronize();
     
+    //auto end_hessian = std::chrono::high_resolution_clock::now();
+    //double hessian_ms = std::chrono::duration<double, std::milli>(end_hessian - start_hessian).count();
+    //printf("[Iteration %d] Hessian computation time: %.2f ms\n", itr, hessian_ms);
 
     //B = reduce_cpu(B);
     //E = reduce_cpu(E);
@@ -694,16 +605,16 @@ std::vector<torch::Tensor> cuda_ba(
 
     
 
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
     //reducing every tensor
     B = B.sum(0);
     E = E.sum(0);
     C = C.sum(0);
     v = v.sum(0);
     u = u.sum(0);
-    auto end = std::chrono::high_resolution_clock::now();
-    double cpu_ms = std::chrono::duration<double, std::milli>(end - start).count();
-    printf("[Iteration %d] CPU reduction time: %.2f ms\n", itr, cpu_ms);
+    //auto end = std::chrono::high_resolution_clock::now();
+    //double cpu_ms = std::chrono::duration<double, std::milli>(end - start).count();
+    //printf("[Iteration %d] CPU reduction time: %.2f ms\n", itr, cpu_ms);
 
 
     //std::cout << "After hessian computation: " << std::endl;

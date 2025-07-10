@@ -15,7 +15,7 @@ from .lietorch import SE3
 
 from .extractor import *
 from .blocks import GradientClip, GatedResidual, SoftAgg
-from .selector import Scorer, SelectionMethod, PatchSelector
+from .selector import Scorer, SelectionMethod, PatchSelector, ev_density_selector
 
 from .utils import *
 from .ba import BA
@@ -404,8 +404,9 @@ class Patchifier(nn.Module):
 
 
         #instantiate the SCORE MAP object in case it is specified
-        if self.patch_selector == SelectionMethod.SCORER:
-            self.scorer = Scorer(5)
+        #if self.patch_selector == SelectionMethod.SCORER:
+        #skip line in order to load the scorer from the config despite not being eventually used
+        self.scorer = Scorer(5)
 
     def __event_gradient(self, events):
         events = events.sum(dim=2) # sum over bins
@@ -478,6 +479,14 @@ class Patchifier(nn.Module):
                 border_suppression_size=0,
                 non_max_supp_rad=11,
             )
+        elif self.patch_selector == SelectionMethod.EVENT_DENSITY:
+            # here for the determienistic method based on density
+            x, y = ev_density_selector(events=events, 
+                           patches_per_image=patches_per_image, 
+                           suppression_borders=11)
+            x += 1
+            y += 1
+            
         else:
             print(f"{self.patch_selector} not implemented")
             raise NotImplementedError
@@ -514,111 +523,6 @@ class Patchifier(nn.Module):
             
         return fmap, gmap, imap, patches, index
     
-
-
-
-####### ORIGINAL PATCHIFIER CLASS #######
-# class Patchifier(nn.Module):
-#     def __init__(self, patch_size=3, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER):
-#         super(Patchifier, self).__init__()
-#         self.patch_size = patch_size
-#         self.ctx_feat_dim = ctx_feat_dim # dim of context extractor and hidden state (update operator)
-#         self.match_feat_dim = match_feat_dim # dim of matching extractor
-#         self.patch_selector = patch_selector.lower()
-#         self.fnet = BasicEncoder4Evs(output_dim=self.match_feat_dim, dim=dim, norm_fn='instance') # matching-feature extractor
-#         self.inet = BasicEncoder4Evs(output_dim=self.ctx_feat_dim, dim=dim, norm_fn='none') # context-feature extractor
-#         if self.patch_selector == SelectionMethod.SCORER:
-#             self.scorer = Scorer(5)
-
-#     def __event_gradient(self, images):
-#         images = images.sum(dim=2) # sum over bins
-#         dx = images[...,:-1,1:] - images[...,:-1,:-1]
-#         dy = images[...,1:,:-1] - images[...,:-1,:-1]
-#         g = torch.sqrt(dx**2 + dy**2)
-#         g = F.avg_pool2d(g, 4, 4)
-#         return g
-
-#     def forward(self, images, patches_per_image=80, disps=None, return_color=False, scorer_eval_mode="multi", scorer_eval_use_grid=True):
-#         """ extract patches from input images """
-#         fmap = self.fnet(images) / 4.0 # (1, 15, 128, 120, 160)
-#         imap = self.inet(images) / 4.0 # (1, 15, 384, 120, 160)
-
-#         b, n, c, h, w = fmap.shape # (1, 15, 128, 120, 160)
-#         P = self.patch_size
-
-#         # Patch selection
-#         if self.patch_selector == SelectionMethod.GRADIENT:
-#             # bias patch selection towards regions with high gradient
-#             g = self.__event_gradient(images) # gradient map (b,n_frames,h/4-1,w/4-1)
-            
-#             if self.training:
-#                 patch_selector_fn = PatchSelector("3xrandom")
-#             else:
-#                 patch_selector_fn = PatchSelector(scorer_eval_mode, grid=scorer_eval_use_grid)
-            
-#             x, y = patch_selector_fn(g, patches_per_image) # TODO use g[...,1:,1:]?
-                        
-#             x = x.clamp(min=1, max=w-2)
-#             y = y.clamp(min=1, max=h-2)
-#         elif self.patch_selector == SelectionMethod.RANDOM:
-#             # random sampling
-#             x = torch.randint(1, w-1, size=[n, patches_per_image], device="cuda")
-#             y = torch.randint(1, h-1, size=[n, patches_per_image], device="cuda")
-#         elif self.patch_selector == SelectionMethod.SCORER:
-#             scores = self.scorer(images) # (1, 15, 118, 158)
-#             scores = torch.sigmoid(scores)
-            
-#             if self.training:
-#                 x = torch.randint(0, w-2, size=[n, 3*patches_per_image], device="cuda")
-#                 y = torch.randint(0, h-2, size=[n, 3*patches_per_image], device="cuda")
-
-#                 coords = torch.stack([x, y], dim=-1).float() # (n_frames,3*patches_per_image,2)
-#                 scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, 3 * patches_per_image) # extract patches of scorer map
-                
-#                 vx, ix = torch.sort(scores, dim=1) # sort by score (n_frames,3*patches_per_image)
-#                 x = x + 1
-#                 y = y + 1
-#                 x = torch.gather(x, 1, ix[:, -patches_per_image:]) # choose patch idx with largest score
-#                 y = torch.gather(y, 1, ix[:, -patches_per_image:])
-#                 scores = vx[:, -patches_per_image:].contiguous().view(n,patches_per_image)
-#             else:            
-#                 patch_selector_fn = PatchSelector(scorer_eval_mode, grid=scorer_eval_use_grid)
-#                 x, y = patch_selector_fn(scores, patches_per_image)
-#                 coords = torch.stack([x, y], dim=-1).float() # (b*n,patches_per_image,2)
-#                 scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
-                
-#                 x += 1
-#                 y += 1
-#         else:
-#             print(f"{self.patch_selector} not implemented")
-#             raise NotImplementedError
-        
-#         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
-#         imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.ctx_feat_dim, 1, 1) # [B, n_images*n_patches_per_image, ctx_feat_dim, 1, 1]
-#         gmap = altcorr.patchify(fmap[0], coords, P//2).view(b, -1, self.match_feat_dim, P, P) # [B, n_images*n_patches_per_image, match_feat_dim, 3, 3]
-
-#         if return_color:
-#             clr = altcorr.patchify(images[0].abs().sum(dim=1,keepdim=True), 4*(coords + 0.5), 0).clamp(min=0,max=255).view(b, -1, 1)
-
-#         if disps is None:
-#             disps = torch.ones(b, n, h, w, device="cuda")
-
-#         grid, _ = coords_grid_with_index(disps, device=fmap.device) # [B, n_images, 3, H//4, W//4]
-#         patches = altcorr.patchify(grid[0], coords, P//2).view(b, -1, 3, P, P) # [B, n_images*n_patches_per_image, 3, 3, 3]
-
-#         index = torch.arange(n, device="cuda").view(n, 1) # [n_images, 1]
-#         index = index.repeat(1, patches_per_image).reshape(-1) # [15, 80] => [15*80, 1] => [15*80]
-
-#         if self.training:
-#             if self.patch_selector == SelectionMethod.SCORER:
-#                 return fmap, gmap, imap, patches, index, scores
-#         else:
-#             if return_color:
-#                 return fmap, gmap, imap, patches, index, clr
-            
-#         return fmap, gmap, imap, patches, index
-
-
 class CorrBlock:
     """ Correlation block for computing correlation between matching features """
     def __init__(self, fmap, gmap, radius=3, dropout=0.2, levels=[1,4]):

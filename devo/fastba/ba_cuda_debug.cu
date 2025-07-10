@@ -12,8 +12,57 @@
   for (size_t i = blockIdx.x * blockDim.x + threadIdx.x; i<n; i += blockDim.x * gridDim.x)
 
 
-#define NUM_THREADS 256
-#define NUM_BLOCKS(batch_size) ((batch_size + NUM_THREADS - 1) / NUM_THREADS)
+//1 thread per edge would make the memory explode, try with a threshold for the number of threads (once reached, use a fixed number of threads, so 1 thread will process multiple edges)
+#define NUM_THREADS_PER_BLOCK 256
+#define MAX_BLOCKS 64
+
+#define NUM_BLOCKS(batch_size) \
+  ((batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK < MAX_BLOCKS ? \
+   (batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK : \
+   MAX_BLOCKS)
+
+
+// __device__ int retirementCount = 0;
+
+// __global__ void reduce_gpu_sptr(double *sdata, int size, double *res) {
+//     int tid = threadIdx.x + blockIdx.x * blodkDim.x;
+
+//     extern __shared__ double smem[];
+
+//     /* Split the data in smaller chunk. The block only only on one chunk */
+//     if (tid >= size)
+//         smem[threadIdx.x] = 0.0;
+//     else
+//         smem[threadIdx.x] = data[tid];
+
+//     /* Wait for all thread to update shared memory */
+//     __syncthreads();
+
+//     /* apply the block reduction */
+//     double partial_sum = 0.0;
+//     block_reduce(smem, partial_sum);
+
+//     if (threadIdx.x == 0)
+//         partial_results[blockIdx.x] = partial_sum;
+
+//     __threadfences();
+
+//     bool __shared__ amLast = false;
+//     if (threadIdx.x == 0) {
+//         int prev = atomicInc(&retirementCount, gridSize.x);
+//         amLast = (prev == (gridDim.x - 1));
+//     }
+//     __syncthreads();
+
+//     if (amLast) {
+//         if (threadIdx.x == 0) {
+//             double sum = 0;
+//             for (int i = 0; i < gridDim.x; i++)
+//                 sum += res[i];
+//             res[0] = sum;
+//         }
+//     }
+// }
 
 
 __device__ void
@@ -223,81 +272,79 @@ __global__ void reprojection_residuals_and_hessian(
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> jj,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> kk,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> ku,
-    torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> B,
-    torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> E,
-    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> C,
-    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> v,
-    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> u, const int t0)
+    torch::PackedTensorAccessor64<float,3,torch::RestrictPtrTraits> B,
+    torch::PackedTensorAccessor64<float,3,torch::RestrictPtrTraits> E,
+    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> C,
+    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> v,
+    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> u,
+    const int t0)
 {
 
+    
     //take the thread index
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    
-    //if(tid == 0)
-    //{
-    //  printf("TID 0: tensors\n");
-    //  //print here the tensor stats
-    //  print_accessor_stats(B, "B");
-    //  print_accessor_stats(E, "E");
-    //  print_accessor_stats(C, "C");
-    //  print_accessor_stats(v, "v");
-    //  print_accessor_stats(u, "u");
-    //}
+
+    //get the respected local tensors
+    auto local_B = B[tid];
+    auto local_E = E[tid];
+    auto local_v = v[tid];
+    auto local_C = C[tid];
+    auto local_u = u[tid];
 
 
-  __shared__ float fx, fy, cx, cy;
-  if (threadIdx.x == 0) {
-    fx = intrinsics[0][0];
-    fy = intrinsics[0][1];
-    cx = intrinsics[0][2];
-    cy = intrinsics[0][3];
-  }
 
-  __syncthreads();
+    __shared__ float fx, fy, cx, cy;
+    if (threadIdx.x == 0) {
+        fx = intrinsics[0][0];
+        fy = intrinsics[0][1];
+        cx = intrinsics[0][2];
+        cy = intrinsics[0][3];
+    }
+    __syncthreads();
 
-  GPU_1D_KERNEL_LOOP(n, ii.size(0)) {
-    int k = ku[n];
-    int ix = ii[n];
-    int jx = jj[n];
-    int kx = kk[n];
 
-    float ti[3] = { poses[ix][0], poses[ix][1], poses[ix][2] };
-    float tj[3] = { poses[jx][0], poses[jx][1], poses[jx][2] };
-    float qi[4] = { poses[ix][3], poses[ix][4], poses[ix][5], poses[ix][6] };
-    float qj[4] = { poses[jx][3], poses[jx][4], poses[jx][5], poses[jx][6] };
+    GPU_1D_KERNEL_LOOP(n, ii.size(0)) {
+      int k = ku[n];
+      int ix = ii[n];
+      int jx = jj[n];
+      int kx = kk[n];
 
-    float Xi[4], Xj[4];
-    Xi[0] = (patches[kx][0][1][1] - cx) / fx;
-    Xi[1] = (patches[kx][1][1][1] - cy) / fy;
-    Xi[2] = 1.0;
-    Xi[3] = patches[kx][2][1][1];
-    
-    float tij[3], qij[4];
-    relSE3(ti, qi, tj, qj, tij, qij);
-    actSE3(tij, qij, Xi, Xj);
+      float ti[3] = { poses[ix][0], poses[ix][1], poses[ix][2] };
+      float tj[3] = { poses[jx][0], poses[jx][1], poses[jx][2] };
+      float qi[4] = { poses[ix][3], poses[ix][4], poses[ix][5], poses[ix][6] };
+      float qj[4] = { poses[jx][3], poses[jx][4], poses[jx][5], poses[jx][6] };
 
-    const float X = Xj[0];
-    const float Y = Xj[1];
-    const float Z = Xj[2];
-    const float W = Xj[3];
+      float Xi[4], Xj[4];
+      Xi[0] = (patches[kx][0][1][1] - cx) / fx;
+      Xi[1] = (patches[kx][1][1][1] - cy) / fy;
+      Xi[2] = 1.0;
+      Xi[3] = patches[kx][2][1][1];
+      
+      float tij[3], qij[4];
+      relSE3(ti, qi, tj, qj, tij, qij);
+      actSE3(tij, qij, Xi, Xj);
 
-    const float d = (Z >= 0.2) ? 1.0 / Z : 0.0; 
-    const float d2 = d * d;
+      const float X = Xj[0];
+      const float Y = Xj[1];
+      const float Z = Xj[2];
+      const float W = Xj[3];
 
-    const float x1 = fx * (X / Z) + cx;
-    const float y1 = fy * (Y / Z) + cy;
+      const float d = (Z >= 0.2) ? 1.0 / Z : 0.0; 
+      const float d2 = d * d;
 
-    const float rx = target[n][0] - x1;
-    const float ry = target[n][1] - y1;
+      const float x1 = fx * (X / Z) + cx;
+      const float y1 = fy * (Y / Z) + cy;
 
-    const bool in_bounds = (sqrt(rx*rx + ry*ry) < 128) && (Z > 0.2) &&
-      (x1 > -64) && (y1 > -64) && (x1 < 2*cx + 64) && (y1 < 2*cy + 64);
+      const float rx = target[n][0] - x1;
+      const float ry = target[n][1] - y1;
 
-    const float mask = in_bounds ? 1.0 : 0.0;
+      const bool in_bounds = (sqrt(rx*rx + ry*ry) < 128) && (Z > 0.2) &&
+        (x1 > -64) && (y1 > -64) && (x1 < 2*cx + 64) && (y1 < 2*cy + 64);
 
-    ix = ix - t0;
-    jx = jx - t0;
+      const float mask = in_bounds ? 1.0 : 0.0;
+
+      ix = ix - t0;
+      jx = jx - t0;
 
     {
       const float r = target[n][0] - x1;
@@ -311,32 +358,32 @@ __global__ void reprojection_residuals_and_hessian(
       for (int i=0; i<6; i++) {
         for (int j=0; j<6; j++) {
           if (ix >= 0)
-            atomicAdd(&B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
+            atomicAdd(&local_B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
           if (jx >= 0)
-            atomicAdd(&B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
+            atomicAdd(&local_B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
           if (ix >= 0 && jx >= 0) {
-            atomicAdd(&B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
-            atomicAdd(&B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
+            atomicAdd(&local_B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
+            atomicAdd(&local_B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
           }
         }
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&E[6*ix+i][k], -w * Jz * Ji[i]);
+          atomicAdd(&local_E[6*ix+i][k], -w * Jz * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&E[6*jx+i][k],  w * Jz * Jj[i]);
+          atomicAdd(&local_E[6*jx+i][k],  w * Jz * Jj[i]);
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&v[6*ix+i], -w * r * Ji[i]);
+          atomicAdd(&local_v[6*ix+i], -w * r * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&v[6*jx+i],  w * r * Jj[i]);
+          atomicAdd(&local_v[6*jx+i],  w * r * Jj[i]);
       }
 
-      atomicAdd(&C[k], w * Jz * Jz);
-      atomicAdd(&u[k], w *  r * Jz);
+      atomicAdd(&local_C[k], w * Jz * Jz);
+      atomicAdd(&local_u[k], w *  r * Jz);
     }
 
     {
@@ -351,48 +398,39 @@ __global__ void reprojection_residuals_and_hessian(
       for (int i=0; i<6; i++) {
         for (int j=0; j<6; j++) {
           if (ix >= 0)
-            atomicAdd(&B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
+            atomicAdd(&local_B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
           if (jx >= 0)
-            atomicAdd(&B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
+            atomicAdd(&local_B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
           if (ix >= 0 && jx >= 0) {
-            atomicAdd(&B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
-            atomicAdd(&B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
+            atomicAdd(&local_B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
+            atomicAdd(&local_B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
           }
         }
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&E[6*ix+i][k], -w * Jz * Ji[i]);
+          atomicAdd(&local_E[6*ix+i][k], -w * Jz * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&E[6*jx+i][k],  w * Jz * Jj[i]);
+          atomicAdd(&local_E[6*jx+i][k],  w * Jz * Jj[i]);
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&v[6*ix+i], -w * r * Ji[i]);
+          atomicAdd(&local_v[6*ix+i], -w * r * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&v[6*jx+i],  w * r * Jj[i]);
+          atomicAdd(&local_v[6*jx+i],  w * r * Jj[i]);
       }
 
-      atomicAdd(&C[k], w * Jz * Jz);
-      atomicAdd(&u[k], w *  r * Jz);
+      atomicAdd(&local_C[k], w * Jz * Jz);
+      atomicAdd(&local_u[k], w *  r * Jz);
     }
-  }
-
-
-    //print stats for both inputs and outputs
-    //if(tid == 0)
-    //{
-    //  printf("TID 0: tensors after computation\n");
-    //  //print here the tensor stats
-    //  print_accessor_stats(B, "B");
-    //  print_accessor_stats(E, "E");
-    //  print_accessor_stats(C, "C");
-    //  print_accessor_stats(v, "v");
-    //  print_accessor_stats(u, "u");
-    //}
+    
+  } // end of GPU_1D_KERNEL_LOOP
+    __syncthreads();
 }
+
+
 
 
 __global__ void reproject(
@@ -461,7 +499,7 @@ std::vector<torch::Tensor> cuda_ba(
     torch::Tensor kk,
     const int t0, const int t1, const int iterations)
 {
-  std::cout << "\nStarting CUDA Bundle Adjustment..." << std::endl;
+
 
   auto ktuple = torch::_unique(kk, true, true);
   torch::Tensor kx = std::get<0>(ktuple);
@@ -482,36 +520,24 @@ std::vector<torch::Tensor> cuda_ba(
   weight = weight.view({-1, 2});
 
   const int num = ii.size(0);
-  torch::Tensor B = torch::empty({6*N, 6*N}, opts);
-  torch::Tensor E = torch::empty({6*N, 1*M}, opts);
-  torch::Tensor C = torch::empty({M}, opts);
 
-  torch::Tensor v = torch::empty({6*N}, opts);
-  torch::Tensor u = torch::empty({1*M}, opts);
+  int num_threads = NUM_BLOCKS(ii.size(0)) * NUM_THREADS_PER_BLOCK;  // total threads launched
+
 
   for (int itr=0; itr < iterations; itr++) {
 
-    B.zero_();
-    E.zero_();
-    C.zero_();
-    v.zero_();
-    u.zero_();
 
-    v = v.view({6*N});
-    u = u.view({1*M});
+    torch::Tensor B = torch::zeros({num_threads, 6 * N, 6 * N}, opts);
+    torch::Tensor E = torch::zeros({num_threads, 6 * N, M}, opts);
+    torch::Tensor C = torch::zeros({num_threads, M}, opts);
+    torch::Tensor v = torch::zeros({num_threads, 6 * N}, opts);
+    torch::Tensor u = torch::zeros({num_threads, M}, opts); 
 
-    //printf("Iteration %d: %d threads, %d blocks\n", itr, num_threads, NUM_BLOCKS(ii.size(0)));
-    std::cout << "\n-------  Iteration "<< itr << " -------"  << std::endl;
-    std::cout << "Before hessian computation: " << std::endl;
-        //print max min mean and std of the tensors, in 1 line per tensor
-    print_tensor_stats(B, "B");
-    print_tensor_stats(E, "E");
-    print_tensor_stats(C, "C");
-    print_tensor_stats(v, "v");
-    print_tensor_stats(u, "u");
-
-
-    reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS>>>(
+    v = v.view({num_threads, 6*N});
+    u = u.view({num_threads, 1*M});
+    std::cout << "Iteration: " << itr << std::endl;
+    auto start_hessian = std::chrono::high_resolution_clock::now();
+    reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS_PER_BLOCK>>>(
       poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
       patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
       intrinsics.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
@@ -522,27 +548,131 @@ std::vector<torch::Tensor> cuda_ba(
       jj.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
       kk.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
       ku.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
-      B.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
-      E.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
-      C.packed_accessor32<float,1,torch::RestrictPtrTraits>(),
-      v.packed_accessor32<float,1,torch::RestrictPtrTraits>(),
-      u.packed_accessor32<float,1,torch::RestrictPtrTraits>(), t0);
+      B.packed_accessor64<float,3,torch::RestrictPtrTraits>(),
+      E.packed_accessor64<float,3,torch::RestrictPtrTraits>(),
+      C.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
+      v.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
+      u.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
+      t0);
     
-    std::cout << "After hessian computation: " << std::endl;
-        //print max min mean and std of the tensors, in 1 line per tensor
-    print_tensor_stats(B, "B");
-    print_tensor_stats(E, "E");
-    print_tensor_stats(C, "C");
-    print_tensor_stats(v, "v");
-    print_tensor_stats(u, "u");
+    cudaDeviceSynchronize();
+    auto end_hessian = std::chrono::high_resolution_clock::now();
+    auto duration_hessian = std::chrono::duration_cast<std::chrono::milliseconds>(end_hessian - start_hessian);
+    std::cout << "Hessian computation time: " << duration_hessian.count() << " milliseconds" << std::endl;
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    reduce_tensor(B);
+    //reduce_tensor(E);
+    reduce_tensor(C);
+    reduce_tensor(v);
+    reduce_tensor(u);
+    //B = B.sum(0);
+    //E = E.sum(0);
+    //C = C.sum(0);
+    //v = v.sum(0);
+    //u = u.sum(0);
 
+    // auto B_contig = B.contiguous();
+    // int num_threads = B.size(0);
+    // int H = B.size(1);  // 6*N
+    // int W = B.size(2);  // 6*N
+    // int vec_size = H * W;
 
+    // const float* B_ptr = B_contig.data_ptr<float>();
+    auto options = torch::TensorOptions().dtype(B.dtype()).device(B.device());
+    // torch::Tensor B_out_flat = torch::empty({vec_size}, options);
+
+    int threads_per_block = 256;
+
+    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+    //     B_ptr, num_threads, vec_size, B_out_flat.data_ptr<float>());
+
+    // B = B_out_flat.view({H, W});
+     
+
+    // auto C_contig = C.contiguous();
+    // num_threads = C.size(0);
+    // vec_size = C.size(1);
+    // const float* C_ptr = C_contig.data_ptr<float>();
+    // torch::Tensor C_out_flat = torch::empty({vec_size}, options);
+    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+    //     C_ptr, num_threads, vec_size, C_out_flat.data_ptr<float>());
+    // C = C_out_flat.view({vec_size});
+    
+    // auto v_contig = v.contiguous();
+    // num_threads = v.size(0);
+    // H = v.size(1);  // 6*N
+    // vec_size = H;
+    // const float* v_ptr = v_contig.data_ptr<float>();
+    // torch::Tensor v_out_flat = torch::empty({vec_size}, options);
+    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+    //     v_ptr, num_threads, vec_size, v_out_flat.data_ptr<float>());
+    // v = v_out_flat.view({H});
+
+    // auto u_contig = u.contiguous();
+    // num_threads = u.size(0);
+    // vec_size = u.size(1);  // M
+    // const float* u_ptr = u_contig.data_ptr<float>();
+    // torch::Tensor u_out_flat = torch::empty({vec_size}, options);
+    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+    //     u_ptr, num_threads, vec_size, u_out_flat.data_ptr<float>());
+    // u = u_out_flat.view({vec_size});
+    
+    
+    
+    auto E_contig = E.contiguous();
+    int num_threads = E.size(0);
+    int H = E.size(1);  // 6*N
+    int W = E.size(2);  // M
+    int vec_size = H * W;
+    std::cout << "Num blocks : " << vec_size << std::endl;
+    const float* E_ptr = E_contig.data_ptr<float>();
+    torch::Tensor E_out_flat = torch::empty({vec_size}, options); 
+    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+        E_ptr, num_threads, vec_size, E_out_flat.data_ptr<float>());
+    E = E_out_flat.view({H, W});
+
+/*
+    auto C_contig = C.contiguous();
+    num_threads = C.size(0);
+    vec_size = C.size(1);
+    const float* C_ptr = C_contig.data_ptr<float>();
+    torch::Tensor C_out_flat = torch::empty({vec_size}, options);
+    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+        C_ptr, num_threads, vec_size, C_out_flat.data_ptr<float>());
+    C = C_out_flat.view({vec_size});
+
+    auto v_contig = v.contiguous();
+    num_threads = v.size(0);
+    H = v.size(1);  // 6*N
+    vec_size = H;
+    const float* v_ptr = v_contig.data_ptr<float>();
+    torch::Tensor v_out_flat = torch::empty({vec_size}, options);
+    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+        v_ptr, num_threads, vec_size, v_out_flat.data_ptr<float>());
+    v = v_out_flat.view({H});
+
+    auto u_contig = u.contiguous();
+    num_threads = u.size(0);
+    vec_size = u.size(1);  // M
+    const float* u_ptr = u_contig.data_ptr<float>();
+    torch::Tensor u_out_flat = torch::empty({vec_size}, options);
+    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
+        u_ptr, num_threads, vec_size, u_out_flat.data_ptr<float>());
+    u = u_out_flat.view({vec_size});
+*/
+    
+
+    cudaDeviceSynchronize();  // waits until reductions really finished
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Reduction time: " << duration.count() << " milliseconds" << std::endl;
+    //create one more dimension for v and u
     v = v.view({6*N, 1});
     u = u.view({1*M, 1});
 
     torch::Tensor Q = 1.0 / (C + lmbda).view({1, M});
-    print_tensor_stats(Q, "Q");
-
+    //print_tensor_stats(Q, "Q");
     if (t1 - t0 == 0) {
 
       torch::Tensor Qt = torch::transpose(Q, 0, 1);
@@ -550,7 +680,7 @@ std::vector<torch::Tensor> cuda_ba(
 
       dZ = dZ.view({M});
 
-      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS>>>(
+      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS_PER_BLOCK>>>(
         kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
         patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
         dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
@@ -560,49 +690,39 @@ std::vector<torch::Tensor> cuda_ba(
     else {
 
       torch::Tensor EQ = E * Q;
-      print_tensor_stats(EQ, "EQ");
+      
       torch::Tensor Et = torch::transpose(E, 0, 1);
       torch::Tensor Qt = torch::transpose(Q, 0, 1);
 
       torch::Tensor S = B - torch::matmul(EQ, Et);
-      print_tensor_stats(S, "S");
       torch::Tensor y = v - torch::matmul(EQ,  u);
-      print_tensor_stats(y, "y");
 
       torch::Tensor I = torch::eye(6*N, opts);
       S += I * (1e-4 * S + 1.0);
-      print_tensor_stats(S, "S after regularization");
-
 
       torch::Tensor U = torch::linalg::cholesky(S);
-      print_tensor_stats(U, "U");
       torch::Tensor dX = torch::cholesky_solve(y, U);
-      print_tensor_stats(dX, "dX");
       torch::Tensor dZ = Qt * (u - torch::matmul(Et, dX));
-      print_tensor_stats(torch::matmul(Et, dX), "Et * dX");
-      print_tensor_stats(dZ, "dZ");
       dX = dX.view({N, 6});
       dZ = dZ.view({M});
-      std::cout << "After solving the system: " << std::endl;
+      //std::cout < "After solving the system: " << std::endl;
 
-      pose_retr_kernel<<<NUM_BLOCKS(N), NUM_THREADS>>>(t0, t1,
+
+      pose_retr_kernel<<<NUM_BLOCKS(N), NUM_THREADS_PER_BLOCK>>>(t0, t1,
           poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
           dX.packed_accessor32<float,2,torch::RestrictPtrTraits>());
 
-      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS>>>(
+      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS_PER_BLOCK>>>(
           kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
           patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
           dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
       
-      std::cout << "After updating the poses and patches: " << std::endl;
-
-      print_tensor_stats(poses, "poses");
-      print_tensor_stats(patches, "patches");
-      print_tensor_stats(dX, "dX");
-      print_tensor_stats(dZ, "dZ");
+      //std::cout << "After updating the poses and patches: " << std::endl;
+      //print_tensor_stats(poses, "poses");
+      //print_tensor_stats(patches, "patches");
+      //print_tensor_stats(dX, "dX");
+      //print_tensor_stats(dZ, "dZ");
     }
-    
-
   }
   
   return {};
@@ -630,7 +750,7 @@ torch::Tensor cuda_reproject(
 
   torch::Tensor coords = torch::empty({N, 2, P, P}, opts);
 
-  reproject<<<NUM_BLOCKS(N), NUM_THREADS>>>(
+  reproject<<<NUM_BLOCKS(N), NUM_THREADS_PER_BLOCK>>>(
     poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
     patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
     intrinsics.packed_accessor32<float,2,torch::RestrictPtrTraits>(),

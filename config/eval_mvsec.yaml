@@ -16,7 +16,7 @@ MOTION_DAMPING: 0.5
 # maybe use mixed precision for inference
 MIXED_PRECISION: True
 
-# Select between random, gradient, scorer, topk
+# Select between random, gradient, scorer, topk, density
 PATCH_SELECTOR: 'scorer'
 # Normalizer (only evs): none, rescale, standard (std)
 NORM: 'std'

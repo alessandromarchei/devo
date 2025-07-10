@@ -382,7 +382,12 @@ class DEVO:
             #            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
 
             try:
-                fastba.BA(self.poses, self.patches, self.intrinsics,
+                if self.cfg.BA_PRECISION == 'reduction':
+                    fastba.BA_red(self.poses, self.patches, self.intrinsics,
+                        target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                else:
+                    #default using BA with atomic operations
+                    fastba.BA(self.poses, self.patches, self.intrinsics,
                         target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
             except:
                 print("Warning BA failed...")
