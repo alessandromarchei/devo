@@ -840,3 +840,70 @@ def visualize_scorer_map(scores, save=False, folder="results/scorer"):
     else:    
         plt.show()
     plt.close()
+
+
+import os
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from datetime import datetime
+import cv2
+import os
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+def show_voxel_coordinates(voxel_in, patch_coords, use_color=True, save=True, folder="test/viz_coords", index=None):
+    if isinstance(voxel_in, torch.Tensor):
+        if voxel_in.device != 'cpu':
+            voxel_in = voxel_in.detach().cpu()
+        voxel_np = voxel_in.numpy()
+    else:
+        voxel_np = voxel_in
+
+    # voxel_np shape: (1, 1, 5, H, W)
+    voxel_np = np.squeeze(voxel_np, axis=(0, 1))  # shape now (5, H, W)
+
+    summed_frame = voxel_np.sum(axis=0)  # shape (H, W)
+    H, W = summed_frame.shape
+
+    if use_color:
+        color_img = np.zeros((H, W, 3), dtype=np.uint8)
+        color_img[summed_frame < 0] = [255, 0, 0]
+        color_img[summed_frame > 0] = [0, 255, 0]
+        color_img[summed_frame == 0] = [0, 0, 0]
+        img_to_show = color_img
+    else:
+        img_to_show = summed_frame
+        if np.max(img_to_show) > 0:
+            img_to_show = img_to_show / np.max(img_to_show)
+
+    coords = patch_coords.squeeze(0).detach().cpu().numpy()  # shape (N, 2)
+    coords_x = (coords[:, 0] * 4).astype(int)
+    coords_y = (coords[:, 1] * 4).astype(int)
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    if use_color:
+        ax.imshow(img_to_show)
+    else:
+        ax.imshow(img_to_show, cmap='gray')
+    ax.axis('off')
+
+    # Simple blue markers, clean look
+    ax.scatter(coords_x, coords_y, s=50, c='blue', marker='o', edgecolors='white', linewidths=0.8)
+
+    if save:
+        os.makedirs(folder, exist_ok=True)
+        if index is not None:
+            string = f"coords_{index}"
+        else:
+            string = datetime.today().strftime('%Y-%m-%d_%H-%M-%S.%f')
+        out_path = os.path.join(folder, f"{string}.png")
+
+        fig.savefig(out_path, bbox_inches='tight', dpi=150)
+        plt.close(fig)
+        print(f"Saved {out_path}")
+    else:
+        plt.show()

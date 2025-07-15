@@ -341,14 +341,14 @@ def ev_density_selector(events,
     patches_per_image,
     suppression_borders=0,
 ):
-    #get the absolute value of the events tensor. shape [batch_size, 1, height, width]
+    #get the absolute value of the events tensor. shape [batch_size, 5, height, width]
     positive_event_tensor = torch.abs(events.squeeze(0))
 
-    #downsample [batch_size, 1, height, width] to [batch_size, 1, height/4, width/4]
+    #downsample [batch_size, 5, height, width] to [batch_size, 5, height/4, width/4]
     downsampled_event_tensor = F.avg_pool2d(positive_event_tensor, 4, 4)
     event_in_xy_form = downsampled_event_tensor.transpose(3, 2)
 
-    #mean across the BINS. shape [batch_size, 1, height/4, width/4]
+    #mean across the BINS. shape [batch_size, 5, height/4, width/4]
     ev_mean = torch.mean(event_in_xy_form, dim=1)
 
     if suppression_borders != 0:
@@ -381,3 +381,109 @@ def ev_density_selector(events,
     (x,y) = coords[:, :, 0], coords[:, :, 1] # (batch_size, patches_per_image)
     return (x, y)
 
+
+import torch
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import os
+
+def plot_tensor(tensor, title, folder="debug_ev_steps", index=None, cmap='gray'):
+    os.makedirs(folder, exist_ok=True)
+    tensor_np = tensor.squeeze().detach().cpu().numpy()
+
+    # If tensor still has more than 2 dims, reduce (e.g., sum across first dimension)
+    if tensor_np.ndim > 2:
+        tensor_np = np.sum(tensor_np, axis=0)
+
+    plt.figure(figsize=(8, 8))
+    plt.imshow(tensor_np, cmap=cmap)
+    plt.title(title)
+    plt.axis('off')
+    if index is not None:
+        save_path = os.path.join(folder, f"{title.replace(' ', '_')}_{index}.png")
+        plt.savefig(save_path, bbox_inches='tight')
+        print(f"[INFO] Saved: {save_path}")
+        plt.close()
+    else:
+        plt.show()
+
+
+def ev_density_selector_viz(events,
+                        patches_per_image,
+                        suppression_borders=0,
+                        visualize=True,
+                        index=None,
+                        folder="debug_ev_steps"):
+    """
+    Select patches based on event density and optionally visualize each step.
+
+    Args:
+        events: input event tensor [1, 5, H, W]
+        patches_per_image: number of patches to select
+        suppression_borders: kernel size for NMS (0 = no suppression)
+        visualize: whether to plot intermediate steps
+        index: identifier for saved images
+        folder: where to save visualization images
+    """
+    # Step 1: Positive event tensor
+    positive_event_tensor = torch.abs(events.squeeze(0))  # shape: [1, 5, H, W]
+    if visualize:
+        plot_tensor(torch.sum(positive_event_tensor, dim=0), "1_Positive_Event_Tensor", folder, index)
+
+    # Step 2: Downsample
+    downsampled_event_tensor = F.avg_pool2d(positive_event_tensor, 4, 4)  # [1, 5, H/4, W/4]
+    if visualize:
+        plot_tensor(torch.sum(downsampled_event_tensor, dim=0), "2_Downsampled_Event_Tensor", folder, index)
+
+    # Step 4: Mean across bins
+    ev_mean = torch.mean(downsampled_event_tensor, dim=1)  # shape: [1, W/4, H/4]
+    if visualize:
+        plot_tensor(ev_mean, "3_Mean_Across_Bins", folder, index)
+
+    # Step 5: Non-maximum suppression (optional)
+    if suppression_borders != 0:
+        ev_mean = nms_image(ev_mean, kernel_size=suppression_borders)
+        if visualize:
+            plot_tensor(ev_mean, "4_After_NMS", folder, index)
+
+    # Flatten and select top k
+    event_mean_flat = ev_mean.flatten()  # shape: [1, W/4 * H/4]
+    values, indices = torch.topk(event_mean_flat, k=patches_per_image, dim=-1)
+
+    # Compute row and col indices
+    row_indices = indices / ev_mean.shape[-1]
+    col_indices = indices % ev_mean.shape[-1]
+
+    # Optional: plot points on final mean image
+    if visualize:
+        plt.figure(figsize=(8, 8))
+        plt.imshow(ev_mean.squeeze().detach().cpu().numpy(), cmap='gray')
+        plt.scatter(col_indices.cpu(), row_indices.cpu(), c='blue', s=40, marker='o', edgecolors='white')
+        plt.title("5_Selected_Points")
+        plt.axis('off')
+        if index is not None:
+            save_path = os.path.join(folder, f"5_Selected_Points_{index}.png")
+            plt.savefig(save_path, bbox_inches='tight')
+            print(f"[INFO] Saved: {save_path}")
+            plt.close()
+        else:
+            plt.show()
+
+
+# compute the batch indices of the top k values in the flattened tensor
+#ev_mean shape = [1, H/4, W/4]
+    batch_indices = (
+        torch.arange(ev_mean.shape[0], device="cuda")
+        .view(-1, 1)
+        .repeat(1, patches_per_image)
+    )
+
+    # combine the batch, row, and column indices to obtain the indices in the original 3D tensor
+    row_indices = row_indices.view(-1, patches_per_image)
+    col_indices = col_indices.view(-1, patches_per_image)
+    orig_indices = torch.stack((batch_indices, row_indices, col_indices), dim=-1)
+
+    coords = orig_indices[:, :, 1:]
+    #return the coordindate in (x,y) format as the other implementations
+    (x,y) = coords[:, :, 0], coords[:, :, 1] # (batch_size, patches_per_image)
+    return (x, y)

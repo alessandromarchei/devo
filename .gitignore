@@ -201,3 +201,7 @@ evals/backup
 *.nfs*
 
 instructions.txt
+
+test/
+
+debug_ev_steps/

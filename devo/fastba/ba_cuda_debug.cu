@@ -14,7 +14,7 @@
 
 //1 thread per edge would make the memory explode, try with a threshold for the number of threads (once reached, use a fixed number of threads, so 1 thread will process multiple edges)
 #define NUM_THREADS_PER_BLOCK 256
-#define MAX_BLOCKS 64
+#define MAX_BLOCKS 8
 
 #define NUM_BLOCKS(batch_size) \
   ((batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK < MAX_BLOCKS ? \
@@ -536,7 +536,13 @@ std::vector<torch::Tensor> cuda_ba(
     v = v.view({num_threads, 6*N});
     u = u.view({num_threads, 1*M});
     std::cout << "Iteration: " << itr << std::endl;
-    auto start_hessian = std::chrono::high_resolution_clock::now();
+
+
+    cudaEvent_t start_kernel, stop_kernel;
+    cudaEventCreate(&start_kernel);
+    cudaEventCreate(&stop_kernel);
+
+    cudaEventRecord(start_kernel);
     reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS_PER_BLOCK>>>(
       poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
       patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
@@ -555,22 +561,32 @@ std::vector<torch::Tensor> cuda_ba(
       u.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
       t0);
     
-    cudaDeviceSynchronize();
-    auto end_hessian = std::chrono::high_resolution_clock::now();
-    auto duration_hessian = std::chrono::duration_cast<std::chrono::milliseconds>(end_hessian - start_hessian);
-    std::cout << "Hessian computation time: " << duration_hessian.count() << " milliseconds" << std::endl;
-    
-    auto start = std::chrono::high_resolution_clock::now();
-    reduce_tensor(B);
+    cudaEventRecord(stop_kernel);
+
+    cudaEventSynchronize(stop_kernel);
+
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start_kernel, stop_kernel);
+    std::cout << "Kernel time: " << milliseconds << " ms" << std::endl;
+
+    cudaEventDestroy(start_kernel);
+    cudaEventDestroy(stop_kernel);
+
+
+    cudaEvent_t start_reduction, stop_reduction;
+    cudaEventCreate(&start_reduction);
+    cudaEventCreate(&stop_reduction);
+    //reduce_tensor(B);
     //reduce_tensor(E);
-    reduce_tensor(C);
-    reduce_tensor(v);
-    reduce_tensor(u);
-    //B = B.sum(0);
-    //E = E.sum(0);
-    //C = C.sum(0);
-    //v = v.sum(0);
-    //u = u.sum(0);
+    //reduce_tensor(C);
+    //reduce_tensor(v);
+    //reduce_tensor(u);
+    cudaEventRecord(start_reduction);
+    B = B.sum(0);
+    E = E.sum(0);
+    C = C.sum(0);
+    v = v.sum(0);
+    u = u.sum(0);
 
     // auto B_contig = B.contiguous();
     // int num_threads = B.size(0);
@@ -583,94 +599,23 @@ std::vector<torch::Tensor> cuda_ba(
     // torch::Tensor B_out_flat = torch::empty({vec_size}, options);
 
     int threads_per_block = 256;
-
-    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-    //     B_ptr, num_threads, vec_size, B_out_flat.data_ptr<float>());
-
-    // B = B_out_flat.view({H, W});
-     
-
-    // auto C_contig = C.contiguous();
-    // num_threads = C.size(0);
-    // vec_size = C.size(1);
-    // const float* C_ptr = C_contig.data_ptr<float>();
-    // torch::Tensor C_out_flat = torch::empty({vec_size}, options);
-    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-    //     C_ptr, num_threads, vec_size, C_out_flat.data_ptr<float>());
-    // C = C_out_flat.view({vec_size});
-    
-    // auto v_contig = v.contiguous();
-    // num_threads = v.size(0);
-    // H = v.size(1);  // 6*N
-    // vec_size = H;
-    // const float* v_ptr = v_contig.data_ptr<float>();
-    // torch::Tensor v_out_flat = torch::empty({vec_size}, options);
-    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-    //     v_ptr, num_threads, vec_size, v_out_flat.data_ptr<float>());
-    // v = v_out_flat.view({H});
-
-    // auto u_contig = u.contiguous();
-    // num_threads = u.size(0);
-    // vec_size = u.size(1);  // M
-    // const float* u_ptr = u_contig.data_ptr<float>();
-    // torch::Tensor u_out_flat = torch::empty({vec_size}, options);
-    // reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-    //     u_ptr, num_threads, vec_size, u_out_flat.data_ptr<float>());
-    // u = u_out_flat.view({vec_size});
-    
-    
-    
-    auto E_contig = E.contiguous();
-    int num_threads = E.size(0);
-    int H = E.size(1);  // 6*N
-    int W = E.size(2);  // M
-    int vec_size = H * W;
-    std::cout << "Num blocks : " << vec_size << std::endl;
-    const float* E_ptr = E_contig.data_ptr<float>();
-    torch::Tensor E_out_flat = torch::empty({vec_size}, options); 
-    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-        E_ptr, num_threads, vec_size, E_out_flat.data_ptr<float>());
-    E = E_out_flat.view({H, W});
-
-/*
-    auto C_contig = C.contiguous();
-    num_threads = C.size(0);
-    vec_size = C.size(1);
-    const float* C_ptr = C_contig.data_ptr<float>();
-    torch::Tensor C_out_flat = torch::empty({vec_size}, options);
-    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-        C_ptr, num_threads, vec_size, C_out_flat.data_ptr<float>());
-    C = C_out_flat.view({vec_size});
-
-    auto v_contig = v.contiguous();
-    num_threads = v.size(0);
-    H = v.size(1);  // 6*N
-    vec_size = H;
-    const float* v_ptr = v_contig.data_ptr<float>();
-    torch::Tensor v_out_flat = torch::empty({vec_size}, options);
-    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-        v_ptr, num_threads, vec_size, v_out_flat.data_ptr<float>());
-    v = v_out_flat.view({H});
-
-    auto u_contig = u.contiguous();
-    num_threads = u.size(0);
-    vec_size = u.size(1);  // M
-    const float* u_ptr = u_contig.data_ptr<float>();
-    torch::Tensor u_out_flat = torch::empty({vec_size}, options);
-    reduce_first_dim<<<vec_size, threads_per_block, threads_per_block * sizeof(float)>>>(
-        u_ptr, num_threads, vec_size, u_out_flat.data_ptr<float>());
-    u = u_out_flat.view({vec_size});
-*/
     
 
     cudaDeviceSynchronize();  // waits until reductions really finished
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "Reduction time: " << duration.count() << " milliseconds" << std::endl;
+    
+    cudaEventRecord(stop_reduction);
+    cudaEventSynchronize(stop_reduction);
+    float reduction_time = 0;
+    cudaEventElapsedTime(&reduction_time, start_reduction, stop_reduction);
+    cudaEventDestroy(start_reduction);
+    cudaEventDestroy(stop_reduction); 
+    std::cout << "Reduction time: " << reduction_time << " ms" << std::endl;
     //create one more dimension for v and u
     v = v.view({6*N, 1});
     u = u.view({1*M, 1});
 
+
+    auto start_solver = std::chrono::high_resolution_clock::now();
     torch::Tensor Q = 1.0 / (C + lmbda).view({1, M});
     //print_tensor_stats(Q, "Q");
     if (t1 - t0 == 0) {
@@ -717,12 +662,13 @@ std::vector<torch::Tensor> cuda_ba(
           patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
           dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
       
-      //std::cout << "After updating the poses and patches: " << std::endl;
-      //print_tensor_stats(poses, "poses");
-      //print_tensor_stats(patches, "patches");
-      //print_tensor_stats(dX, "dX");
-      //print_tensor_stats(dZ, "dZ");
+
     }
+    cudaDeviceSynchronize();  // waits until reductions really finished
+
+    auto end_solver = std::chrono::high_resolution_clock::now();
+    auto duration_solver = std::chrono::duration_cast<std::chrono::milliseconds>(end_solver - start_solver);
+    std::cout << "Solver time: " << duration_solver.count() << " milliseconds" << std::endl;
   }
   
   return {};

@@ -17,11 +17,11 @@ MOTION_DAMPING: 0.5
 MIXED_PRECISION: True
 
 # Select between random, gradient, scorer, topk, density
-PATCH_SELECTOR: 'density'
+PATCH_SELECTOR: 'scorer'
 # Normalizer (only evs): none, rescale, standard (std)
 NORM: 'std'
 # Eval mode of patch selector (random, topk, multinomial)
-SCORER_EVAL_MODE: 'density'
+SCORER_EVAL_MODE: 'multi'
 SCORER_EVAL_USE_GRID: True
 
 BA_PRECISION: 'reduction'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'

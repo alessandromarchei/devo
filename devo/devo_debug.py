@@ -18,7 +18,7 @@ from . import projective_ops as pops
 autocast = torch.cuda.amp.autocast
 Id = SE3.Identity(1, device="cuda")
 
-from utils.viz_utils import visualize_voxel
+from utils.viz_utils import visualize_voxel, show_voxel_coordinates
 from scripts.draw_graph import draw_patch_graph
 import os
 
@@ -155,6 +155,8 @@ class DEVO:
         self.pose_file_read_pointer = 0  # number of lines already read
 
         self.iteration = 0
+
+        self.viz = viz
 
     def load_weights(self, network):
         # load network from checkpoint file
@@ -493,26 +495,34 @@ class DEVO:
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
                 elif self.cfg.BA_PRECISION == "reduction":
                     #reduction method, deterministic float32
-                    fastba.BA_red(self.poses, self.patches, self.intrinsics, 
-                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
-                    
-                elif self.cfg.BA_PRECISION == "debug":
-                    #uncomment for using double precision
-                    # self.poses_ = self.poses_.to(dtype=torch.float64, device=self.poses_.device)
-                    # self.patches_ = self.patches_.to(dtype=torch.float64, device=self.patches_.device)
-                    # self.intrinsics_ = self.intrinsics_.to(dtype=torch.float64, device=self.intrinsics_.device)
 
-                    # target = target.to(dtype=torch.float64, device=target.device)
-                    # weight = weight.to(dtype=torch.float64, device=weight.device)
-                    # lmbda = lmbda.to(dtype=torch.float64, device=lmbda.device)
+                    
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
+
+                    fastba.BA_red(self.poses, self.patches, self.intrinsics, 
+                                target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+
+                    print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                
+                elif self.cfg.BA_PRECISION == "debug":
+                    
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
 
                     fastba.BA_debug(self.poses, self.patches, self.intrinsics,
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
 
-                    #now convert everything back to float32
-                    # self.poses_ = self.poses_.to(dtype=torch.float32, device=self.poses_.device)
-                    # self.patches_ = self.patches_.to(dtype=torch.float32, device=self.patches_.device)  
-                    # self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
+                    
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+
+                    print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 elif self.cfg.BA_PRECISION == "truncate_double":
                     decimal_places = 13
                     #uncomment for using double precision
@@ -532,9 +542,15 @@ class DEVO:
                     self.patches_ = self.patches_.to(dtype=torch.float32, device=self.patches_.device)  
                     self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
                 else:
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
                     fastba.BA(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
 
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+
+                    print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 
 
                 self.poses_np = self.poses[0].data.cpu().numpy().tolist()
@@ -632,7 +648,7 @@ class DEVO:
 
         # TODO patches with depth is available (val)
         with autocast(enabled=self.cfg.MIXED_PRECISION):
-            fmap, gmap, imap, patches, _, clr = \
+            fmap, gmap, imap, patches, coords= \
                 self.network.patchify(image,
                     patches_per_image=self.cfg.PATCHES_PER_FRAME, 
                     return_color=True,
@@ -647,7 +663,8 @@ class DEVO:
         log_stats(imap, "imap", self.logname, ignore_zeros=True)
         log_stats(imap, "patches_gt", self.logname, ignore_zeros=True)
 
-
+        if self.viz:
+            show_voxel_coordinates(image, coords, index=self.iteration)
 
         ### update state attributes ###
         self.tlist.append(tstamp)

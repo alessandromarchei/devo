@@ -73,7 +73,7 @@ def run_voxel_debug(voxeldir, cfg, network, viz=False, iterator=None, timing=Fal
     print(f"use_pyramid: {use_pyramid}")
     from devo.devo_debug import DEVO
     
-    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=False, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
+    slam = DEVO(cfg, network, evs=True, ht=H, wd=W, viz=viz, viz_flow=viz_flow, model=model, pyramid=use_pyramid, **kwargs)
     
     for i, (voxel, intrinsics, t) in enumerate(tqdm(iterator)):
         if timing and i == 0:
@@ -81,10 +81,10 @@ def run_voxel_debug(voxeldir, cfg, network, viz=False, iterator=None, timing=Fal
             t1 = torch.cuda.Event(enable_timing=True)
             t0.record()
 
-        if viz: 
-            # import matplotlib.pyplot as plt
-            # plt.switch_backend('Qt5Agg')
-            visualize_voxel(voxel.detach().cpu(), save=True, index=i)
+        #if viz: 
+        #    # import matplotlib.pyplot as plt
+        #    # plt.switch_backend('Qt5Agg')
+        #    visualize_voxel(voxel.detach().cpu(), save=True, index=i)
         
         with Timer("DEVO", enabled=timing):
             slam(t, voxel, intrinsics, scale=scale)

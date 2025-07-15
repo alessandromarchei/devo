@@ -15,7 +15,7 @@ from .lietorch import SE3
 
 from .extractor import *
 from .blocks import GradientClip, GatedResidual, SoftAgg
-from .selector_debug import Scorer, SelectionMethod, PatchSelector, ev_density_selector
+from .selector_debug import Scorer, SelectionMethod, PatchSelector, ev_density_selector, ev_density_selector_viz
 
 from .utils import *
 from .ba import BA
@@ -329,7 +329,9 @@ class Patchifier(nn.Module):
         self.model = model
         self.iteration = 0
 
+
         self.kwargs = kwargs
+
 
         #CHOOSE ARCHITECTURE BASED ON THE MODEL
         if self.model == "mksmall":
@@ -496,19 +498,25 @@ class Patchifier(nn.Module):
             x, y = patch_selector_fn(scores, patches_per_image)
         else:
             # here for the determienistic method based on density
-            x, y = ev_density_selector(events=events, 
+            #x, y = ev_density_selector(events=events, 
+            #    patches_per_image=patches_per_image, 
+            #    suppression_borders=11)
+            x, y = ev_density_selector_viz(events=events, 
                            patches_per_image=patches_per_image, 
-                           suppression_borders=11)
+                           suppression_borders=7,
+                           visualize=False,
+                           index=self.iteration)
+         
 
 
-        x += 1
-        y += 1
+        #x += 1
+        #y += 1
         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
         
         scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
 
         #save the coordinates in the range (H//4, W//4) with the dump function
-        coords_path = f"test_randomness/mvsec1_coords/coords_{self.iteration}.npz"
+        coords_path = f"test_randomness/mvsec4_coords/coords_{self.iteration}.npz"
         #save coordinates to a file txt
         #with open(f"mvsec4_coords/coords_{self.iteration}.txt", "w") as f:
         #    for i in range(coords.shape[0]):
@@ -518,8 +526,8 @@ class Patchifier(nn.Module):
         #dump_extracted_coords_npz(path=coords_path,coords=coords)
 
         #load coordinates from the file
-        coords = np.load(coords_path)["coords"]
-        coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
+        #coords = np.load(coords_path)["coords"]
+        #coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
 
         #FMAP : MATCHING FEATURE MAP (1/4 RESOLUTION)
         #IMAP : CONTEXT FEATURE MAP (1/4 RESOLUTION)
@@ -543,15 +551,8 @@ class Patchifier(nn.Module):
         index = index.repeat(1, patches_per_image).reshape(-1) # [15, 80] => [15*80, 1] => [15*80]
 
         self.iteration += 1
-
-        if self.training:
-            if self.patch_selector == SelectionMethod.SCORER:
-                return fmap, gmap, imap, patches, index, scores
-        else:
-            if return_color:
-                return fmap, gmap, imap, patches, index, clr
             
-        return fmap, gmap, imap, patches, index
+        return fmap, gmap, imap, patches, coords
 
 
 

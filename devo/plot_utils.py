@@ -39,6 +39,8 @@ def plot_trajectory(pred_traj, gt_traj=None, title="", filename="", align=True, 
     plot_collection = plot.PlotCollection("PlotCol")
     fig = plt.figure(figsize=(8, 8))
     plot_mode = best_plotmode(gt_traj if (gt_traj is not None) else pred_traj)
+    if 'mvsec' in filename:
+        plot_mode = 'xz'  # Use 'xz' mode for MVSEC dataset
     ax = plot.prepare_axis(fig, plot_mode)
     ax.set_title(title)
 

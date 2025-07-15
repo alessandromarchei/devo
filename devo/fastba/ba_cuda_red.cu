@@ -14,7 +14,7 @@
 
 //1 thread per edge would make the memory explode, try with a threshold for the number of threads (once reached, use a fixed number of threads, so 1 thread will process multiple edges)
 #define NUM_THREADS_PER_BLOCK 256
-#define MAX_BLOCKS 64
+#define MAX_BLOCKS 32
 
 #define NUM_BLOCKS(batch_size) \
   ((batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK < MAX_BLOCKS ? \
