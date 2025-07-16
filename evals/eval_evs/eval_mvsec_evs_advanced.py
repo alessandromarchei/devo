@@ -47,6 +47,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             # estimated trajectory
             datapath_val = os.path.join(datapath, scene)
 
+            kwargs['trial'] = trial
             # run the slam system
             traj_est, tstamps, flowdata, max_nedges = run_voxel_advanced(datapath_val, config, net, viz=viz, 
                                           iterator=mvsec_evs_iterator(datapath_val, side=side, stride=stride, timing=timing, H=H, W=W),
@@ -66,7 +67,6 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
                     train_step = 240000
                 if train_step == 0:
                     train_step = 1
-                print("train_step", train_step)
                 
 
 
@@ -140,6 +140,12 @@ if __name__ == '__main__':
     parser.add_argument('--skip_start', type=int, default=0, help='skip start frames')
     parser.add_argument('--skip_end', type=int, default=0, help='skip end')
     parser.add_argument('--outdir', type=str, default=None, help='path to save plots')
+    parser.add_argument('--devo_debug', action='store_true', help='use devo debug mode')
+    parser.add_argument('--logname', type=str, default=None, help='path to log stats')
+    parser.add_argument('--trial_num', type=int, default=1, help='trial number for debugging')
+    parser.add_argument('--path', type=str, default=None, help='path to load coords or ba inputs files')
+    parser.add_argument('--load_ba', type=lambda x: x.lower() == 'true', default=False, help='load ba inputs')
+    parser.add_argument('--load_coords', type=lambda x: x.lower() == 'true', default=False, help='load coords files')
     args = parser.parse_args()
     assert_eval_config(args)
 
@@ -152,6 +158,18 @@ if __name__ == '__main__':
     # args.save_trajectory = True
     # args.plot = True
     kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "skip_start": args.skip_start, "skip_end": args.skip_end}
+    kwargs["devo_debug"] = args.devo_debug
+    kwargs["logname"] = args.logname
+    if args.outdir is not None:
+        kwargs["outdir"] = args.outdir
+    if args.path is not None:
+        kwargs["path"] = args.path
+    if args.trial_num is not None:
+        kwargs["trial_num"] = args.trial_num
+    kwargs["load_ba"] = args.load_ba
+    kwargs["load_coords"] = args.load_coords
+
+    
     print("kwargs", kwargs)
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz,timing=args.timing, \

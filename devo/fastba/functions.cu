@@ -217,7 +217,7 @@ __device__ void block_reduce(float *smem) {
 __global__ void reduce_first_dim(const float *data, int N, int vec_size, float *res) {
     extern __shared__ float smem[];
 
-    int idx = blockIdx.x;  // index along final flattened 60x60 dimension
+    int idx = blockIdx.x;  // index along final flattened
     int tid = threadIdx.x;
 
     if (idx >= vec_size)
@@ -244,6 +244,7 @@ void reduce_tensor(torch::Tensor& input_tensor)
 {
     // Make contiguous
     auto input_tensor_contig = input_tensor.contiguous();
+    //1 thread for the number of elements in the first dimension
     int num_threads = input_tensor_contig.size(0);
 
     // Get shape of remaining dimensions after first
@@ -265,7 +266,7 @@ void reduce_tensor(torch::Tensor& input_tensor)
     int num_blocks = vec_size;
 
 
-    // Launch CUDA kernel
+    // Launch CUDA kernel, with shared memory for block reduction
     reduce_first_dim<<<num_blocks, threads_per_block, threads_per_block * sizeof(float)>>>(
         input_ptr, num_threads, vec_size, output_flat.data_ptr<float>());
 
@@ -281,7 +282,7 @@ void reduce_tensor(torch::Tensor& input_tensor)
 
 
 // Deterministic sum along dim 0 on CPU
-torch::Tensor reduce_cpu(const torch::Tensor& input) {
+torch::Tensor reduce_cpu_fw(const torch::Tensor& input) {
     // Move to CPU if needed
     torch::Tensor input_cpu = input;
     if (input.device().is_cuda()) {
@@ -295,6 +296,70 @@ torch::Tensor reduce_cpu(const torch::Tensor& input) {
     const int64_t num = input_cpu.size(0);
     for (int64_t i = 0; i < num; ++i) {
         out += input_cpu[i];
+    }
+
+    // Move back to original device if needed
+    if (input.device().is_cuda()) {
+        out = out.to(input.device());
+    }
+
+    return out;
+}
+
+// Alternative deterministic CPU reduction (reverse order)
+torch::Tensor reduce_cpu_bw(const torch::Tensor& input) {
+    // Move to CPU if needed
+    torch::Tensor input_cpu = input;
+    if (input.device().is_cuda()) {
+        input_cpu = input.cpu();
+    }
+
+    // Initialize output tensor with zeros, same shape as one slice
+    torch::Tensor out = torch::zeros_like(input_cpu[0]);
+
+    const int64_t num = input_cpu.size(0);
+    // Reverse order loop: sum slices from last to first
+    for (int64_t i = num - 1; i >= 0; --i) {
+        out += input_cpu[i];
+    }
+
+    // Move back to original device if needed
+    if (input.device().is_cuda()) {
+        out = out.to(input.device());
+    }
+
+    return out;
+}
+
+
+#include <random>
+
+torch::Tensor reduce_cpu_shuffle(const torch::Tensor& input) {
+    // Move to CPU if needed
+    torch::Tensor input_cpu = input;
+    if (input.device().is_cuda()) {
+        input_cpu = input.cpu();
+    }
+
+    // Initialize output tensor with zeros
+    torch::Tensor out = torch::zeros_like(input_cpu[0]);
+
+    const int64_t num = input_cpu.size(0);
+
+    // Create shuffled index list
+    std::vector<int64_t> indices(num);
+    for (int64_t i = 0; i < num; ++i) {
+        indices[i] = i;
+    }
+
+    // Shuffle using random device
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+
+    // Accumulate in shuffled order
+    for (int64_t idx : indices) {
+        out += input_cpu[idx];
     }
 
     // Move back to original device if needed

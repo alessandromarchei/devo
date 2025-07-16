@@ -263,7 +263,7 @@ def dump_ba_inputs_npz(
         "n": n,
     }
     np.savez_compressed(path, **data_dict)
-    print(f"[✓] Saved BA inputs to {path} (keys: {list(data_dict.keys())})")
+    #print(f"[✓] Saved BA inputs to {path} (keys: {list(data_dict.keys())})")
 
 
 def dump_extracted_coords_npz(
@@ -284,7 +284,7 @@ def dump_extracted_coords_npz(
         "coords": coords.detach().cpu().numpy(),
     }
     np.savez_compressed(path, **data_dict)
-    print(f"[✓] Saved extracted coordinates to {path} (keys: {list(data_dict.keys())})")
+    #print(f"[✓] Saved extracted coordinates to {path} (keys: {list(data_dict.keys())})")
 
 
 

@@ -43,6 +43,18 @@ class DEVO:
         self.match_feat_dim = kwargs.get("dim_fnet", match_feat_dim)
         print(f"ctx_feat_dim: {self.ctx_feat_dim}, match_feat_dim: {self.match_feat_dim}")
 
+        self.trial = kwargs.get("trial", 0)
+        
+        self.load_path = self.kwargs.get("path", None)
+        self.load_ba = self.kwargs.get("load_ba", False)
+        self.load_coords = self.kwargs.get("load_coords", False)
+        
+        if self.load_ba or self.load_coords:
+            self.trial = kwargs.get("trial_num", 1)
+            print(f"Loading BA inputs from {self.load_path} for trial {self.trial}")
+
+        self.iteration = kwargs.get("skip_start", 0)
+
         
         self.dim = dim
         # TODO add patch_selector
@@ -154,7 +166,6 @@ class DEVO:
         self.ba_inner_counter = 0
         self.pose_file_read_pointer = 0  # number of lines already read
 
-        self.iteration = 0
 
         self.viz = viz
 
@@ -458,8 +469,8 @@ class DEVO:
             else:
                 # ------------ RUN BA ------------
 
-                #save the inputs of the fastba.BA
-                #dump_ba_inputs_npz(f"ba_poses_mvsec1/{self.ba_inner_counter}_inputs.npz",
+                #print(f"[BA] Running BA with t0={t0}, n={self.n}, ii={self.ii.shape}, jj={self.jj.shape}, kk={self.kk.shape}")
+                #dump_ba_inputs_npz(f"test/ba_poses_mvsec2_trial{self.trial}/{self.ba_inner_counter}.npz",
                 #    self.poses, self.patches, self.intrinsics, 
                 #    target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n)
 
@@ -484,19 +495,28 @@ class DEVO:
                     decimal_places = 9
                     fastba.BA_trunc(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2, decimal_places=decimal_places)
-                elif self.cfg.BA_PRECISION == "det_fp32":
-                    #deterministic float32
-                    fastba.BA_det(self.poses, self.patches, self.intrinsics, 
-                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
                     
                 elif self.cfg.BA_PRECISION == "single":
                     #single thread float32
                     fastba.BA_single_thread(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                elif self.cfg.BA_PRECISION == "cpu_fw":
+                    #print(f"[BA] Running BA with cpu_fw precision")
+                    #single thread float32
+                    fastba.BA_red_cpu_fw(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                elif self.cfg.BA_PRECISION == "cpu_bw":
+                    #print(f"[BA] Running BA with cpu_bw precision")
+                    #single thread float32
+                    fastba.BA_red_cpu_bw(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
                 elif self.cfg.BA_PRECISION == "reduction":
                     #reduction method, deterministic float32
 
-                    
+                    #print(f"[BA] Running BA with reduction method, t0={t0}, n={self.n}, ii={self.ii.shape}, jj={self.jj.shape}, kk={self.kk.shape}")
                     torch.cuda.synchronize()  # Wait for any prior GPU work
                     start_ba = time.time()
 
@@ -507,7 +527,7 @@ class DEVO:
 
                     elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
 
-                    print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 
                 elif self.cfg.BA_PRECISION == "debug":
                     
@@ -550,7 +570,7 @@ class DEVO:
 
                     elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
 
-                    print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 
 
                 self.poses_np = self.poses[0].data.cpu().numpy().tolist()

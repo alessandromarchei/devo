@@ -185,9 +185,18 @@ def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=
 @torch.no_grad()
 def run_voxel_advanced(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
     
+    if kwargs.get("devo_debug", False):
+        from devo.devo_debug import DEVO
+    else:
+        from devo.devo import DEVO
+
+
     print(f"use_pyramid: {use_pyramid}")
     skip_start = kwargs.get("skip_start", 0)
     skip_end = kwargs.get("skip_end", 0)
+
+    kwargs['skip_start'] = skip_start
+    kwargs['skip_end'] = skip_end    
 
     data_list = list(iterator)
     total_len = len(data_list)
@@ -453,7 +462,7 @@ def make_evo_traj(poses_N_x_7, tss_us):
 
 @torch.no_grad()            
 def log_results(data, hyperparam, all_results, results_dict_scene, figures, 
-                plot=False, save=True, return_figure=False, rpg_eval=True, stride=1, 
+                plot=False, save=True, return_figure=False, rpg_eval=False, stride=1, 
                 calib1_eds=None, camID_tumvie=None, outdir=None, expname="", max_diff_sec=0.01, save_csv=False, cfg=None, name=None, step=None):
     # results: dict of (scene, list of results)
     # all_results: list of all raw_results
@@ -546,7 +555,30 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
 
         write_res_table(outfolder, res_str, scene_name, trial)
     else:
+        p = f"{outfolder}/"
+        p = os.path.abspath(p)
+        os.makedirs(p, exist_ok=True)
+
+        
+        fnameGT = os.path.join(p, "stamped_groundtruth.txt")
+        f = open(fnameGT, "w")
+        f.write("# timestamp[secs] tx ty tz qx qy qz qw\n")
+        for i in range(len(traj_GT)):
+            f.write(f"{tss_GT_us[i]/1e6} {traj_GT[i,0]} {traj_GT[i,1]} {traj_GT[i,2]} {traj_GT[i,3]} {traj_GT[i,4]} {traj_GT[i,5]} {traj_GT[i,6]}\n")
+        f.close()
+
+        fnameEst = os.path.join(p, "stamped_traj_estimate.txt")
+        f = open(fnameEst, "w")
+        f.write("# timestamp[secs] tx ty tz qx qy qz qw\n")
+        for i in range(len(traj_est)):
+            f.write(f"{tss_est_us[i]/1e6} {traj_est[i,0]} {traj_est[i,1]} {traj_est[i,2]} {traj_est[i,3]} {traj_est[i,4]} {traj_est[i,5]} {traj_est[i,6]}\n")
+        f.close()
+
+
         res_str = f"\nATE[cm]: {ate_score:.03f} | MPE[%/m]: {MPE:.03f}"
+
+
+        write_res_table(outfolder, res_str, scene_name, trial)
 
     if plot and outdir is None:
         Path(f"{outfolder}/").mkdir(exist_ok=True)
@@ -573,6 +605,8 @@ def log_results(data, hyperparam, all_results, results_dict_scene, figures,
         fig = fig_trajectory((traj_est, tss_est_us/1e6), (traj_GT, tss_GT_us/1e6), f"{dataset_name} {scene_name.replace('_', ' ')} {res_str})",
                             return_figure=True, max_diff_sec=max_diff_sec)
         figures[f"{dataset_name}_{scene_name}"] = fig
+    
+    print(f"Results for {dataset_name} {scene_name} Trial #{trial+1} {res_str}")
 
     return all_results, results_dict_scene, figures, outfolder
 

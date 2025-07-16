@@ -332,6 +332,8 @@ class Patchifier(nn.Module):
 
         self.kwargs = kwargs
 
+        self.trial = kwargs.get("trial", 0)
+
 
         #CHOOSE ARCHITECTURE BASED ON THE MODEL
         if self.model == "mksmall":
@@ -509,25 +511,30 @@ class Patchifier(nn.Module):
          
 
 
-        #x += 1
-        #y += 1
+        x += 1
+        y += 1
         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
         
         scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
 
         #save the coordinates in the range (H//4, W//4) with the dump function
-        coords_path = f"test_randomness/mvsec4_coords/coords_{self.iteration}.npz"
-        #save coordinates to a file txt
-        #with open(f"mvsec4_coords/coords_{self.iteration}.txt", "w") as f:
-        #    for i in range(coords.shape[0]):
-        #        for j in range(coords.shape[1]):
-        #            f.write(f"{coords[i,j,0].item()} {coords[i,j,1].item()}\n")
+        #coords_folder = "test_randomness/coords_mvsec2_trial{}/".format(self.trial)
+            
+        coords_folder = "test_randomness/mvsec2_coords/"
+
+        if not os.path.exists(coords_folder):
+            os.makedirs(coords_folder)
+
+
+        coords_path = f"{coords_folder}coords_{self.iteration}.npz"
+    
         
         #dump_extracted_coords_npz(path=coords_path,coords=coords)
 
         #load coordinates from the file
-        #coords = np.load(coords_path)["coords"]
-        #coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
+        coords = np.load(coords_path)["coords"]
+        coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
+        #print(f"coords from {coords_path}")
 
         #FMAP : MATCHING FEATURE MAP (1/4 RESOLUTION)
         #IMAP : CONTEXT FEATURE MAP (1/4 RESOLUTION)
@@ -602,6 +609,16 @@ class eVONet(nn.Module):
         self.kwargs = kwargs
         self.logname = kwargs.get("logname", None)
 
+        self.load_path = kwargs.get("path", None)
+        self.load_ba = kwargs.get("load_ba", False)
+        self.load_coords = kwargs.get("load_coords", False)
+        
+        if self.load_ba or self.load_coords:
+            self.trial = kwargs.get("trial_num", 1)
+            print(f"Loading BA inputs from {self.load_path} for trial {self.trial}")
+
+
+
         self.patchify = Patchifier(patch_size=self.P, ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=dim, patch_selector=patch_selector, model=self.model, **self.kwargs)
         if self.use_softagg == False or self.use_tempconv == False:
             self.update = Update_small(self.P, self.ctx_feat_dim, use_pyramid=self.use_pyramid, use_softagg=self.use_softagg, use_tempconv=self.use_tempconv)
@@ -613,6 +630,7 @@ class eVONet(nn.Module):
         self.RES = 4.0
         self.norm = norm
         self.randaug = randaug
+
 
 
 

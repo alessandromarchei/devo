@@ -45,6 +45,7 @@ class DEVO:
         self.use_tempconv = kwargs.get("use_tempconv", True)  # default to False
         self.use_softagg = kwargs.get("use_softagg", True)  # default to False
 
+        self.trial = kwargs.get("trial", 0)
 
         self.load_weights(network)
         self.is_initialized = False
