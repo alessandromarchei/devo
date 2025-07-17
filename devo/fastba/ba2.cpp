@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-std::vector<torch::Tensor> cuda_ba(
+std::vector<torch::Tensor> cuda_ba_2(
     torch::Tensor poses,
     torch::Tensor patches,
     torch::Tensor intrinsics,
@@ -15,7 +15,7 @@ std::vector<torch::Tensor> cuda_ba(
     torch::Tensor ii,
     torch::Tensor jj, 
     torch::Tensor kk,
-    int t0, int t1, int iterations);
+    int t0, int t1, int iterations, std::vector<int64_t> reduction_config);
 
 torch::Tensor cuda_reproject(
     torch::Tensor poses,
@@ -25,7 +25,7 @@ torch::Tensor cuda_reproject(
     torch::Tensor jj, 
     torch::Tensor kk);
 
-std::vector<torch::Tensor> ba(
+std::vector<torch::Tensor> ba_2(
     torch::Tensor poses,
     torch::Tensor patches,
     torch::Tensor intrinsics,
@@ -35,8 +35,8 @@ std::vector<torch::Tensor> ba(
     torch::Tensor ii,
     torch::Tensor jj, 
     torch::Tensor kk,
-    int t0, int t1, int iterations) {
-  return cuda_ba(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations);
+    int t0, int t1, int iterations, std::vector<int64_t> reduction_config){
+  return cuda_ba_2(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations, reduction_config);
 }
 
 torch::Tensor reproject(
@@ -148,7 +148,7 @@ std::vector<torch::Tensor> neighbors(torch::Tensor ii, torch::Tensor jj)
 
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("forward", &ba, "BA forward operator");
+  m.def("forward2", &ba_2, "BA forward operator");
   m.def("neighbors", &neighbors, "temporal neighboor indicies");
   m.def("reproject", &reproject, "temporal neighboor indicies");
 

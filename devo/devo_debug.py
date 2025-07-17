@@ -175,9 +175,9 @@ class DEVO:
             print(f"Loading from {network}")
             checkpoint = torch.load(network)
             # TODO infer ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim
-            self.network = VONet(patch_selector=self.cfg.PATCH_SELECTOR) if not self.evs else \
-                eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid,
+            self.network = eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid,
                        use_softagg=self.use_softagg, use_tempconv=self.use_tempconv, **self.kwargs)
+                
             if 'model_state_dict' in checkpoint:
                 if self.cfg.PATCH_SELECTOR.lower() == "scorer":
                     #default case
@@ -532,6 +532,22 @@ class DEVO:
 
                     fastba.BA_red(self.poses, self.patches, self.intrinsics, 
                                 target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                
+                elif self.cfg.BA_PRECISION == "red2":
+                    #reduction method, deterministic float32
+                    reduction_config = [1, 1, 1, 1, 1]
+                    #print(f"[BA] Running BA with reduction method, t0={t0}, n={self.n}, ii={self.ii.shape}, jj={self.jj.shape}, kk={self.kk.shape}")
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
+
+                    fastba.BA_red2(self.poses, self.patches, self.intrinsics, 
+                                target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2, reduction_config)
 
                     torch.cuda.synchronize()  # Wait for this call to fully finish
 
