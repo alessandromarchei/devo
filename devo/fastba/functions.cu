@@ -6,7 +6,9 @@
 #include <ATen/NativeFunctions.h>
 #include <ATen/Parallel.h>
 
-
+#include <fstream>
+#include <limits>
+#include <iomanip>
 
 
 void print_tensor_stats(const torch::Tensor& tensor, const std::string& name) {
@@ -137,73 +139,6 @@ __device__ void print_accessor_stats(const at::GenericPackedTensorAccessor<float
     printf("%s -> Size: [%d, %d, %d], Mean: %.4f, Min: %.4f, Max: %.4f\n",
            name, accessor.size(0), accessor.size(1), accessor.size(2), mean, min_v, max_v);
 }
-
-
-
-///* apply a block reduction on a array of blockDim.x elements on a thread block (blockDim.x >= 64) */
-//
-//__device__ void block_reduce(float *smem, *float &partial_sum)
-//{
-//    /* data a loaded in shared memory before calling the function */
-//
-//    /*
-//        Apply the pairwise method also called a tree reduction. The
-//        number of active threads is halved between iteration.
-//    */
-//    for (offset = blockDim.x / 2; offset > 0; offset  /= 2) {
-//        /* the number of active threads is halved after each iteration */
-//        if (threadIdx.x < offset)
-//            smem[threadIdx.x] += smem[threadIdx.x + offset];
-//        /*  synchronization barrier */
-//        __syncthreads();
-//    }
-//
-//    if (threadIdx.x == 0)
-//        partial_sum = smem[0];
-//}
-//
-//
-//__device__ int retirementCount = 0;
-//
-//__global__ void reduce_gpu_sptr(float *sdata, int size, float *res) {
-//    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-//
-//    extern __shared__ float smem[];
-//
-//    /* Split the data in smaller chunk. The block only only on one chunk */
-//    if (tid >= size)
-//        smem[threadIdx.x] = 0.0;
-//    else
-//        smem[threadIdx.x] = data[tid];
-//
-//    /* Wait for all thread to update shared memory */
-//    __syncthreads();
-//
-//    /* apply the block reduction */
-//    float partial_sum = 0.0;
-//    block_reduce(smem, partial_sum);
-//
-//    if (threadIdx.x == 0)
-//        partial_results[blockIdx.x] = partial_sum;
-//
-//    __threadfences();
-//
-//    bool __shared__ amLast = false;
-//    if (threadIdx.x == 0) {
-//        int prev = atomicInc(&retirementCount, gridSize.x);
-//        amLast = (prev == (gridDim.x - 1));
-//    }
-//    __syncthreads();
-//
-//    if (amLast) {
-//        if (threadIdx.x == 0) {
-//            float sum = 0;
-//            for (int i = 0; i < gridDim.x; i++)
-//                sum += res[i];
-//            res[0] = sum;
-//        }
-//    }
-//}
 
 
 __device__ void block_reduce(float *smem) {
@@ -400,6 +335,7 @@ __global__ void kahan_reduce_nd_kernel(
     float c = 0.0f;
 
     for (int t = 0; t < num_threads; ++t) {
+        //the tensor is flattened, so each thread sums elements that are spaced by the number of elements in the single contribution
         int flat_idx = t * inner_size + idx;
         float y = input[flat_idx] - c;
         float temp = sum + y;
@@ -410,32 +346,24 @@ __global__ void kahan_reduce_nd_kernel(
     output[idx] = sum;
 }
 
-
 torch::Tensor kahan_reduce_dim0(torch::Tensor input) {
     TORCH_CHECK(input.dim() >= 1, "Input must be at least 1D");
 
+    //total number of threads is the number of contributions (1 thread per contribution)
     int num_threads = input.size(0);
-    printf("Number of threads: %d\n", num_threads);
     auto output_shape = input.sizes().slice(1);  // remove dim 0
-    printf("Output shape: ");
-    for (const auto& dim : output_shape) {
-        printf("%lld ", dim);
-    }
-    printf("\n");
 
 
     // flatten inner dims for generality
+    //calculate the number of elements in the flattened tensor OF EACH CONTRIBUTION : example B[Nthreads, 60, 60] -> 60*60 = 3600
     int inner_size = 1;
     for (int i = 1; i < input.dim(); ++i)
         inner_size *= input.size(i);
-    printf("Inner size: %d\n", inner_size);
 
     auto output = torch::zeros({inner_size}, input.options());
-    printf("Output tensor initialized with shape: %s\n", output.sizes().vec().c_str());
 
     const int threads = 256;
     const int blocks = (inner_size + threads - 1) / threads;
-    printf("Launching kernel with %d blocks and %d threads per block\n", blocks, threads);
 
     kahan_reduce_nd_kernel<<<blocks, threads>>>(
         input.data_ptr<float>(),
@@ -447,4 +375,147 @@ torch::Tensor kahan_reduce_dim0(torch::Tensor input) {
     // reshape to original shape minus dim 0
     return output.view(output_shape);
 }
+
+
+
+__global__ void kahan_reduce_nd_kernel_log(
+    const float* __restrict__ input,
+    float* __restrict__ output,
+    float* __restrict__ log_buffer,
+    int num_threads,
+    int inner_size,
+    int thread_to_log)  // 👈 aggiunto
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= inner_size) return;
+
+    float sum = 0.0f;
+    float c = 0.0f;
+
+    for (int t = 0; t < num_threads; ++t) {
+        int flat_idx = t * inner_size + idx;
+        float in_val = input[flat_idx];
+        float y = in_val - c;
+        float temp = sum + y;
+        float new_c = (temp - sum) - y;
+        float new_sum = temp;
+
+        // 👇 Solo il thread desiderato scrive nel log
+        if (idx == thread_to_log) {
+            int log_idx = t * 7;
+            log_buffer[log_idx + 0] = static_cast<float>(idx);
+            log_buffer[log_idx + 1] = static_cast<float>(t);
+            log_buffer[log_idx + 2] = in_val;
+            log_buffer[log_idx + 3] = y;
+            log_buffer[log_idx + 4] = temp;
+            log_buffer[log_idx + 5] = new_c;
+            log_buffer[log_idx + 6] = new_sum;
+        }
+
+        sum = new_sum;
+        c = new_c;
+    }
+
+    output[idx] = sum;
+}
+torch::Tensor kahan_reduce_dim0_log(torch::Tensor input, int thread_to_log = 0) {
+    TORCH_CHECK(input.dim() >= 1, "Input must be at least 1D");
+
+    int num_threads = input.size(0);
+    int inner_size = 1;
+    for (int i = 1; i < input.dim(); ++i)
+        inner_size *= input.size(i);
+
+    auto output = torch::zeros({inner_size}, input.options());
+
+    const int threads = 256;
+    const int blocks = (inner_size + threads - 1) / threads;
+
+    // 👇 Log solo per 1 thread
+    const int log_cols = 7;
+    const int log_rows = num_threads;
+    auto log_buffer_tensor = torch::zeros({log_rows * log_cols}, input.options().dtype(torch::kFloat32));
+
+    kahan_reduce_nd_kernel_log<<<blocks, threads>>>(
+        input.data_ptr<float>(),
+        output.data_ptr<float>(),
+        log_buffer_tensor.data_ptr<float>(),
+        num_threads,
+        inner_size,
+        thread_to_log  // 👈 passaggio chiave
+    );
+    cudaDeviceSynchronize();
+
+    // CPU copy e salvataggio log
+    auto log_cpu = log_buffer_tensor.cpu();
+    float* log_data = log_cpu.data_ptr<float>();
+
+    std::ofstream logfile("kahan_debug_thread" + std::to_string(thread_to_log) + ".txt");
+    logfile << "Kahan Debug Log (Only idx = " << thread_to_log << ")\n";
+    logfile << "Format: idx, t, input, y, temp, c, sum\n\n";
+
+
+    logfile << std::setprecision(std::numeric_limits<float>::max_digits10);
+
+    for (int i = 0; i < log_rows; ++i) {
+        int base = i * log_cols;
+        logfile 
+            << "idx: "   << log_data[base + 0] << "\t"
+            << "t: "     << log_data[base + 1] << "\t"
+            << "input: " << log_data[base + 2] << "\t"
+            << "y: "     << log_data[base + 3] << "\t"
+            << "temp: "  << log_data[base + 4] << "\t"
+            << "c: "     << log_data[base + 5] << "\t"
+            << "sum: "   << log_data[base + 6] << "\n";
+    }
+
+    logfile.close();
+    return output.view(input.sizes().slice(1));
+}
+
+
+
+
+auto check_kahan_result = [](const torch::Tensor& input_before, const torch::Tensor& reduced, const std::string& name) {
+    auto gt = input_before.sum(0);  // ground truth sum along dim 0
+    auto gt_contig = gt.contiguous();
+    auto reduced_contig = reduced.contiguous();
+
+    auto gt_data = gt_contig.data_ptr<float>();
+    auto red_data = reduced_contig.data_ptr<float>();
+
+    int size = gt.numel();
+    float max_abs_diff = 0.0f;
+    float max_rel_diff = 0.0f;
+    int num_mismatches = 0;
+
+    for (int i = 0; i < size; ++i) {
+        float a = red_data[i];
+        float b = gt_data[i];
+        float abs_err = std::abs(a - b);
+        float rel_err = (std::abs(b) > 1e-6) ? abs_err / std::abs(b) : abs_err;
+
+        if (abs_err > 1e-6f) {
+            num_mismatches++;
+            if (num_mismatches <= 10) {
+                std::cout << "[" << name << "] Mismatch at " << i 
+                          << " → Kahan: " << a 
+                          << ", GT: " << b 
+                          << ", abs_err: " << abs_err 
+                          << ", rel_err: " << rel_err << "\n";
+            }
+        }
+
+        max_abs_diff = std::max(max_abs_diff, abs_err);
+        max_rel_diff = std::max(max_rel_diff, rel_err);
+    }
+
+    std::cout << "[" << name << "] Checked " << size << " elements. ";
+    if (num_mismatches == 0) {
+        std::cout << "✅ All values match.\n";
+    } else {
+        std::cout << "❌ " << num_mismatches << " mismatches. Max abs error: " 
+                  << max_abs_diff << ", max rel error: " << max_rel_diff << "\n";
+    }
+};
 

@@ -11,6 +11,7 @@ import cuda_ba_red_cpu_fw
 import cuda_ba_red_cpu_bw
 import cuda_ba_red_cpu_fw_save
 import cuda_ba_red_cpu_bw_save
+import cuda_ba_kahan
 
 
 neighbors = cuda_ba.neighbors
@@ -51,3 +52,6 @@ def BA_red_cpu_fw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj
 
 def BA_red_cpu_bw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_red_cpu_bw_save.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_red_kahan(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_kahan.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)

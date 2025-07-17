@@ -520,7 +520,7 @@ class Patchifier(nn.Module):
         #save the coordinates in the range (H//4, W//4) with the dump function
         #coords_folder = "test_randomness/coords_mvsec2_trial{}/".format(self.trial)
             
-        coords_folder = "test_randomness/mvsec2_coords/"
+        coords_folder = "test_randomness/mvsec3_coords/"
 
         if not os.path.exists(coords_folder):
             os.makedirs(coords_folder)

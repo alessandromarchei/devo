@@ -553,6 +553,19 @@ class DEVO:
                     elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
 
                     print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                elif self.cfg.BA_PRECISION == "kahan":
+                    #kahan summation method, deterministic float32
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
+
+                    fastba.BA_red_kahan(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 elif self.cfg.BA_PRECISION == "truncate_double":
                     decimal_places = 13
                     #uncomment for using double precision
