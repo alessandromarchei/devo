@@ -9,6 +9,9 @@ import cuda_ba_single_thread
 import cuda_ba_red
 import cuda_ba_red_cpu_fw
 import cuda_ba_red_cpu_bw
+import cuda_ba_red_cpu_fw_save
+import cuda_ba_red_cpu_bw_save
+
 
 neighbors = cuda_ba.neighbors
 reproject = cuda_ba.reproject
@@ -42,3 +45,9 @@ def BA_red_cpu_fw(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk,
 
 def BA_red_cpu_bw(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_red_cpu_bw.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_red_cpu_fw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_red_cpu_fw_save.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_red_cpu_bw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_red_cpu_bw_save.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)

@@ -507,7 +507,7 @@ torch::Tensor cuda_reproject(
 
 // ---------------------- Bundle Adjustment Core -----------------------------
 
-std::vector<torch::Tensor> cuda_ba_trunc_double(
+std::vector<torch::Tensor> cuda_ba(
     torch::Tensor poses,
     torch::Tensor patches,
     torch::Tensor intrinsics,

@@ -369,3 +369,82 @@ torch::Tensor reduce_cpu_shuffle(const torch::Tensor& input) {
 
     return out;
 }
+
+
+template <class T> T kahanSummation(T *data, int size)
+{
+    T sum = data[0];
+    T c   = (T)0.0;
+
+    for (int i = 1; i < size; i++) {
+        T y = data[i] - c;
+        T t = sum + y;
+        c   = (t - sum) - y;
+        sum = t;
+    }
+
+    return sum;
+}
+
+
+__global__ void kahan_reduce_nd_kernel(
+    const float* __restrict__ input,
+    float* __restrict__ output,
+    int num_threads,
+    int inner_size)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= inner_size) return;
+
+    float sum = 0.0f;
+    float c = 0.0f;
+
+    for (int t = 0; t < num_threads; ++t) {
+        int flat_idx = t * inner_size + idx;
+        float y = input[flat_idx] - c;
+        float temp = sum + y;
+        c = (temp - sum) - y;
+        sum = temp;
+    }
+
+    output[idx] = sum;
+}
+
+
+torch::Tensor kahan_reduce_dim0(torch::Tensor input) {
+    TORCH_CHECK(input.dim() >= 1, "Input must be at least 1D");
+
+    int num_threads = input.size(0);
+    printf("Number of threads: %d\n", num_threads);
+    auto output_shape = input.sizes().slice(1);  // remove dim 0
+    printf("Output shape: ");
+    for (const auto& dim : output_shape) {
+        printf("%lld ", dim);
+    }
+    printf("\n");
+
+
+    // flatten inner dims for generality
+    int inner_size = 1;
+    for (int i = 1; i < input.dim(); ++i)
+        inner_size *= input.size(i);
+    printf("Inner size: %d\n", inner_size);
+
+    auto output = torch::zeros({inner_size}, input.options());
+    printf("Output tensor initialized with shape: %s\n", output.sizes().vec().c_str());
+
+    const int threads = 256;
+    const int blocks = (inner_size + threads - 1) / threads;
+    printf("Launching kernel with %d blocks and %d threads per block\n", blocks, threads);
+
+    kahan_reduce_nd_kernel<<<blocks, threads>>>(
+        input.data_ptr<float>(),
+        output.data_ptr<float>(),
+        num_threads,
+        inner_size
+    );
+
+    // reshape to original shape minus dim 0
+    return output.view(output_shape);
+}
+

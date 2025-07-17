@@ -33,13 +33,13 @@ setup(
                 'devo/lietorch/src/lietorch_cpu.cpp'],
             extra_compile_args={'cxx': ['-O3'], 'nvcc': ['-O3'],}),
         CUDAExtension('cuda_ba_double',
-            sources=['devo/fastba/ba_double.cpp', 'devo/fastba/ba_cuda_double.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_double.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
             }),
         CUDAExtension('cuda_ba_single_thread',
-            sources=['devo/fastba/ba_single_thread.cpp', 'devo/fastba/ba_cuda_singlethread.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_singlethread.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],

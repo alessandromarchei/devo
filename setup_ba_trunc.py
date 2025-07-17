@@ -12,13 +12,13 @@ setup(
     packages=find_packages(),
     ext_modules=[
         CUDAExtension('cuda_ba_trunc',
-            sources=['devo/fastba/ba_trunc.cpp', 'devo/fastba/ba_cuda_trunc.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_trunc.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
             }),
         CUDAExtension('cuda_ba_trunc_double',
-            sources=['devo/fastba/ba_trunc_double.cpp', 'devo/fastba/ba_cuda_double_trunc.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_double_trunc.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],

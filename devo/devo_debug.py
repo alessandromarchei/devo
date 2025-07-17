@@ -506,13 +506,23 @@ class DEVO:
                     #single thread float32
                     fastba.BA_red_cpu_fw(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                elif self.cfg.BA_PRECISION == "cpu_fw_save":
+                    #print(f"[BA] Running BA with cpu_fw_save precision")
+                    #single thread float32
+                    fastba.BA_red_cpu_fw_save(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
                     
                 elif self.cfg.BA_PRECISION == "cpu_bw":
                     #print(f"[BA] Running BA with cpu_bw precision")
                     #single thread float32
                     fastba.BA_red_cpu_bw(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
-                    
+                
+                elif self.cfg.BA_PRECISION == "cpu_bw_save":
+                    #print(f"[BA] Running BA with cpu_bw_save precision")
+                    #single thread float32
+                    fastba.BA_red_cpu_bw_save(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
                 elif self.cfg.BA_PRECISION == "reduction":
                     #reduction method, deterministic float32
 

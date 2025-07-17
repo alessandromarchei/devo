@@ -450,7 +450,7 @@ __global__ void reprojection_residuals_and_hessian(
 
 
 //FORWARD FUNCTION IMPLEMENTING THE BUNDLE ADJUSTMENT
-std::vector<torch::Tensor> cuda_ba_double(
+std::vector<torch::Tensor> cuda_ba(
     torch::Tensor poses,
     torch::Tensor patches,
     torch::Tensor intrinsics,

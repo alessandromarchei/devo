@@ -12,17 +12,30 @@ setup(
     packages=find_packages(),
     ext_modules=[
         CUDAExtension('cuda_ba_red_cpu_fw',
-            sources=['devo/fastba/ba_red_cpu_fw.cpp', 'devo/fastba/ba_cuda_red_cpu_fw.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red_cpu_fw.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
             }),
         CUDAExtension('cuda_ba_red_cpu_bw',
-            sources=['devo/fastba/ba_red_cpu_bw.cpp', 'devo/fastba/ba_cuda_red_cpu_bw.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red_cpu_bw.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
-            })
+            }),
+        CUDAExtension('cuda_ba_red_cpu_fw_save',
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red_cpu_fw_save.cu'],
+            extra_compile_args={
+                'cxx':  ['-O3'], 
+                'nvcc': ['-O3'],
+            }),
+        CUDAExtension('cuda_ba_red_cpu_bw_save',
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red_cpu_bw_save.cu'],
+            extra_compile_args={
+                'cxx':  ['-O3'], 
+                'nvcc': ['-O3'],
+            }),
+    
         
     ],
     cmdclass={

@@ -12,7 +12,7 @@ setup(
     packages=find_packages(),
     ext_modules=[
         CUDAExtension('cuda_ba_red',
-            sources=['devo/fastba/ba_red.cpp', 'devo/fastba/ba_cuda_red.cu'],
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],

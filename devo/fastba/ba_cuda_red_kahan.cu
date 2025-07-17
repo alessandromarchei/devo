@@ -6,13 +6,63 @@
 #include <ATen/NativeFunctions.h>
 #include <ATen/Parallel.h>
 
+#include "functions.cu"
 
 #define GPU_1D_KERNEL_LOOP(i, n) \
   for (size_t i = blockIdx.x * blockDim.x + threadIdx.x; i<n; i += blockDim.x * gridDim.x)
 
 
-#define NUM_THREADS 256
-#define NUM_BLOCKS(batch_size) ((batch_size + NUM_THREADS - 1) / NUM_THREADS)
+//1 thread per edge would make the memory explode, try with a threshold for the number of threads (once reached, use a fixed number of threads, so 1 thread will process multiple edges)
+#define NUM_THREADS_PER_BLOCK 256
+#define MAX_BLOCKS 32
+
+#define NUM_BLOCKS(batch_size) \
+  ((batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK < MAX_BLOCKS ? \
+   (batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK : \
+   MAX_BLOCKS)
+
+
+// __device__ int retirementCount = 0;
+
+// __global__ void reduce_gpu_sptr(double *sdata, int size, double *res) {
+//     int tid = threadIdx.x + blockIdx.x * blodkDim.x;
+
+//     extern __shared__ double smem[];
+
+//     /* Split the data in smaller chunk. The block only only on one chunk */
+//     if (tid >= size)
+//         smem[threadIdx.x] = 0.0;
+//     else
+//         smem[threadIdx.x] = data[tid];
+
+//     /* Wait for all thread to update shared memory */
+//     __syncthreads();
+
+//     /* apply the block reduction */
+//     double partial_sum = 0.0;
+//     block_reduce(smem, partial_sum);
+
+//     if (threadIdx.x == 0)
+//         partial_results[blockIdx.x] = partial_sum;
+
+//     __threadfences();
+
+//     bool __shared__ amLast = false;
+//     if (threadIdx.x == 0) {
+//         int prev = atomicInc(&retirementCount, gridSize.x);
+//         amLast = (prev == (gridDim.x - 1));
+//     }
+//     __syncthreads();
+
+//     if (amLast) {
+//         if (threadIdx.x == 0) {
+//             double sum = 0;
+//             for (int i = 0; i < gridDim.x; i++)
+//                 sum += res[i];
+//             res[0] = sum;
+//         }
+//     }
+// }
 
 
 __device__ void
@@ -156,7 +206,7 @@ retrSE3(const float *xi, const float* t, const float* q, float* t1, float* q1) {
 }
 
 
-//fence not needed since every thread writes to a different row of the matrix
+
 __global__ void pose_retr_kernel(const int t0, const int t1,
     torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> poses,
     torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> update)
@@ -188,10 +238,6 @@ __global__ void pose_retr_kernel(const int t0, const int t1,
 }
 
 
-//// This kernel updates the patch depth values based on the update values.
-// Each thread updates a single patch depth value.
-//no thread fence is needed since each thread writes to a different patch
-// and the patch depth value is updated independently.
 __global__ void patch_retr_kernel(
     torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> index,
     torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> patches,
@@ -215,8 +261,7 @@ __global__ void patch_retr_kernel(
 }
 
 
-
-__global__ void reprojection_residuals_and_hessian_det(
+__global__ void reprojection_residuals_and_hessian(
     const torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> poses,
     const torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> patches,
     const torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> intrinsics,
@@ -227,13 +272,27 @@ __global__ void reprojection_residuals_and_hessian_det(
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> jj,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> kk,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> ku,
-    torch::PackedTensorAccessor32<float,3,torch::RestrictPtrTraits> B_contrib,
-    torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> E_contrib,
-    torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> v_contrib,
-    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> C_contrib,
-    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> u_contrib,
+    torch::PackedTensorAccessor64<float,3,torch::RestrictPtrTraits> B,
+    torch::PackedTensorAccessor64<float,3,torch::RestrictPtrTraits> E,
+    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> C,
+    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> v,
+    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> u,
     const int t0)
 {
+
+    
+    //take the thread index
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    //get the respected local tensors
+    auto local_B = B[tid];
+    auto local_E = E[tid];
+    auto local_v = v[tid];
+    auto local_C = C[tid];
+    auto local_u = u[tid];
+
+
+
     __shared__ float fx, fy, cx, cy;
     if (threadIdx.x == 0) {
         fx = intrinsics[0][0];
@@ -243,108 +302,132 @@ __global__ void reprojection_residuals_and_hessian_det(
     }
     __syncthreads();
 
+
     GPU_1D_KERNEL_LOOP(n, ii.size(0)) {
-        int ix = ii[n];
-        int jx = jj[n];
-        int kx = kk[n];
+      int k = ku[n];
+      int ix = ii[n];
+      int jx = jj[n];
+      int kx = kk[n];
 
-        float ti[3] = { poses[ix][0], poses[ix][1], poses[ix][2] };
-        float tj[3] = { poses[jx][0], poses[jx][1], poses[jx][2] };
-        float qi[4] = { poses[ix][3], poses[ix][4], poses[ix][5], poses[ix][6] };
-        float qj[4] = { poses[jx][3], poses[jx][4], poses[jx][5], poses[jx][6] };
+      float ti[3] = { poses[ix][0], poses[ix][1], poses[ix][2] };
+      float tj[3] = { poses[jx][0], poses[jx][1], poses[jx][2] };
+      float qi[4] = { poses[ix][3], poses[ix][4], poses[ix][5], poses[ix][6] };
+      float qj[4] = { poses[jx][3], poses[jx][4], poses[jx][5], poses[jx][6] };
 
-        float Xi[4], Xj[4];
-        Xi[0] = (patches[kx][0][1][1] - cx) / fx;
-        Xi[1] = (patches[kx][1][1][1] - cy) / fy;
-        Xi[2] = 1.0;
-        Xi[3] = patches[kx][2][1][1];
+      float Xi[4], Xj[4];
+      Xi[0] = (patches[kx][0][1][1] - cx) / fx;
+      Xi[1] = (patches[kx][1][1][1] - cy) / fy;
+      Xi[2] = 1.0;
+      Xi[3] = patches[kx][2][1][1];
+      
+      float tij[3], qij[4];
+      relSE3(ti, qi, tj, qj, tij, qij);
+      actSE3(tij, qij, Xi, Xj);
 
-        float tij[3], qij[4];
-        relSE3(ti, qi, tj, qj, tij, qij);
-        actSE3(tij, qij, Xi, Xj);
+      const float X = Xj[0];
+      const float Y = Xj[1];
+      const float Z = Xj[2];
+      const float W = Xj[3];
 
-        const float X = Xj[0];
-        const float Y = Xj[1];
-        const float Z = Xj[2];
-        const float W = Xj[3];
+      const float d = (Z >= 0.2) ? 1.0 / Z : 0.0; 
+      const float d2 = d * d;
 
-        const float d = (Z >= 0.2f) ? 1.0f / Z : 0.0f;
-        const float d2 = d * d;
+      const float x1 = fx * (X / Z) + cx;
+      const float y1 = fy * (Y / Z) + cy;
 
-        const float x1 = fx * (X / Z) + cx;
-        const float y1 = fy * (Y / Z) + cy;
+      const float rx = target[n][0] - x1;
+      const float ry = target[n][1] - y1;
 
-        const float rx = target[n][0] - x1;
-        const float ry = target[n][1] - y1;
+      const bool in_bounds = (sqrt(rx*rx + ry*ry) < 128) && (Z > 0.2) &&
+        (x1 > -64) && (y1 > -64) && (x1 < 2*cx + 64) && (y1 < 2*cy + 64);
 
-        const bool in_bounds = (sqrtf(rx*rx + ry*ry) < 128.0f) && (Z > 0.2f) &&
-                               (x1 > -64) && (y1 > -64) && (x1 < 2*cx + 64) && (y1 < 2*cy + 64);
+      const float mask = in_bounds ? 1.0 : 0.0;
 
-        const float mask = in_bounds ? 1.0f : 0.0f;
+      ix = ix - t0;
+      jx = jx - t0;
 
-        // Shifted indices for B, E, v if needed later
-        int k = ku[n];
-        ix = ix - t0;
-        jx = jx - t0;
+    {
+      const float r = target[n][0] - x1;
+      const float w = mask * weight[n][0];
 
-        // --- Local contributions ---
-        float B_local[6][6] = {0};
-        float E_local[6] = {0};
-        float v_local[6] = {0};
-        float C_local = 0;
-        float u_local = 0;
+      float Jz = fx * (tij[0] * d - tij[2] * (X * d2));
+      float Ji[6], Jj[6] = {fx*W*d, 0, fx*-X*W*d2, fx*-X*Y*d2, fx*(1+X*X*d2), fx*-Y*d};
 
-        {
-            const float r = target[n][0] - x1;
-            const float w = mask * weight[n][0];
+      adjSE3(tij, qij, Jj, Ji);
 
-            float Jz = fx * (tij[0] * d - tij[2] * (X * d2));
-            float Ji[6], Jj[6] = {fx*W*d, 0, fx*-X*W*d2, fx*-X*Y*d2, fx*(1+X*X*d2), fx*-Y*d};
-
-            adjSE3(tij, qij, Jj, Ji);
-
-            for (int i=0; i<6; i++) {
-                for (int j=0; j<6; j++) {
-                    B_local[i][j] += w * Ji[i] * Ji[j];
-                }
-                E_local[i] += -w * Jz * Ji[i];
-                v_local[i] += -w * r * Ji[i];
-            }
-            C_local += w * Jz * Jz;
-            u_local += w * r * Jz;
+      for (int i=0; i<6; i++) {
+        for (int j=0; j<6; j++) {
+          if (ix >= 0)
+            atomicAdd(&local_B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
+          if (jx >= 0)
+            atomicAdd(&local_B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
+          if (ix >= 0 && jx >= 0) {
+            atomicAdd(&local_B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
+            atomicAdd(&local_B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
+          }
         }
+      }
 
-        {
-            const float r = target[n][1] - y1;
-            const float w = mask * weight[n][1];
+      for (int i=0; i<6; i++) {
+        if (ix >= 0)
+          atomicAdd(&local_E[6*ix+i][k], -w * Jz * Ji[i]);
+        if (jx >= 0)
+          atomicAdd(&local_E[6*jx+i][k],  w * Jz * Jj[i]);
+      }
 
-            float Jz = fy * (tij[1] * d - tij[2] * (Y * d2));
-            float Ji[6], Jj[6] = {0, fy*W*d, fy*-Y*W*d2, fy*(-1-Y*Y*d2), fy*(X*Y*d2), fy*X*d};
+      for (int i=0; i<6; i++) {
+        if (ix >= 0)
+          atomicAdd(&local_v[6*ix+i], -w * r * Ji[i]);
+        if (jx >= 0)
+          atomicAdd(&local_v[6*jx+i],  w * r * Jj[i]);
+      }
 
-            adjSE3(tij, qij, Jj, Ji);
-
-            for (int i=0; i<6; i++) {
-                for (int j=0; j<6; j++) {
-                    B_local[i][j] += w * Ji[i] * Ji[j];
-                }
-                E_local[i] += -w * Jz * Ji[i];
-                v_local[i] += -w * r * Ji[i];
-            }
-            C_local += w * Jz * Jz;
-            u_local += w * r * Jz;
-        }
-
-        // --- Store per-residual contributions deterministically ---
-        for (int i=0; i<6; i++) {
-            for (int j=0; j<6; j++) {
-                B_contrib[n][i][j] = B_local[i][j];
-            }
-            E_contrib[n][i] = E_local[i];
-            v_contrib[n][i] = v_local[i];
-        }
-        C_contrib[n] = C_local;
-        u_contrib[n] = u_local;
+      atomicAdd(&local_C[k], w * Jz * Jz);
+      atomicAdd(&local_u[k], w *  r * Jz);
     }
+
+    {
+      const float r = target[n][1] - y1;
+      const float w = mask * weight[n][1];
+      
+      float Jz = fy * (tij[1] * d - tij[2] * (Y * d2));
+      float Ji[6], Jj[6] = {0, fy*W*d, fy*-Y*W*d2, fy*(-1-Y*Y*d2), fy*(X*Y*d2), fy*X*d};
+      
+      adjSE3(tij, qij, Jj, Ji);
+
+      for (int i=0; i<6; i++) {
+        for (int j=0; j<6; j++) {
+          if (ix >= 0)
+            atomicAdd(&local_B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
+          if (jx >= 0)
+            atomicAdd(&local_B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
+          if (ix >= 0 && jx >= 0) {
+            atomicAdd(&local_B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
+            atomicAdd(&local_B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
+          }
+        }
+      }
+
+      for (int i=0; i<6; i++) {
+        if (ix >= 0)
+          atomicAdd(&local_E[6*ix+i][k], -w * Jz * Ji[i]);
+        if (jx >= 0)
+          atomicAdd(&local_E[6*jx+i][k],  w * Jz * Jj[i]);
+      }
+
+      for (int i=0; i<6; i++) {
+        if (ix >= 0)
+          atomicAdd(&local_v[6*ix+i], -w * r * Ji[i]);
+        if (jx >= 0)
+          atomicAdd(&local_v[6*jx+i],  w * r * Jj[i]);
+      }
+
+      atomicAdd(&local_C[k], w * Jz * Jz);
+      atomicAdd(&local_u[k], w *  r * Jz);
+    }
+    
+  } // end of GPU_1D_KERNEL_LOOP
+    __syncthreads();
 }
 
 
@@ -402,6 +485,8 @@ __global__ void reproject(
   }
 }
 
+
+//FORWARD FUNCTION IMPLEMENTING THE BUNDLE ADJUSTMENT
 std::vector<torch::Tensor> cuda_ba(
     torch::Tensor poses,
     torch::Tensor patches,
@@ -414,16 +499,19 @@ std::vector<torch::Tensor> cuda_ba(
     torch::Tensor kk,
     const int t0, const int t1, const int iterations)
 {
-  printf("CUDA BA DET: %d poses, %d patches, %d residuals\n", t1 - t0, patches.size(0), ii.size(0));
+
+  //std::cout << "\nStarting CUDA Bundle Adjustment..." << std::endl;
+
+  ////std::cout << "Starting CUDA Bundle Adjustment..." << std::endl;
+  ////std::cout << "N edges : " << ii.size(0) << std::endl;
+
   auto ktuple = torch::_unique(kk, true, true);
   torch::Tensor kx = std::get<0>(ktuple);
   torch::Tensor ku = std::get<1>(ktuple);
 
-  printf("defining variables...\n");
   const int N = t1 - t0;    // number of poses
   const int M = kx.size(0); // number of patches
   const int P = patches.size(3); // patch size
-  const int num = ii.size(0);    // number of residuals
 
   auto opts = torch::TensorOptions()
     .dtype(torch::kFloat32).device(torch::kCUDA);
@@ -435,24 +523,57 @@ std::vector<torch::Tensor> cuda_ba(
   target = target.view({-1, 2});
   weight = weight.view({-1, 2});
 
-  printf("entering main loop...\n");
-  for (int itr = 0; itr < iterations; itr++) {
-    // Allocate per-residual contributions
-    printf("creating B contrib of shape [%d, 6, 6]\n", num);
-    torch::Tensor B_contrib = torch::zeros({num, 6, 6}, opts);
-    printf("creating E contrib of shape [%d, 6]\n", num);
-    torch::Tensor E_contrib = torch::zeros({num, 6}, opts);
-    printf("creating v contrib of shape [%d, 6]\n", num);
-    torch::Tensor v_contrib = torch::zeros({num, 6}, opts);
-    printf("creating C contrib of shape [%d]\n", num);
-    torch::Tensor C_contrib = torch::zeros({num}, opts);
-    printf("creating u contrib of shape [%d]\n", num);
-    torch::Tensor u_contrib = torch::zeros({num}, opts);
-    printf("B, E, v, C, u contribs created.\n");
+  const int num = ii.size(0);
+  // torch::Tensor B = torch::empty({6*N, 6*N}, opts);
+  // torch::Tensor E = torch::empty({6*N, 1*M}, opts);
+  // torch::Tensor C = torch::empty({M}, opts);
+
+  // torch::Tensor v = torch::empty({6*N}, opts);
+  // torch::Tensor u = torch::empty({1*M}, opts);
+
+  int num_threads = NUM_BLOCKS(ii.size(0)) * NUM_THREADS_PER_BLOCK;  // total threads launched
+  ////std::cout << "Number of threads: " << num_threads << std::endl;
+  ////std::cout << "NUM BLOCKS: " << NUM_BLOCKS(ii.size(0)) << std::endl;
 
 
-    // Call deterministic kernel
-    reprojection_residuals_and_hessian_det<<<NUM_BLOCKS(num), NUM_THREADS>>>(
+  for (int itr=0; itr < iterations; itr++) {
+
+
+    torch::Tensor B = torch::zeros({num_threads, 6 * N, 6 * N}, opts);
+    torch::Tensor E = torch::zeros({num_threads, 6 * N, M}, opts);
+    torch::Tensor C = torch::zeros({num_threads, M}, opts);
+    torch::Tensor v = torch::zeros({num_threads, 6 * N}, opts);
+    torch::Tensor u = torch::zeros({num_threads, M}, opts); 
+    
+    ////std::cout << "B shape: " << B.sizes() << std::endl;
+    ////std::cout << "E shape: " << E.sizes() << std::endl;
+    ////std::cout << "C shape: " << C.sizes() << std::endl;
+    ////std::cout << "v shape: " << v.sizes() << std::endl;
+    ////std::cout << "u shape: " << u.sizes() << std::endl;
+
+    v = v.view({num_threads, 6*N});
+    u = u.view({num_threads, 1*M});
+
+    ////std::cout << "B shape after zero: " << B.sizes() << std::endl;
+    ////std::cout << "E shape after zero: " << E.sizes() << std::endl;
+    ////std::cout << "C shape after zero: " << C.sizes() << std::endl;
+    ////std::cout << "v shape after zero: " << v.sizes() << std::endl;
+    ////std::cout << "u shape after zero: " << u.sizes() << std::endl;
+
+
+    //printf("Iteration %d: %d threads, %d blocks\n", itr, num_threads, NUM_BLOCKS(ii.size(0)));
+    //std::cout << "\n-------  Iteration "<< itr << " -------"  << std::endl;
+    //std::cout << "Before hessian computation: " << std::endl;
+        //print max min mean and std of the tensors, in 1 line per tensor
+    //print_tensor_stats(B, "B");
+    //print_tensor_stats(E, "E");
+    //print_tensor_stats(C, "C");
+    //print_tensor_stats(v, "v");
+    //print_tensor_stats(u, "u");
+
+    //auto start_hessian = std::chrono::high_resolution_clock::now();
+    //change the packet tensor to 64 pointers
+    reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS_PER_BLOCK>>>(
       poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
       patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
       intrinsics.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
@@ -463,65 +584,92 @@ std::vector<torch::Tensor> cuda_ba(
       jj.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
       kk.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
       ku.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
-      B_contrib.packed_accessor32<float,3,torch::RestrictPtrTraits>(),
-      E_contrib.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
-      v_contrib.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
-      C_contrib.packed_accessor32<float,1,torch::RestrictPtrTraits>(),
-      u_contrib.packed_accessor32<float,1,torch::RestrictPtrTraits>(),
+      B.packed_accessor64<float,3,torch::RestrictPtrTraits>(),
+      E.packed_accessor64<float,3,torch::RestrictPtrTraits>(),
+      C.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
+      v.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
+      u.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
       t0);
+    
+    cudaDeviceSynchronize();
+    
 
-    // Reduce per-residual contributions into global
-    torch::Tensor B = torch::sum(B_contrib, 0); // shape: [6, 6]
-    torch::Tensor E = torch::sum(E_contrib, 0).unsqueeze(1); // shape: [6, 1]
-    torch::Tensor v = torch::sum(v_contrib, 0).unsqueeze(1); // shape: [6, 1]
-    torch::Tensor C = torch::sum(C_contrib, 0).unsqueeze(0); // shape: [1]
-    torch::Tensor u = torch::sum(u_contrib, 0).unsqueeze(0); // shape: [1]
+    B = kahan_reduce_dim0(B);
+    E = kahan_reduce_dim0(E);
+    C = kahan_reduce_dim0(C);
+    v = kahan_reduce_dim0(v);
+    u = kahan_reduce_dim0(u);
 
-    // Compute Q as before
+
+    //DIMENSION IS REDUCED AFTER (FIRST CHANNEL IS REDUCED)
+
+    //create one more dimension for v and u
+    v = v.view({6*N, 1});
+    u = u.view({1*M, 1});
+
     torch::Tensor Q = 1.0 / (C + lmbda).view({1, M});
-
+    //print_tensor_stats(Q, "Q");
     if (t1 - t0 == 0) {
+
       torch::Tensor Qt = torch::transpose(Q, 0, 1);
       torch::Tensor dZ = Qt * u;
 
       dZ = dZ.view({M});
 
-      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS>>>(
-          kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
-          patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
-          dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
-    } else {
+      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS_PER_BLOCK>>>(
+        kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
+        patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
+        dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
+
+    }
+
+    else {
+
       torch::Tensor EQ = E * Q;
+      //print_tensor_stats(EQ, "EQ");
       torch::Tensor Et = torch::transpose(E, 0, 1);
       torch::Tensor Qt = torch::transpose(Q, 0, 1);
 
       torch::Tensor S = B - torch::matmul(EQ, Et);
-      torch::Tensor y = v - torch::matmul(EQ, u);
+      //print_tensor_stats(S, "S");
+      torch::Tensor y = v - torch::matmul(EQ,  u);
+      //print_tensor_stats(y, "y");
 
-      torch::Tensor I = torch::eye(6, opts);
-      S += I * (1e-4 * S.norm() + 1.0);
+      torch::Tensor I = torch::eye(6*N, opts);
+      S += I * (1e-4 * S + 1.0);
+      //print_tensor_stats(S, "S after regularization");
 
       torch::Tensor U = torch::linalg::cholesky(S);
+      //print_tensor_stats(U, "U");
       torch::Tensor dX = torch::cholesky_solve(y, U);
+      //print_tensor_stats(dX, "dX");
       torch::Tensor dZ = Qt * (u - torch::matmul(Et, dX));
-
+      //print_tensor_stats(torch::matmul(Et, dX), "Et * dX");
+      //print_tensor_stats(dZ, "dZ");
       dX = dX.view({N, 6});
       dZ = dZ.view({M});
+      //std::cout << "After solving the system: " << std::endl;
 
-      pose_retr_kernel<<<NUM_BLOCKS(N), NUM_THREADS>>>(t0, t1,
+
+      pose_retr_kernel<<<NUM_BLOCKS(N), NUM_THREADS_PER_BLOCK>>>(t0, t1,
           poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
           dX.packed_accessor32<float,2,torch::RestrictPtrTraits>());
 
-      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS>>>(
+      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS_PER_BLOCK>>>(
           kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
           patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
           dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
+      
+      //std::cout << "After updating the poses and patches: " << std::endl;
+      //print_tensor_stats(poses, "poses");
+      //print_tensor_stats(patches, "patches");
+      //print_tensor_stats(dX, "dX");
+      //print_tensor_stats(dZ, "dZ");
     }
   }
-
+  
   return {};
 }
-
 
 
 torch::Tensor cuda_reproject(
@@ -545,7 +693,7 @@ torch::Tensor cuda_reproject(
 
   torch::Tensor coords = torch::empty({N, 2, P, P}, opts);
 
-  reproject<<<NUM_BLOCKS(N), NUM_THREADS>>>(
+  reproject<<<NUM_BLOCKS(N), NUM_THREADS_PER_BLOCK>>>(
     poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
     patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
     intrinsics.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
