@@ -16,6 +16,7 @@ import cuda_ba_red2
 import cuda_ba_kahan_bw
 import ba_cpu
 import cuda_ba_kahan_db64
+import ba_cpu_fp128
 
 neighbors = cuda_ba.neighbors
 reproject = cuda_ba.reproject
@@ -72,3 +73,6 @@ def BA_cpu(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1
 
 def BA_kahan_db64(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_kahan_db64.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_cpu_fp128(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return ba_cpu_fp128.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)

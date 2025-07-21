@@ -2,7 +2,7 @@
 
 # VO config (increase for better accuracy)
 PATCHES_PER_FRAME: 96
-REMOVAL_WINDOW: 2
+REMOVAL_WINDOW: 22
 OPTIMIZATION_WINDOW: 10
 PATCH_LIFETIME: 13
 
@@ -24,4 +24,4 @@ NORM: 'std'
 SCORER_EVAL_MODE: 'multi'
 SCORER_EVAL_USE_GRID: True
 
-BA_PRECISION: 'kahan'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'
+BA_PRECISION: 'cpu_fp128'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'

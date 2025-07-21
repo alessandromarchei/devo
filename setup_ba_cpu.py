@@ -11,12 +11,21 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     ext_modules=[
-        CUDAExtension('ba_cpu',
-            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu.cpp', 'devo/fastba/reproject.cu'],
+        #CUDAExtension('ba_cpu',
+        #    sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu.cpp', 'devo/fastba/reproject.cu'],
+        #    extra_compile_args={
+        #        'cxx':  ['-O3'], 
+        #        'nvcc': ['-O3'],
+        #    }),
+        CUDAExtension('ba_cpu_fp128',
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_fp128.cpp', 'devo/fastba/reproject.cu'],
             extra_compile_args={
-                'cxx':  ['-O3'], 
+                'cxx':  ['-O3', '-fext-numeric-literals'],
                 'nvcc': ['-O3'],
-            }),
+            },
+            libraries=['quadmath']
+            ),
+        
     ],
     cmdclass={
         'build_ext': BuildExtension

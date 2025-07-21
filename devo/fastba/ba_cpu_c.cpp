@@ -431,7 +431,7 @@ std::vector<torch::Tensor> cuda_ba(
     torch::Tensor kk,
     const int t0, const int t1, const int iterations)
 {
-  
+
   ////std::cout << "CUDA BA: " << t0 << " " << t1 << " " << iterations << std::endl;
   auto ktuple = torch::_unique(kk, true, true);
   torch::Tensor kx = std::get<0>(ktuple);

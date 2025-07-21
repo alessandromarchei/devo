@@ -611,7 +611,7 @@ class DEVO:
                 
                 elif self.cfg.BA_PRECISION == "cpu":
                     #kahan summation method, deterministic float32
-                    print(f"[BA] Running BA with cpu precision")
+                    #print(f"[BA] Running BA with cpu precision")
                     torch.cuda.synchronize()  # Wait for any prior GPU work
                     start_ba = time.time()
 
@@ -629,7 +629,7 @@ class DEVO:
                     fastba.BA_cpu(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
 
-                    self.poses_ = self.posesposes_.to(device="cuda")
+                    self.poses_ = self.poses_.to(device="cuda")
                     self.patches_ = self.patches_.to(device="cuda")
                     self.intrinsics_ = self.intrinsics_.to(device="cuda")
 
@@ -645,6 +645,40 @@ class DEVO:
                     elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
                     #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 
+                elif self.cfg.BA_PRECISION == "cpu_fp128":
+                    #kahan summation method, deterministic quad precision
+                    #print(f"[BA] Running BA with cpu precision")
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
+
+                    self.poses_ = self.poses_.to(dtype=torch.float64, device='cpu')
+                    self.patches_ = self.patches_.to(dtype=torch.float64, device='cpu')
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float64, device='cpu')
+
+                    target = target.to(dtype=torch.float64, device='cpu')
+                    weight = weight.to(dtype=torch.float64, device='cpu')
+                    lmbda = lmbda.to(dtype=torch.float64, device='cpu')
+
+                    fastba.BA_cpu_fp128(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+                    self.poses_ = self.poses_.to(dtype=torch.float32, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float32, device='cuda')
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device='cuda')
+
+                    target = target.to(device="cuda")
+                    weight = weight.to(device="cuda")
+                    lmbda = lmbda.to(device="cuda")
+
+                    self.ii = self.ii.to(device="cuda")
+                    self.jj = self.jj.to(device="cuda")
+                    self.kk = self.kk.to(device="cuda")
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                
+
                 elif self.cfg.BA_PRECISION == "truncate_double":
                     decimal_places = 13
                     #uncomment for using double precision
