@@ -15,6 +15,7 @@ import cuda_ba_kahan
 import cuda_ba_red2
 import cuda_ba_kahan_bw
 import ba_cpu
+import cuda_ba_kahan_db64
 
 neighbors = cuda_ba.neighbors
 reproject = cuda_ba.reproject
@@ -55,7 +56,7 @@ def BA_red_cpu_fw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj
 def BA_red_cpu_bw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_red_cpu_bw_save.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
 
-def BA_red_kahan(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+def BA_kahan(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_kahan.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
 
 def BA_red_kahan_bw(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
@@ -68,3 +69,6 @@ def BA_red2(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t
 
 def BA_cpu(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return ba_cpu.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_kahan_db64(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_kahan_db64.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)

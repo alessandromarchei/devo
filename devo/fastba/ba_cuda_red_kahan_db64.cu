@@ -500,13 +500,14 @@ std::vector<torch::Tensor> cuda_ba(
     const int t0, const int t1, const int iterations)
 {
 
-  // Cast input tensors to double precision
+  //cast inputs to be double
   poses = poses.to(torch::kDouble);
   patches = patches.to(torch::kDouble);
   intrinsics = intrinsics.to(torch::kDouble);
   target = target.to(torch::kDouble);
   weight = weight.to(torch::kDouble);
   lmbda = lmbda.to(torch::kDouble);
+
 
   auto ktuple = torch::_unique(kk, true, true);
   torch::Tensor kx = std::get<0>(ktuple);
@@ -573,11 +574,11 @@ std::vector<torch::Tensor> cuda_ba(
     cudaDeviceSynchronize();
     
 
-    B = kahan_reduce_dim0(B);
-    E = kahan_reduce_dim0(E);
-    C = kahan_reduce_dim0(C);
-    v = kahan_reduce_dim0(v);
-    u = kahan_reduce_dim0(u);
+    B = kahan_reduce_dim0_db64(B);
+    E = kahan_reduce_dim0_db64(E);
+    C = kahan_reduce_dim0_db64(C);
+    v = kahan_reduce_dim0_db64(v);
+    u = kahan_reduce_dim0_db64(u);
 
 
     //DIMENSION IS REDUCED AFTER (FIRST CHANNEL IS REDUCED)
@@ -646,15 +647,14 @@ std::vector<torch::Tensor> cuda_ba(
       //print_tensor_stats(dZ, "dZ");
     }
   }
-  
-  // Cast input tensors to double precision
+
+  //cast back to float
   poses = poses.to(torch::kFloat32);
   patches = patches.to(torch::kFloat32);
   intrinsics = intrinsics.to(torch::kFloat32);
   target = target.to(torch::kFloat32);
   weight = weight.to(torch::kFloat32);
   lmbda = lmbda.to(torch::kFloat32);
-
   return {};
 }
 
@@ -676,7 +676,7 @@ torch::Tensor cuda_reproject(
   intrinsics = intrinsics.view({-1, 4});
 
   auto opts = torch::TensorOptions()
-    .dtype(torch::kFloat32).device(torch::kCUDA);
+    .dtype(torch::kDouble).device(torch::kCUDA);
 
   torch::Tensor coords = torch::empty({N, 2, P, P}, opts);
 

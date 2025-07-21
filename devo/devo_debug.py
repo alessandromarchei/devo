@@ -581,6 +581,20 @@ class DEVO:
                     torch.cuda.synchronize()  # Wait for this call to fully finish
 
                     elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+                
+                elif self.cfg.BA_PRECISION == "kahan_db64":
+                    #kahan summation method, deterministic float32
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
+
+                    fastba.BA_kahan_db64(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+
 
                 elif self.cfg.BA_PRECISION == "kahan_bw":
                     #kahan summation method, deterministic float32
