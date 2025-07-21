@@ -1,10 +1,10 @@
 ### DEVO Config File for MVSEC ###
 
 # VO config (increase for better accuracy)
-PATCHES_PER_FRAME: 16
-REMOVAL_WINDOW: 12
+PATCHES_PER_FRAME: 96
+REMOVAL_WINDOW: 22
 OPTIMIZATION_WINDOW: 10
-PATCH_LIFETIME: 8
+PATCH_LIFETIME: 13
 
 # threshold for keyframe removal
 KEYFRAME_THRESH: 5.0
@@ -24,4 +24,4 @@ NORM: 'std'
 SCORER_EVAL_MODE: 'multi'
 SCORER_EVAL_USE_GRID: True
 
-BA_PRECISION: 'kahan'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'
+BA_PRECISION: 'kahan_bw'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'

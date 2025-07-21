@@ -23,11 +23,23 @@ setup(
         #        'cxx':  ['-O0'], 
         #        'nvcc': ['-O0'],
         #    }),
-        CUDAExtension('cuda_ba_red2',
-            sources=['devo/fastba/ba2.cpp', 'devo/fastba/ba_cuda_red2.cu'],
+        #CUDAExtension('cuda_ba_red2',
+        #    sources=['devo/fastba/ba2.cpp', 'devo/fastba/ba_cuda_red2.cu'],
+        #    extra_compile_args={
+        #        'cxx':  ['-O3'], 
+        #        'nvcc': ['-O3'],
+        #    }),
+        #CUDAExtension('cuda_ba_kahan_bw',
+        #    sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red_kahan_bw.cu'],
+        #    extra_compile_args={
+        #        'cxx':  ['-O0'], 
+        #        'nvcc': ['-O0'],
+        #    }),
+        CUDAExtension('cuda_ba_kahan_db64',
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cuda_red_kahan_db64.cu'],
             extra_compile_args={
-                'cxx':  ['-O3'], 
-                'nvcc': ['-O3'],
+                'cxx':  ['-O0'], 
+                'nvcc': ['-O0'],
             }),
         
     ],

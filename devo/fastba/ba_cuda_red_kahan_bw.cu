@@ -22,6 +22,49 @@
    MAX_BLOCKS)
 
 
+// __device__ int retirementCount = 0;
+
+// __global__ void reduce_gpu_sptr(double *sdata, int size, double *res) {
+//     int tid = threadIdx.x + blockIdx.x * blodkDim.x;
+
+//     extern __shared__ double smem[];
+
+//     /* Split the data in smaller chunk. The block only only on one chunk */
+//     if (tid >= size)
+//         smem[threadIdx.x] = 0.0;
+//     else
+//         smem[threadIdx.x] = data[tid];
+
+//     /* Wait for all thread to update shared memory */
+//     __syncthreads();
+
+//     /* apply the block reduction */
+//     double partial_sum = 0.0;
+//     block_reduce(smem, partial_sum);
+
+//     if (threadIdx.x == 0)
+//         partial_results[blockIdx.x] = partial_sum;
+
+//     __threadfences();
+
+//     bool __shared__ amLast = false;
+//     if (threadIdx.x == 0) {
+//         int prev = atomicInc(&retirementCount, gridSize.x);
+//         amLast = (prev == (gridDim.x - 1));
+//     }
+//     __syncthreads();
+
+//     if (amLast) {
+//         if (threadIdx.x == 0) {
+//             double sum = 0;
+//             for (int i = 0; i < gridDim.x; i++)
+//                 sum += res[i];
+//             res[0] = sum;
+//         }
+//     }
+// }
+
+
 __device__ void
 actSO3(const float *q, const float *X, float *Y) {
   float uv[3];
@@ -241,13 +284,12 @@ __global__ void reprojection_residuals_and_hessian(
     //take the thread index
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-
-    //logic for distinguishing between tensors to be reduced or not
-    auto local_B = B.size(0) > 1 ? B[tid] : B[0];
-    auto local_E = E.size(0) > 1 ? E[tid] : E[0];
-    auto local_C = C.size(0) > 1 ? C[tid] : C[0];
-    auto local_v = v.size(0) > 1 ? v[tid] : v[0];
-    auto local_u = u.size(0) > 1 ? u[tid] : u[0];
+    //get the respected local tensors
+    auto local_B = B[tid];
+    auto local_E = E[tid];
+    auto local_v = v[tid];
+    auto local_C = C[tid];
+    auto local_u = u[tid];
 
 
 
@@ -445,7 +487,7 @@ __global__ void reproject(
 
 
 //FORWARD FUNCTION IMPLEMENTING THE BUNDLE ADJUSTMENT
-std::vector<torch::Tensor> cuda_ba_2(
+std::vector<torch::Tensor> cuda_ba(
     torch::Tensor poses,
     torch::Tensor patches,
     torch::Tensor intrinsics,
@@ -455,13 +497,13 @@ std::vector<torch::Tensor> cuda_ba_2(
     torch::Tensor ii,
     torch::Tensor jj, 
     torch::Tensor kk,
-    const int t0, const int t1, const int iterations, std::vector<int64_t> reduction_config)
+    const int t0, const int t1, const int iterations)
 {
 
-  //REDUCTION config should be a vector containing 5 elements, each one with a flag specifying whether to reduce the respective tensor or not
-  // [B, E, C, v, u], so for example a reduction vector of [0, 1, 1, 0, 0] means that E and C will be reduced, while B, v and u will not be reduced
-  assert(reduction_config.size() == 5);
+  //std::cout << "\nStarting CUDA Bundle Adjustment..." << std::endl;
 
+  ////std::cout << "Starting CUDA Bundle Adjustment..." << std::endl;
+  ////std::cout << "N edges : " << ii.size(0) << std::endl;
 
   auto ktuple = torch::_unique(kk, true, true);
   torch::Tensor kx = std::get<0>(ktuple);
@@ -482,29 +524,55 @@ std::vector<torch::Tensor> cuda_ba_2(
   weight = weight.view({-1, 2});
 
   const int num = ii.size(0);
+  // torch::Tensor B = torch::empty({6*N, 6*N}, opts);
+  // torch::Tensor E = torch::empty({6*N, 1*M}, opts);
+  // torch::Tensor C = torch::empty({M}, opts);
 
+  // torch::Tensor v = torch::empty({6*N}, opts);
+  // torch::Tensor u = torch::empty({1*M}, opts);
 
   int num_threads = NUM_BLOCKS(ii.size(0)) * NUM_THREADS_PER_BLOCK;  // total threads launched
+  ////std::cout << "Number of threads: " << num_threads << std::endl;
+  ////std::cout << "NUM BLOCKS: " << NUM_BLOCKS(ii.size(0)) << std::endl;
+
 
   for (int itr=0; itr < iterations; itr++) {
 
-    int B_threads = reduction_config[0] ? num_threads : 1;
-    int E_threads = reduction_config[1] ? num_threads : 1;
-    int C_threads = reduction_config[2] ? num_threads : 1;
-    int v_threads = reduction_config[3] ? num_threads : 1;
-    int u_threads = reduction_config[4] ? num_threads : 1;
 
-
-    torch::Tensor B = torch::zeros({B_threads, 6 * N, 6 * N}, opts);
-    torch::Tensor E = torch::zeros({E_threads, 6 * N, M}, opts);
-    torch::Tensor C = torch::zeros({C_threads, M}, opts);
-    torch::Tensor v = torch::zeros({v_threads, 6 * N}, opts);
-    torch::Tensor u = torch::zeros({u_threads, M}, opts); 
-
+    torch::Tensor B = torch::zeros({num_threads, 6 * N, 6 * N}, opts);
+    torch::Tensor E = torch::zeros({num_threads, 6 * N, M}, opts);
+    torch::Tensor C = torch::zeros({num_threads, M}, opts);
+    torch::Tensor v = torch::zeros({num_threads, 6 * N}, opts);
+    torch::Tensor u = torch::zeros({num_threads, M}, opts); 
     
-    v = v.view({v_threads, 6*N});
-    u = u.view({u_threads, 1*M});
+    ////std::cout << "B shape: " << B.sizes() << std::endl;
+    ////std::cout << "E shape: " << E.sizes() << std::endl;
+    ////std::cout << "C shape: " << C.sizes() << std::endl;
+    ////std::cout << "v shape: " << v.sizes() << std::endl;
+    ////std::cout << "u shape: " << u.sizes() << std::endl;
 
+    v = v.view({num_threads, 6*N});
+    u = u.view({num_threads, 1*M});
+
+    ////std::cout << "B shape after zero: " << B.sizes() << std::endl;
+    ////std::cout << "E shape after zero: " << E.sizes() << std::endl;
+    ////std::cout << "C shape after zero: " << C.sizes() << std::endl;
+    ////std::cout << "v shape after zero: " << v.sizes() << std::endl;
+    ////std::cout << "u shape after zero: " << u.sizes() << std::endl;
+
+
+    //printf("Iteration %d: %d threads, %d blocks\n", itr, num_threads, NUM_BLOCKS(ii.size(0)));
+    //std::cout << "\n-------  Iteration "<< itr << " -------"  << std::endl;
+    //std::cout << "Before hessian computation: " << std::endl;
+        //print max min mean and std of the tensors, in 1 line per tensor
+    //print_tensor_stats(B, "B");
+    //print_tensor_stats(E, "E");
+    //print_tensor_stats(C, "C");
+    //print_tensor_stats(v, "v");
+    //print_tensor_stats(u, "u");
+
+    //auto start_hessian = std::chrono::high_resolution_clock::now();
+    //change the packet tensor to 64 pointers
     reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS_PER_BLOCK>>>(
       poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
       patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
@@ -524,14 +592,16 @@ std::vector<torch::Tensor> cuda_ba_2(
       t0);
     
     cudaDeviceSynchronize();
+    
+
+    B = kahan_reduce_dim0_bw(B);
+    E = kahan_reduce_dim0_bw(E);
+    C = kahan_reduce_dim0_bw(C);
+    v = kahan_reduce_dim0_bw(v);
+    u = kahan_reduce_dim0_bw(u);
 
 
-       //reducing every tensor
-    B = B.sum(0);
-    E = E.sum(0);
-    C = C.sum(0);
-    v = v.sum(0);
-    u = u.sum(0);
+    //DIMENSION IS REDUCED AFTER (FIRST CHANNEL IS REDUCED)
 
     //create one more dimension for v and u
     v = v.view({6*N, 1});
@@ -590,6 +660,11 @@ std::vector<torch::Tensor> cuda_ba_2(
           patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
           dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
       
+      //std::cout << "After updating the poses and patches: " << std::endl;
+      //print_tensor_stats(poses, "poses");
+      //print_tensor_stats(patches, "patches");
+      //print_tensor_stats(dX, "dX");
+      //print_tensor_stats(dZ, "dZ");
     }
   }
   

@@ -13,7 +13,8 @@ import cuda_ba_red_cpu_fw_save
 import cuda_ba_red_cpu_bw_save
 import cuda_ba_kahan
 import cuda_ba_red2
-
+import cuda_ba_kahan_bw
+import ba_cpu
 
 neighbors = cuda_ba.neighbors
 reproject = cuda_ba.reproject
@@ -57,7 +58,13 @@ def BA_red_cpu_bw_save(poses, patches, intrinsics, target, weight, lmbda, ii, jj
 def BA_red_kahan(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return cuda_ba_kahan.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
 
+def BA_red_kahan_bw(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_kahan_bw.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
 def BA_red2(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2, reduction_config=None):
     if reduction_config is None:
         reduction_config = [1, 1, 1, 1, 1]
     return cuda_ba_red2.forward2(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations, reduction_config)
+
+def BA_cpu(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return ba_cpu.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
