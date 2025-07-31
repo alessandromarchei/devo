@@ -24,4 +24,4 @@ NORM: 'std'
 SCORER_EVAL_MODE: 'multi'
 SCORER_EVAL_USE_GRID: True
 
-BA_PRECISION: 'reduction'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'
+BA_PRECISION: 'debug'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'

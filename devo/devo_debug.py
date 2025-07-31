@@ -7,7 +7,7 @@ from . import altcorr
 from . import lietorch
 from .lietorch import SE3, SO3
 import time
-
+from .ba import BA
 # from .net import VONet # TODO add net.py
 from .enet_debug import eVONet
 from .utils import log_stats
@@ -561,6 +561,65 @@ class DEVO:
                     torch.cuda.synchronize()  # Wait for any prior GPU work
                     start_ba = time.time()
 
+
+                    #draw patch graph
+
+                    if(self.iteration >= 35):
+                        print(f"[BA] iteration {self.iteration} ")
+
+                        #draw_patch_graph(self.ii, self.jj, self.kk, output_path="og.pdf")
+                        #draw_patch_graph(self.ii-t0, self.jj-t0, self.kk, output_path="og_t0.pdf")
+                        #patch ok
+                        #poses ok
+                        #intrinsics ok
+                        #target ok
+                        #weight ok
+                        #ii are less than expected
+                        trimmed_poses, trimmed_patches = save_ba_debug_inputs_as_c_pair(
+                            self.poses, self.patches, self.intrinsics,
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, t1=self.n,
+                            base_name="ba_in_fp32")
+                        
+
+                        #cut off the edges which would not be considered in the BA
+                                # === Create edge mask: keep only edges NOT completely before t0 ===
+                        mask = torch.logical_not(torch.logical_and(self.ii < t0, self.jj < t0))
+
+                        # === Apply mask to edge-related arrays ===
+                        ii_trimmed = self.ii[mask]
+                        jj_trimmed = self.jj[mask]
+                        kk_trimmed = self.kk[mask]
+                        target_trimmed = target[:, mask, :]
+                        weight_trimmed = weight[:, mask, :]
+                        
+                        #print(f"[BA] Running BA with debug precision, t0={t0}, n={self.n}, ii={self.ii.shape}, jj={self.jj.shape}, kk={self.kk.shape}")
+                        #move every tensor to cpu
+                        trimmed_poses = trimmed_poses.to(device="cpu")
+                        trimmed_patches = trimmed_patches.to(device="cpu")
+                        self.intrinsics_ = self.intrinsics_.to(device="cpu")
+
+                        target_trimmed = target_trimmed.to(device="cpu")
+                        weight_trimmed = weight_trimmed.to(device="cpu")
+                        lmbda = lmbda.to(device="cpu")
+
+                        ii_trimmed = ii_trimmed.to(device="cpu")
+                        jj_trimmed = jj_trimmed.to(device="cpu")
+                        kk_trimmed = kk_trimmed.to(device="cpu")
+
+                        fastba.BA_cpu_debug(trimmed_poses,trimmed_patches, self.intrinsics,
+                                target_trimmed, weight_trimmed, lmbda, ii_trimmed, jj_trimmed, kk_trimmed, t0, self.n, 1)
+                        
+                        #SAVE OUTPUT POSES AND PATCHES in a file
+                        #extract only the center x y and depth from the patches
+                        #self.patches shape = [1,4096*96,3,3,3]
+                        #do self.patches.view(1, -1, 3, 3, 3)[:, :, 1, 1, 0:2] to get the center x y and depth
+                        #trimmed_patches = trimmed_patches[0][:, :, 1, 1]
+                        save_golden_outputs_as_c_pair(trimmed_poses, trimmed_patches, base_name="ba_out_fp32")
+
+                        exit(0)  # exit after the first iteration, to avoid running the BA multiple times
+                        
+                    
+                    #print(f"[BA] Running BA with debug precision, t0={t0}, n={self.n}, ii={self.ii.shape}, jj={self.jj.shape}, kk={self.kk.shape}")
                     fastba.BA_debug(self.poses, self.patches, self.intrinsics,
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
 
@@ -569,7 +628,15 @@ class DEVO:
 
                     elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
 
-                    print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+                    #prepare to send the files:
+                    #ba_golden_matrix_fp32_0.h
+                    #ba_golden_matrix_fp32_1.h
+                    #ba_in_fp32.h
+                    #ba_out_fp32.h
+                    #all via scp to 
+
+
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 elif self.cfg.BA_PRECISION == "kahan":
                     #kahan summation method, deterministic float32
                     torch.cuda.synchronize()  # Wait for any prior GPU work
@@ -627,6 +694,46 @@ class DEVO:
                     self.jj = self.jj.to(device="cpu")
                     self.kk = self.kk.to(device="cpu")
                     fastba.BA_cpu(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+                    self.poses_ = self.poses_.to(device="cuda")
+                    self.patches_ = self.patches_.to(device="cuda")
+                    self.intrinsics_ = self.intrinsics_.to(device="cuda")
+
+                    target = target.to(device="cuda")
+                    weight = weight.to(device="cuda")
+                    lmbda = lmbda.to(device="cuda")
+
+                    self.ii = self.ii.to(device="cuda")
+                    self.jj = self.jj.to(device="cuda")
+                    self.kk = self.kk.to(device="cuda")
+                    torch.cuda.synchronize()  # Wait for this call to fully finish
+
+                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
+                    #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
+
+                elif self.cfg.BA_PRECISION == "cpu_profile":
+                    #kahan summation method, deterministic float32
+                    #print(f"[BA] Running BA with cpu precision")
+                    #print(f"[BA] Running BA with cpu profile precision")
+                    torch.cuda.synchronize()  # Wait for any prior GPU work
+                    start_ba = time.time()
+
+                    self.poses_ = self.poses_.to(device="cpu")
+                    self.patches_ = self.patches_.to(device="cpu")
+                    self.intrinsics_ = self.intrinsics_.to(device="cpu")
+
+                    target = target.to(device="cpu")
+                    weight = weight.to(device="cpu")
+                    lmbda = lmbda.to(device="cpu")
+
+                    self.ii = self.ii.to(device="cpu")
+                    self.jj = self.jj.to(device="cpu")
+                    self.kk = self.kk.to(device="cpu")
+
+                    #weight has shape (1,N,2), set to zero the ones which are not the top 70% 
+                    #weight = weight * (weight > torch.quantile(weight, 0.25, dim=1, keepdim=True))
+                    fastba.BA_cpu_profile(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
 
                     self.poses_ = self.poses_.to(device="cuda")
@@ -902,9 +1009,9 @@ class DEVO:
             self.keyframe()
 
 
-        with open(f"test_randomness/full_runs/{self.logname}.txt", mode='a', newline='') as f:
-            #write a ending line to the file like ====
-            f.write(f"================\n")
+        # with open(f"test_randomness/full_runs/{self.logname}.txt", mode='a', newline='') as f:
+        #     #write a ending line to the file like ====
+        #     f.write(f"================\n")
 
         self.iteration += 1
 

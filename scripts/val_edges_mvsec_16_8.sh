@@ -18,7 +18,7 @@ fi
 RUN_ID=$(date +"%Y%m%d_%H%M%S")_$RANDOM
 
 USE_PYRAMID="--use_pyramid=True"
-MODEL_FLAG="--model=original"
+MODEL_FLAG="--model=gradual"
 
 if [[ "$CHECKPOINT_INPUT" == *.pth ]]; then
     LATEST_CKPT_FILE="$CHECKPOINT_INPUT"
@@ -26,7 +26,8 @@ if [[ "$CHECKPOINT_INPUT" == *.pth ]]; then
 
     if [[ "$LATEST_CKPT_FILE" == *DEVO.pth ]]; then
         MODEL_FLAG="--model=DEVO"
-    fi
+    fi    
+
 else
     if [ ! -d "$CHECKPOINT_INPUT" ]; then
         echo "Checkpoint folder does not exist: $CHECKPOINT_INPUT"
@@ -49,7 +50,7 @@ else
 fi
 
 # Output dir (shared across all machines)
-OUTPUT_DIR="/usr/scratch/badile43/amarchei/edges/DEVO_p20/"
+OUTPUT_DIR="/usr/scratch/badile43/amarchei/edges/DEVO_gradual_v4"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -102,11 +103,13 @@ for PATCHES in $PATCH_RANGE; do
             $MODEL_FLAG \
             --outdir="$OUTPUT_DIR" \
             --expname="$EXP_NAME" \
-            --trials=3 \
+            --trials=5 \
             --plot \
             $USE_PYRAMID \
             --csv_name="$CSV_PATH" \
-            --save_csv
+            --save_csv \
+            --dim_fnet=64 \
+            --dim_inet=192
             
         echo "✅ Done evaluation for PATCHES=$PATCHES, REMOVAL_WINDOW=$REMOVAL_WINDOW"
     done

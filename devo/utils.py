@@ -550,3 +550,175 @@ def ba_solver_py(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, 
     updated_poses = poses.clone()
     updated_poses[0, t0:t1] = poses_opt.detach()
     return updated_poses
+
+
+
+def save_ba_debug_inputs_as_c_pair(
+    poses, patches, intrinsics, target, weight, lmbda,
+    ii, jj, kk, t0, t1,
+    base_name="ba_in_fp32",
+    zero_thresh=1e-6,
+    min_nonzero_fraction=0.05
+):
+    header_path = f"{base_name}.h"
+    source_path = f"{base_name}.c"
+
+    def extern_decl(type_, name, size):
+        return f"extern {type_} {name}[{size}];\n"
+
+    def tensor_to_definitions(name, tensor, type_="float"):
+        flat = tensor.contiguous().cpu().numpy()
+        if name == "patches":
+            flat = flat[:, :, 1, 1]  # center only
+        flat = flat.reshape(-1)
+        values = ', '.join(f'{v:.8f}' for v in flat)
+        return f"{type_} {name}[{len(flat)}] = {{{values}}};\n", len(flat)
+
+    def int_tensor_to_definitions(name, tensor, type_="uint16_t"):
+        flat = tensor.contiguous().view(-1).cpu().numpy()
+        values = ', '.join(str(int(v)) for v in flat)
+        return f"{type_} {name}[{len(flat)}] = {{{values}}};\n", len(flat)
+
+    def intrinsics_to_definition(tensor):
+        flat = tensor.contiguous().view(-1).cpu().numpy()
+        intr = flat[0:4]
+        return f"float intrinsics[4] = {{{intr[0]:.8f}, {intr[1]:.8f}, {intr[2]:.8f}, {intr[3]:.8f}}};\n"
+
+    def find_last_non_identity_pose(pose_tensor):
+        poses_np = pose_tensor[0].cpu().numpy()
+        identity = np.array([0, 0, 0, 0, 0, 0, 1])
+        for i in reversed(range(poses_np.shape[0])):
+            if not np.allclose(poses_np[i], identity, atol=1e-6):
+                return i + 1
+        return 1
+
+    def find_first_allzero_patch(patch_tensor):
+        patches_np = patch_tensor[0].cpu().numpy()[:, :, 1, 1]
+        for i in range(patches_np.shape[0]):
+            if np.all(np.abs(patches_np[i]) < zero_thresh):
+                return i
+        return patches_np.shape[0]
+
+    # Trim inputs
+    n_poses = find_last_non_identity_pose(poses)
+    poses = poses[:, :n_poses, :]
+
+    n_patches = find_first_allzero_patch(patches)
+    patches = patches[:, :n_patches]
+
+    mask = torch.logical_not(torch.logical_and(ii < t0, jj < t0))
+    ii_trimmed = ii[mask]
+    jj_trimmed = jj[mask]
+    kk_trimmed = kk[mask]
+    target_trimmed = target[:, mask, :]
+    weight_trimmed = weight[:, mask, :]
+
+    # Save header (.h)
+    with open(header_path, "w") as h, open(source_path, "w") as c:
+        h.write("// Auto-generated header declarations\n\n")
+        c.write("// Auto-generated variable definitions\n\n")
+
+        h.write(f"#pragma once\n\n")
+        h.write("typedef unsigned short uint16_t;\n\n")
+        c.write("typedef unsigned short uint16_t;\n\n")
+
+        h.write(f"extern uint16_t num_poses;\n")
+        c.write(f"uint16_t num_poses = {n_poses};\n\n")
+
+        poses_def, poses_len = tensor_to_definitions("poses", poses)
+        h.write(extern_decl("float", "poses", poses_len))
+        c.write(poses_def + "\n")
+
+        h.write(f"extern uint16_t num_patches;\n")
+        c.write(f"uint16_t num_patches = {n_patches};\n\n")
+
+        patches_def, patches_len = tensor_to_definitions("patches", patches[0])
+        h.write(extern_decl("float", "patches", patches_len))
+        c.write(patches_def + "\n")
+
+        h.write(extern_decl("float", "intrinsics", 4))
+        c.write(intrinsics_to_definition(intrinsics) + "\n")
+
+        num_edges = ii_trimmed.shape[0]
+        h.write(f"extern uint16_t num_edges;\n")
+        c.write(f"uint16_t num_edges = {num_edges};\n\n")
+
+        for name, data, is_int in [("target", target_trimmed, False), ("weights", weight_trimmed, False)]:
+            def_fn = tensor_to_definitions if not is_int else int_tensor_to_definitions
+            val_def, val_len = def_fn(name, data)
+            h.write(extern_decl("float", name, val_len))
+            c.write(val_def + "\n")
+
+        h.write(f"extern float lambda;\n")
+        c.write(f"float lambda = {float(lmbda):.8f};\n\n")
+
+        for name, tensor in [("ii", ii_trimmed), ("jj", jj_trimmed), ("kk", kk_trimmed)]:
+            val_def, val_len = int_tensor_to_definitions(name, tensor)
+            h.write(extern_decl("uint16_t", name, val_len))
+            c.write(val_def + "\n")
+
+        h.write("extern uint16_t t0;\n")
+        h.write("extern uint16_t t1;\n")
+        c.write(f"uint16_t t0 = {t0};\n")
+        c.write(f"uint16_t t1 = {t1};\n")
+
+        kx, ku, _ = torch.unique(kk_trimmed, return_inverse=True, return_counts=True)
+        h.write(f"extern uint16_t unique_patches;\n")
+        c.write(f"uint16_t unique_patches = {kx.shape[0]};\n\n")
+
+        ku_def, ku_len = int_tensor_to_definitions("ku", ku)
+        kx_def, kx_len = int_tensor_to_definitions("kx", kx)
+
+        h.write(extern_decl("uint16_t", "ku", ku_len))
+        h.write(extern_decl("uint16_t", "kx", kx_len))
+
+        c.write(ku_def + "\n")
+        c.write(kx_def + "\n")
+
+    print(f"[INFO] Saved header to: {header_path}")
+    print(f"[INFO] Saved source to: {source_path}")
+    return poses, patches
+
+
+def save_golden_outputs_as_c_pair(poses, patches, base_name="golden_outputs"):
+    header_path = f"{base_name}.h"
+    source_path = f"{base_name}.c"
+
+    def extern_decl(type_, name, size):
+        return f"extern {type_} {name}[{size}];\n"
+
+    def tensor_to_definitions(name, tensor, type_="float"):
+        flat = tensor.contiguous().view(-1).cpu().numpy()
+        values = ', '.join(f'{v:.8f}' for v in flat)
+        return f"{type_} {name}[{len(flat)}] = {{{values}}};\n", len(flat)
+
+    with open(header_path, "w") as h, open(source_path, "w") as c:
+        h.write("// Golden output header declarations\n\n")
+        c.write("// Golden output variable definitions\n\n")
+
+        h.write("typedef unsigned short uint16_t;\n\n")
+        c.write("typedef unsigned short uint16_t;\n\n")
+
+        n_poses = poses.shape[1]
+        n_patches = patches.shape[1]
+
+        h.write("extern uint16_t golden_num_poses;\n")
+        c.write(f"uint16_t golden_num_poses = {n_poses};\n\n")
+
+        poses_def, poses_len = tensor_to_definitions("golden_poses", poses)
+        h.write(extern_decl("float", "golden_poses", poses_len))
+        c.write(poses_def + "\n")
+
+        h.write("extern uint16_t golden_num_patches;\n")
+        c.write(f"uint16_t golden_num_patches = {n_patches};\n\n")
+
+        # === NEW: Extract center (x, y, disp) from 3x3x3 patches ===
+        center_patches = patches[:, :, 1, 1, :]  # shape: [1, N, 3]
+
+        patches_def, patches_len = tensor_to_definitions("golden_patches", center_patches[0])
+        h.write(extern_decl("float", "golden_patches", patches_len))
+        c.write(patches_def + "\n")
+
+    print(f"[INFO] Saved golden header to: {header_path}")
+    print(f"[INFO] Saved golden source to: {source_path}")
+    print(f"[INFO] Golden Poses: {n_poses}, Golden Patches: {n_patches} (center only)")

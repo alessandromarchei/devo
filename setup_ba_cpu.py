@@ -17,14 +17,20 @@ setup(
         #        'cxx':  ['-O3'], 
         #        'nvcc': ['-O3'],
         #    }),
-        CUDAExtension('ba_cpu_fp128',
-            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_fp128.cpp', 'devo/fastba/reproject.cu'],
+        CUDAExtension('ba_cpu_profile',
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_profile.cpp', 'devo/fastba/reproject.cu'],
             extra_compile_args={
-                'cxx':  ['-O3', '-fext-numeric-literals'],
+                'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
-            },
-            libraries=['quadmath']
-            ),
+            }),
+        #CUDAExtension('ba_cpu_fp128',
+        #    sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_fp128.cpp', 'devo/fastba/reproject.cu'],
+        #    extra_compile_args={
+        #        'cxx':  ['-O3', '-fext-numeric-literals'],
+        #        'nvcc': ['-O3'],
+        #    },
+        #    libraries=['quadmath']
+        #    ),
         
     ],
     cmdclass={

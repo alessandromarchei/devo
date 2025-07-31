@@ -14,7 +14,7 @@ gpu_num: 1
 # checkpoints
 freeze_patchify: 
 checkpoint: #/home/amarchei/Desktop/repos/DEVO/checkpoints/devo_half/015000.pth
-fgraph_pickle: /home/amarchei/Desktop/repos/DEVO/train_full_dataset/TartanAirEVS.pickle
+fgraph_pickle: /home/amarchei/Desktop/repos/DEVO/pickles/train_full_dataset/TartanAirEVS.pickle
 train_split: splits/tartan/tartan_full_train.txt
 val_split: /home/amarchei/Desktop/repos/DEVO/splits/mvsec/mvsec_val.txt       
 eval_step: 10000         #save checkpoint every N iterations. ALSO EVALUATION

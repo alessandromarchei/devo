@@ -510,7 +510,6 @@ class Patchifier(nn.Module):
                            index=self.iteration)
          
 
-
         x += 1
         y += 1
         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
@@ -533,7 +532,16 @@ class Patchifier(nn.Module):
 
         #load coordinates from the file
         coords = np.load(coords_path)["coords"]
+
+        #remove all the coordinates that are more than patches_per_image
+        if coords.shape[1] > patches_per_image:
+            print(f"Reducing coordinates from {coords.shape[1]} to {patches_per_image}")
+            coords = coords[:,:patches_per_image]
+
+
         coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
+
+        
         #print(f"coords from {coords_path}")
 
         #FMAP : MATCHING FEATURE MAP (1/4 RESOLUTION)

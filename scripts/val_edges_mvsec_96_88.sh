@@ -14,10 +14,11 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+# Unique RUN ID for this script execution
 RUN_ID=$(date +"%Y%m%d_%H%M%S")_$RANDOM
 
 USE_PYRAMID="--use_pyramid=True"
-MODEL_FLAG="--model=original"
+MODEL_FLAG="--model=gradual"
 
 if [[ "$CHECKPOINT_INPUT" == *.pth ]]; then
     LATEST_CKPT_FILE="$CHECKPOINT_INPUT"
@@ -25,7 +26,8 @@ if [[ "$CHECKPOINT_INPUT" == *.pth ]]; then
 
     if [[ "$LATEST_CKPT_FILE" == *DEVO.pth ]]; then
         MODEL_FLAG="--model=DEVO"
-    fi
+    fi    
+
 else
     if [ ! -d "$CHECKPOINT_INPUT" ]; then
         echo "Checkpoint folder does not exist: $CHECKPOINT_INPUT"
@@ -46,10 +48,13 @@ else
 
     EXP_NAME=$(basename "$CHECKPOINT_INPUT")
 fi
-OUTPUT_DIR="/usr/scratch/badile43/amarchei/edges/DEVO_p20/"
+
+# Output dir (shared across all machines)
+OUTPUT_DIR="/usr/scratch/badile43/amarchei/edges/DEVO_gradual_v4"
 
 mkdir -p "$OUTPUT_DIR"
 
+# CSV name is unique per machine
 CSV_NAME="${EXP_NAME}_${MACHINE_NAME}.csv"
 CSV_PATH="${OUTPUT_DIR}/${CSV_NAME}"
 
@@ -62,13 +67,11 @@ echo "CSV path: $CSV_PATH"
 echo "Model flag: $MODEL_FLAG"
 echo "Pyramid flag: $USE_PYRAMID"
 
-# Custom PATCHES list
 # Define PATCH_RANGE and REMOVAL_WINDOWS manually per machine or via env
 PATCH_RANGE=$(seq 96 -8 88)
 REMOVAL_WINDOWS=(22 16 12 8)
 
 FIXED_LT=True
-
 
 for PATCHES in $PATCH_RANGE; do
     for REMOVAL_WINDOW in "${REMOVAL_WINDOWS[@]}"; do
@@ -100,11 +103,13 @@ for PATCHES in $PATCH_RANGE; do
             $MODEL_FLAG \
             --outdir="$OUTPUT_DIR" \
             --expname="$EXP_NAME" \
-            --trials=3 \
+            --trials=5 \
             --plot \
             $USE_PYRAMID \
             --csv_name="$CSV_PATH" \
-            --save_csv
+            --save_csv \
+            --dim_fnet=64 \
+            --dim_inet=192
             
         echo "✅ Done evaluation for PATCHES=$PATCHES, REMOVAL_WINDOW=$REMOVAL_WINDOW"
     done

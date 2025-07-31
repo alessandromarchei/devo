@@ -205,3 +205,13 @@ instructions.txt
 test/
 
 debug_ev_steps/
+
+devo/pulp-trainlib
+
+
+#tests performed for deployment of the BA on gap9
+ba_*
+debug.png
+*.png
+quad*
+*.txt

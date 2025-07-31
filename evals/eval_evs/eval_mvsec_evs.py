@@ -80,7 +80,7 @@ def evaluate(config, args, net, train_step=None, datapath="", split_file=None,
             all_results, results_dict_scene, figures, outfolder = log_results(data, hyperparam, all_results, results_dict_scene, figures, 
                                                                    plot=plot, save=save, return_figure=return_figure, stride=stride,
                                                                    expname=args.expname, save_csv=args.save_csv, cfg=config, name=args.csv_name,
-                                                                   outdir=args.outdir)
+                                                                   outdir=args.outdir, rpg_eval=True)
             
             # if viz_flow:
             #     viz_flow_inference(outfolder, flowdata)

@@ -37,7 +37,7 @@ NUM_WORKERS = 16
 
 #clear cache
 torch.cuda.empty_cache()
-
+torch.manual_seed(0)
 
 
 def dict2namespace(d):

@@ -610,6 +610,25 @@ std::vector<torch::Tensor> cuda_ba(
   */
 
 
+  /*
+  
+  example PATCH content (shape [3,3,3])
+  [[44.0, 45.0, 46.0],    X COORDINATES OF THE 3X3 PATCH
+    [44.0, 45.0, 46.0],
+    [44.0, 45.0, 46.0]],
+
+    [[120.0, 120.0, 120.0],   Y COORDINATES OF THE 3X3 PATCH
+    [121.0, 121.0, 121.0],
+    [122.0, 122.0, 122.0]],
+
+    [[0.65, 0.65, 0.65],   DEPTH (unique) CHANNEL OF THE 3X3 PATCH
+    [0.65, 0.65, 0.65],
+    [0.65, 0.65, 0.65]]
+  
+  
+  */
+
+
   //apply conversion to quad precision here
   auto poses_q = tensor_to_quad_dim2(poses);
   auto patches_q = tensor_to_quad_dim4(patches);

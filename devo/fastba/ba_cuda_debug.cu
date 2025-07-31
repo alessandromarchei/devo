@@ -6,63 +6,13 @@
 #include <ATen/NativeFunctions.h>
 #include <ATen/Parallel.h>
 
-#include "functions.cu"
 
 #define GPU_1D_KERNEL_LOOP(i, n) \
   for (size_t i = blockIdx.x * blockDim.x + threadIdx.x; i<n; i += blockDim.x * gridDim.x)
 
 
-//1 thread per edge would make the memory explode, try with a threshold for the number of threads (once reached, use a fixed number of threads, so 1 thread will process multiple edges)
-#define NUM_THREADS_PER_BLOCK 256
-#define MAX_BLOCKS 8
-
-#define NUM_BLOCKS(batch_size) \
-  ((batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK < MAX_BLOCKS ? \
-   (batch_size + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK : \
-   MAX_BLOCKS)
-
-
-// __device__ int retirementCount = 0;
-
-// __global__ void reduce_gpu_sptr(double *sdata, int size, double *res) {
-//     int tid = threadIdx.x + blockIdx.x * blodkDim.x;
-
-//     extern __shared__ double smem[];
-
-//     /* Split the data in smaller chunk. The block only only on one chunk */
-//     if (tid >= size)
-//         smem[threadIdx.x] = 0.0;
-//     else
-//         smem[threadIdx.x] = data[tid];
-
-//     /* Wait for all thread to update shared memory */
-//     __syncthreads();
-
-//     /* apply the block reduction */
-//     double partial_sum = 0.0;
-//     block_reduce(smem, partial_sum);
-
-//     if (threadIdx.x == 0)
-//         partial_results[blockIdx.x] = partial_sum;
-
-//     __threadfences();
-
-//     bool __shared__ amLast = false;
-//     if (threadIdx.x == 0) {
-//         int prev = atomicInc(&retirementCount, gridSize.x);
-//         amLast = (prev == (gridDim.x - 1));
-//     }
-//     __syncthreads();
-
-//     if (amLast) {
-//         if (threadIdx.x == 0) {
-//             double sum = 0;
-//             for (int i = 0; i < gridDim.x; i++)
-//                 sum += res[i];
-//             res[0] = sum;
-//         }
-//     }
-// }
+#define NUM_THREADS 256
+#define NUM_BLOCKS(batch_size) ((batch_size + NUM_THREADS - 1) / NUM_THREADS)
 
 
 __device__ void
@@ -272,79 +222,88 @@ __global__ void reprojection_residuals_and_hessian(
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> jj,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> kk,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> ku,
-    torch::PackedTensorAccessor64<float,3,torch::RestrictPtrTraits> B,
-    torch::PackedTensorAccessor64<float,3,torch::RestrictPtrTraits> E,
-    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> C,
-    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> v,
-    torch::PackedTensorAccessor64<float,2,torch::RestrictPtrTraits> u,
-    const int t0)
+    torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> B,
+    torch::PackedTensorAccessor32<float,2,torch::RestrictPtrTraits> E,
+    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> C,
+    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> v,
+    torch::PackedTensorAccessor32<float,1,torch::RestrictPtrTraits> u, const int t0)
 {
 
+  __shared__ float fx, fy, cx, cy;
+  if (threadIdx.x == 0) {
+    fx = intrinsics[0][0];
+    fy = intrinsics[0][1];
+    cx = intrinsics[0][2];
+    cy = intrinsics[0][3];
+  }
+
+  __syncthreads();
+
+  GPU_1D_KERNEL_LOOP(n, ii.size(0)) {
+    int k = ku[n];
+    int ix = ii[n];
+    int jx = jj[n];
+    int kx = kk[n];
+
+
+
+    float ti[3] = { poses[ix][0], poses[ix][1], poses[ix][2] };
+    float tj[3] = { poses[jx][0], poses[jx][1], poses[jx][2] };
+    float qi[4] = { poses[ix][3], poses[ix][4], poses[ix][5], poses[ix][6] };
+    float qj[4] = { poses[jx][3], poses[jx][4], poses[jx][5], poses[jx][6] };
+
+    float Xi[4], Xj[4];
+    Xi[0] = (patches[kx][0][1][1] - cx) / fx;
+    Xi[1] = (patches[kx][1][1][1] - cy) / fy;
+    Xi[2] = 1.0;
+    Xi[3] = patches[kx][2][1][1];
     
-    //take the thread index
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    float tij[3], qij[4];
+    relSE3(ti, qi, tj, qj, tij, qij);
+    actSE3(tij, qij, Xi, Xj);
 
-    //get the respected local tensors
-    auto local_B = B[tid];
-    auto local_E = E[tid];
-    auto local_v = v[tid];
-    auto local_C = C[tid];
-    auto local_u = u[tid];
+    const float X = Xj[0];
+    const float Y = Xj[1];
+    const float Z = Xj[2];
+    const float W = Xj[3];
 
+    const float d = (Z >= 0.2) ? 1.0 / Z : 0.0; 
+    const float d2 = d * d;
 
+    const float x1 = fx * (X / Z) + cx;
+    const float y1 = fy * (Y / Z) + cy;
 
-    __shared__ float fx, fy, cx, cy;
-    if (threadIdx.x == 0) {
-        fx = intrinsics[0][0];
-        fy = intrinsics[0][1];
-        cx = intrinsics[0][2];
-        cy = intrinsics[0][3];
-    }
-    __syncthreads();
+    const float rx = target[n][0] - x1;
+    const float ry = target[n][1] - y1;
 
+    const bool in_bounds = (sqrt(rx*rx + ry*ry) < 128) && (Z > 0.2) &&
+      (x1 > -64) && (y1 > -64) && (x1 < 2*cx + 64) && (y1 < 2*cy + 64);
 
-    GPU_1D_KERNEL_LOOP(n, ii.size(0)) {
-      int k = ku[n];
-      int ix = ii[n];
-      int jx = jj[n];
-      int kx = kk[n];
+    const float mask = in_bounds ? 1.0 : 0.0;
 
-      float ti[3] = { poses[ix][0], poses[ix][1], poses[ix][2] };
-      float tj[3] = { poses[jx][0], poses[jx][1], poses[jx][2] };
-      float qi[4] = { poses[ix][3], poses[ix][4], poses[ix][5], poses[ix][6] };
-      float qj[4] = { poses[jx][3], poses[jx][4], poses[jx][5], poses[jx][6] };
+    ix = ix - t0;
+    jx = jx - t0;
 
-      float Xi[4], Xj[4];
-      Xi[0] = (patches[kx][0][1][1] - cx) / fx;
-      Xi[1] = (patches[kx][1][1][1] - cy) / fy;
-      Xi[2] = 1.0;
-      Xi[3] = patches[kx][2][1][1];
-      
-      float tij[3], qij[4];
-      relSE3(ti, qi, tj, qj, tij, qij);
-      actSE3(tij, qij, Xi, Xj);
+    // // Only print the first 10 edges that enter into one of those if loops
+    // __shared__ int warn_count;
+    // if (threadIdx.x == 0) warn_count = 0;
+    // __syncthreads();
 
-      const float X = Xj[0];
-      const float Y = Xj[1];
-      const float Z = Xj[2];
-      const float W = Xj[3];
-
-      const float d = (Z >= 0.2) ? 1.0 / Z : 0.0; 
-      const float d2 = d * d;
-
-      const float x1 = fx * (X / Z) + cx;
-      const float y1 = fy * (Y / Z) + cy;
-
-      const float rx = target[n][0] - x1;
-      const float ry = target[n][1] - y1;
-
-      const bool in_bounds = (sqrt(rx*rx + ry*ry) < 128) && (Z > 0.2) &&
-        (x1 > -64) && (y1 > -64) && (x1 < 2*cx + 64) && (y1 < 2*cy + 64);
-
-      const float mask = in_bounds ? 1.0 : 0.0;
-
-      ix = ix - t0;
-      jx = jx - t0;
+    // if ((ix < 0 && jx >= 0) || (ix >= 0 && jx < 0)) {
+    //   int old = atomicAdd(&warn_count, 1);
+    //   if (old < 10) {
+    //   if(ix < 0 && jx >= 0)
+    //   {
+    //     printf("WARNING: t0 = %d edge (%d, %d) has ix < 0, jx >= 0\n", t0, ix+t0, jx+t0);
+    //   }
+    //   if(ix >= 0 && jx < 0)
+    //   {
+    //     printf("WARNING: t0 = %d edge (%d, %d) has ix >= 0, jx < 0\n", t0, ix+t0, jx+t0);
+    //   }
+    //   }
+    // }
+    // __syncthreads();
+    
 
     {
       const float r = target[n][0] - x1;
@@ -358,32 +317,32 @@ __global__ void reprojection_residuals_and_hessian(
       for (int i=0; i<6; i++) {
         for (int j=0; j<6; j++) {
           if (ix >= 0)
-            atomicAdd(&local_B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
+            atomicAdd(&B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
           if (jx >= 0)
-            atomicAdd(&local_B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
+            atomicAdd(&B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
           if (ix >= 0 && jx >= 0) {
-            atomicAdd(&local_B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
-            atomicAdd(&local_B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
+            atomicAdd(&B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
+            atomicAdd(&B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
           }
         }
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&local_E[6*ix+i][k], -w * Jz * Ji[i]);
+          atomicAdd(&E[6*ix+i][k], -w * Jz * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&local_E[6*jx+i][k],  w * Jz * Jj[i]);
+          atomicAdd(&E[6*jx+i][k],  w * Jz * Jj[i]);
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&local_v[6*ix+i], -w * r * Ji[i]);
+          atomicAdd(&v[6*ix+i], -w * r * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&local_v[6*jx+i],  w * r * Jj[i]);
+          atomicAdd(&v[6*jx+i],  w * r * Jj[i]);
       }
 
-      atomicAdd(&local_C[k], w * Jz * Jz);
-      atomicAdd(&local_u[k], w *  r * Jz);
+      atomicAdd(&C[k], w * Jz * Jz);
+      atomicAdd(&u[k], w *  r * Jz);
     }
 
     {
@@ -398,39 +357,35 @@ __global__ void reprojection_residuals_and_hessian(
       for (int i=0; i<6; i++) {
         for (int j=0; j<6; j++) {
           if (ix >= 0)
-            atomicAdd(&local_B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
+            atomicAdd(&B[6*ix+i][6*ix+j],  w * Ji[i] * Ji[j]);
           if (jx >= 0)
-            atomicAdd(&local_B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
+            atomicAdd(&B[6*jx+i][6*jx+j],  w * Jj[i] * Jj[j]);
           if (ix >= 0 && jx >= 0) {
-            atomicAdd(&local_B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
-            atomicAdd(&local_B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
+            atomicAdd(&B[6*ix+i][6*jx+j], -w * Ji[i] * Jj[j]);
+            atomicAdd(&B[6*jx+i][6*ix+j], -w * Jj[i] * Ji[j]);
           }
         }
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&local_E[6*ix+i][k], -w * Jz * Ji[i]);
+          atomicAdd(&E[6*ix+i][k], -w * Jz * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&local_E[6*jx+i][k],  w * Jz * Jj[i]);
+          atomicAdd(&E[6*jx+i][k],  w * Jz * Jj[i]);
       }
 
       for (int i=0; i<6; i++) {
         if (ix >= 0)
-          atomicAdd(&local_v[6*ix+i], -w * r * Ji[i]);
+          atomicAdd(&v[6*ix+i], -w * r * Ji[i]);
         if (jx >= 0)
-          atomicAdd(&local_v[6*jx+i],  w * r * Jj[i]);
+          atomicAdd(&v[6*jx+i],  w * r * Jj[i]);
       }
 
-      atomicAdd(&local_C[k], w * Jz * Jz);
-      atomicAdd(&local_u[k], w *  r * Jz);
+      atomicAdd(&C[k], w * Jz * Jz);
+      atomicAdd(&u[k], w *  r * Jz);
     }
-    
-  } // end of GPU_1D_KERNEL_LOOP
-    __syncthreads();
+  }
 }
-
-
 
 
 __global__ void reproject(
@@ -500,7 +455,6 @@ std::vector<torch::Tensor> cuda_ba(
     const int t0, const int t1, const int iterations)
 {
 
-
   auto ktuple = torch::_unique(kk, true, true);
   torch::Tensor kx = std::get<0>(ktuple);
   torch::Tensor ku = std::get<1>(ktuple);
@@ -520,30 +474,28 @@ std::vector<torch::Tensor> cuda_ba(
   weight = weight.view({-1, 2});
 
   const int num = ii.size(0);
+  torch::Tensor B = torch::empty({6*N, 6*N}, opts);
+  torch::Tensor E = torch::empty({6*N, 1*M}, opts);
+  torch::Tensor C = torch::empty({M}, opts);
 
-  int num_threads = NUM_BLOCKS(ii.size(0)) * NUM_THREADS_PER_BLOCK;  // total threads launched
+  torch::Tensor v = torch::empty({6*N}, opts);
+  torch::Tensor u = torch::empty({1*M}, opts);
 
+  std::cout << "BA CUDA: " << N << " poses, " << M << " unique patches, "
+            << num << " edges" << std::endl;  
 
   for (int itr=0; itr < iterations; itr++) {
 
+    B.zero_();
+    E.zero_();
+    C.zero_();
+    v.zero_();
+    u.zero_();
 
-    torch::Tensor B = torch::zeros({num_threads, 6 * N, 6 * N}, opts);
-    torch::Tensor E = torch::zeros({num_threads, 6 * N, M}, opts);
-    torch::Tensor C = torch::zeros({num_threads, M}, opts);
-    torch::Tensor v = torch::zeros({num_threads, 6 * N}, opts);
-    torch::Tensor u = torch::zeros({num_threads, M}, opts); 
+    v = v.view({6*N});
+    u = u.view({1*M});
 
-    v = v.view({num_threads, 6*N});
-    u = u.view({num_threads, 1*M});
-    std::cout << "Iteration: " << itr << std::endl;
-
-
-    cudaEvent_t start_kernel, stop_kernel;
-    cudaEventCreate(&start_kernel);
-    cudaEventCreate(&stop_kernel);
-
-    cudaEventRecord(start_kernel);
-    reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS_PER_BLOCK>>>(
+    reprojection_residuals_and_hessian<<<NUM_BLOCKS(ii.size(0)), NUM_THREADS>>>(
       poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
       patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
       intrinsics.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
@@ -554,70 +506,17 @@ std::vector<torch::Tensor> cuda_ba(
       jj.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
       kk.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
       ku.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
-      B.packed_accessor64<float,3,torch::RestrictPtrTraits>(),
-      E.packed_accessor64<float,3,torch::RestrictPtrTraits>(),
-      C.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
-      v.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
-      u.packed_accessor64<float,2,torch::RestrictPtrTraits>(),
-      t0);
-    
-    cudaEventRecord(stop_kernel);
+      B.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
+      E.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
+      C.packed_accessor32<float,1,torch::RestrictPtrTraits>(),
+      v.packed_accessor32<float,1,torch::RestrictPtrTraits>(),
+      u.packed_accessor32<float,1,torch::RestrictPtrTraits>(), t0);
 
-    cudaEventSynchronize(stop_kernel);
-
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start_kernel, stop_kernel);
-    std::cout << "Kernel time: " << milliseconds << " ms" << std::endl;
-
-    cudaEventDestroy(start_kernel);
-    cudaEventDestroy(stop_kernel);
-
-
-    cudaEvent_t start_reduction, stop_reduction;
-    cudaEventCreate(&start_reduction);
-    cudaEventCreate(&stop_reduction);
-    //reduce_tensor(B);
-    //reduce_tensor(E);
-    //reduce_tensor(C);
-    //reduce_tensor(v);
-    //reduce_tensor(u);
-    cudaEventRecord(start_reduction);
-    B = B.sum(0);
-    E = E.sum(0);
-    C = C.sum(0);
-    v = v.sum(0);
-    u = u.sum(0);
-
-    // auto B_contig = B.contiguous();
-    // int num_threads = B.size(0);
-    // int H = B.size(1);  // 6*N
-    // int W = B.size(2);  // 6*N
-    // int vec_size = H * W;
-
-    // const float* B_ptr = B_contig.data_ptr<float>();
-    auto options = torch::TensorOptions().dtype(B.dtype()).device(B.device());
-    // torch::Tensor B_out_flat = torch::empty({vec_size}, options);
-
-    int threads_per_block = 256;
-    
-
-    cudaDeviceSynchronize();  // waits until reductions really finished
-    
-    cudaEventRecord(stop_reduction);
-    cudaEventSynchronize(stop_reduction);
-    float reduction_time = 0;
-    cudaEventElapsedTime(&reduction_time, start_reduction, stop_reduction);
-    cudaEventDestroy(start_reduction);
-    cudaEventDestroy(stop_reduction); 
-    std::cout << "Reduction time: " << reduction_time << " ms" << std::endl;
-    //create one more dimension for v and u
     v = v.view({6*N, 1});
     u = u.view({1*M, 1});
 
-
-    auto start_solver = std::chrono::high_resolution_clock::now();
     torch::Tensor Q = 1.0 / (C + lmbda).view({1, M});
-    //print_tensor_stats(Q, "Q");
+
     if (t1 - t0 == 0) {
 
       torch::Tensor Qt = torch::transpose(Q, 0, 1);
@@ -625,7 +524,7 @@ std::vector<torch::Tensor> cuda_ba(
 
       dZ = dZ.view({M});
 
-      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS_PER_BLOCK>>>(
+      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS>>>(
         kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
         patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
         dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
@@ -635,7 +534,6 @@ std::vector<torch::Tensor> cuda_ba(
     else {
 
       torch::Tensor EQ = E * Q;
-      
       torch::Tensor Et = torch::transpose(E, 0, 1);
       torch::Tensor Qt = torch::transpose(Q, 0, 1);
 
@@ -645,30 +543,23 @@ std::vector<torch::Tensor> cuda_ba(
       torch::Tensor I = torch::eye(6*N, opts);
       S += I * (1e-4 * S + 1.0);
 
+
       torch::Tensor U = torch::linalg::cholesky(S);
       torch::Tensor dX = torch::cholesky_solve(y, U);
       torch::Tensor dZ = Qt * (u - torch::matmul(Et, dX));
+
       dX = dX.view({N, 6});
       dZ = dZ.view({M});
-      //std::cout < "After solving the system: " << std::endl;
 
-
-      pose_retr_kernel<<<NUM_BLOCKS(N), NUM_THREADS_PER_BLOCK>>>(t0, t1,
+      pose_retr_kernel<<<NUM_BLOCKS(N), NUM_THREADS>>>(t0, t1,
           poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
           dX.packed_accessor32<float,2,torch::RestrictPtrTraits>());
 
-      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS_PER_BLOCK>>>(
+      patch_retr_kernel<<<NUM_BLOCKS(M), NUM_THREADS>>>(
           kx.packed_accessor32<long,1,torch::RestrictPtrTraits>(),
           patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
           dZ.packed_accessor32<float,1,torch::RestrictPtrTraits>());
-      
-
     }
-    cudaDeviceSynchronize();  // waits until reductions really finished
-
-    auto end_solver = std::chrono::high_resolution_clock::now();
-    auto duration_solver = std::chrono::duration_cast<std::chrono::milliseconds>(end_solver - start_solver);
-    std::cout << "Solver time: " << duration_solver.count() << " milliseconds" << std::endl;
   }
   
   return {};
@@ -696,7 +587,7 @@ torch::Tensor cuda_reproject(
 
   torch::Tensor coords = torch::empty({N, 2, P, P}, opts);
 
-  reproject<<<NUM_BLOCKS(N), NUM_THREADS_PER_BLOCK>>>(
+  reproject<<<NUM_BLOCKS(N), NUM_THREADS>>>(
     poses.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
     patches.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
     intrinsics.packed_accessor32<float,2,torch::RestrictPtrTraits>(),
