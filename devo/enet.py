@@ -105,7 +105,8 @@ class Update(nn.Module):
         if self.max_nedges < net.shape[1]:
             self.max_nedges = net.shape[1]
             
-            
+        if inp is None:
+            inp = torch.zeros_like(net)
         net = net + inp + self.corr(corr)
         net = self.norm(net) # (b,edges,384)
 
@@ -131,12 +132,15 @@ class Update(nn.Module):
 
 
 class Update_small(nn.Module):
-    def __init__(self, p, dim=DIM, use_pyramid=True, use_softagg=True, use_tempconv=True):
+    def __init__(self, p, dim=DIM, use_pyramid=True, use_softagg=True, use_tempconv=True, use_ctx_features=True):
         super(Update_small, self).__init__()
         self.dim = dim
         self.use_pyramid = use_pyramid
         self.use_softagg = use_softagg
         self.use_tempconv = use_tempconv
+        self.use_ctx_features = use_ctx_features
+
+
         self.max_nedges = 0
         # if self.use_tempconv:
         self.c1 = nn.Sequential(
@@ -261,7 +265,7 @@ class Update_small(nn.Module):
 
 
 class Patchifier(nn.Module):
-    def __init__(self, event_bins = 5, patch_size=3, dim=32, match_feat_dim=128, ctx_feat_dim=384, patch_selector=SelectionMethod.SCORER, model="mksmall"):
+    def __init__(self, event_bins = 5, patch_size=3, dim=32, match_feat_dim=128, ctx_feat_dim=384, patch_selector=SelectionMethod.SCORER, model="mksmall", **kwargs):
         super(Patchifier, self).__init__()
         self.patch_size = patch_size
         self.match_feat_dim = match_feat_dim
@@ -269,6 +273,8 @@ class Patchifier(nn.Module):
         self.patch_selector = patch_selector.lower()
         self.evs_bins = event_bins
         self.model = model
+
+        self.use_ctx_features = kwargs.get("use_ctx_features", True)  # default to True
 
 
         #CHOOSE ARCHITECTURE BASED ON THE MODEL
@@ -402,6 +408,10 @@ class Patchifier(nn.Module):
         else:
             raise ValueError("Invalid model type")
 
+        #depending on the use of the context features, we can use the context features or not
+        if not self.use_ctx_features:
+            print("Context features disabled. Removing ctx_feat_encoder.")
+            self.ctx_feat_encoder = None
 
         #instantiate the SCORE MAP object in case it is specified
         #if self.patch_selector == SelectionMethod.SCORER:
@@ -423,7 +433,7 @@ class Patchifier(nn.Module):
             imap = self.inet(events) / 4.0
         else:
             fmap = self.matching_feat_encoder(events) / 4.0 # (1, 15, 128, 120, 160)
-            imap = self.ctx_feat_encoder(events) / 4.0 # (1, 15, 384, 120, 160)
+            imap = self.ctx_feat_encoder(events) / 4.0 if self.use_ctx_features else None
 
         b, n, c, h, w = fmap.shape # (1, 15, 128, 120, 160)
         P = self.patch_size
@@ -497,7 +507,10 @@ class Patchifier(nn.Module):
         #IMAP : CONTEXT FEATURE MAP (1/4 RESOLUTION)
 
         #extract the N PATCHES 1X1 FROM THE FMAP (INPUT : DIM,H/4,W/4) -> (OUTPUT : DIM,N_PATCHES,1,1)
-        imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.ctx_feat_dim, 1, 1) # [B, n_events*n_patches_per_image, ctx_feat_dim, 1, 1]
+        if self.use_ctx_features:
+            imap = altcorr.patchify(imap[0], coords, 0).view(b, -1, self.ctx_feat_dim, 1, 1) # [B, n_events*n_patches_per_image, ctx_feat_dim, 1, 1]
+        else:
+            imap = None
         
         #extract the N PATCHES 3X3 FROM THE FMAP (INPUT : DIM,H/4,W/4) -> (OUTPUT : DIM,N_PATCHES,3,3)
         gmap = altcorr.patchify(fmap[0], coords, P//2).view(b, -1, self.match_feat_dim, P, P) # [B, n_events*n_patches_per_image, match_feat_dim, 3, 3]
@@ -541,7 +554,7 @@ class CorrBlock:
 
 
 class eVONet(nn.Module):
-    def __init__(self, P=3, use_viewer=False, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER, norm="std2", randaug=False, args=None, model="DEVO", use_pyramid=True, use_tempconv=True, use_softagg=True):
+    def __init__(self, P=3, use_viewer=False, ctx_feat_dim=DIM, match_feat_dim=128, dim=32, patch_selector=SelectionMethod.SCORER, norm="std2", randaug=False, args=None, model="DEVO", use_pyramid=True, use_tempconv=True, use_softagg=True, use_ctx_features=True):
         super(eVONet, self).__init__()
         print(f"Using {ctx_feat_dim} context feature dimension")
         print(f"Using {match_feat_dim} matching feature dimension")
@@ -553,6 +566,14 @@ class eVONet(nn.Module):
         self.use_pyramid = use_pyramid
         self.use_tempconv = use_tempconv
         self.use_softagg = use_softagg
+        self.use_ctx_features = use_ctx_features
+
+        kwargs = {
+            "use_pyramid": use_pyramid,
+            "use_tempconv": use_tempconv,
+            "use_softagg": use_softagg,
+            "use_ctx_features": use_ctx_features,
+        }
 
         if args is not None:
             self.use_pyramid = args.use_pyramid
@@ -564,9 +585,10 @@ class eVONet(nn.Module):
         print(f"Using temporal conv : {self.use_tempconv}")
         print(f"Using softagg : {self.use_softagg}")
         print(f"Using patchifier model : {self.model}")
+        print(f"Using context features : {self.use_ctx_features}")
 
 
-        self.patchify = Patchifier(patch_size=self.P, ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=dim, patch_selector=patch_selector, model=self.model)
+        self.patchify = Patchifier(patch_size=self.P, ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=dim, patch_selector=patch_selector, model=self.model, **kwargs)
         if self.use_softagg == False or self.use_tempconv == False:
             self.update = Update_small(self.P, self.ctx_feat_dim, use_pyramid=self.use_pyramid, use_softagg=self.use_softagg, use_tempconv=self.use_tempconv)
         else:

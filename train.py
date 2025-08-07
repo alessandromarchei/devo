@@ -179,8 +179,11 @@ def train(rank, args):
 
     # Initial VOnet
     kwargs_net = {"ctx_feat_dim": args.ctx_feat_dim, "match_feat_dim": args.match_feat_dim, "dim": args.dim}
+    if args.patch_size is None:
+        args.patch_size = 3
+        
     net = VONet(**kwargs_net, patch_selector=args.patch_selector.lower()) if not args.evs else \
-    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, args=args)
+    eVONet(**kwargs_net, patch_selector=args.patch_selector.lower(), norm=args.norm, randaug=args.randaug, args=args, P=args.patch_size)
 
 
     net.train()
@@ -466,7 +469,7 @@ def train(rank, args):
                                 #for compatibility, add the state args.model that is args.patchifier_model
                                 args.model = args.patchifier_model
                                 trials = 3
-                                mvsec_datapath = "/capstor/scratch/cscs/amarchei/mvsec/indoor_flying"
+                                mvsec_datapath = "/usr/scratch/badile13/amarchei/mvsec/indoor_flying"
                                 val_results, val_figures = eval_mvsec_evs(None, args, net.module if args.ddp else net, total_steps,
                                                                         mvsec_datapath, args.val_split, trials, return_figure=True, plot=False, rpg_eval=False,
                                                                         expname=args.name, **kwargs_net)

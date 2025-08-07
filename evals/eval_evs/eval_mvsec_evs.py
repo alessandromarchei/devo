@@ -1,6 +1,6 @@
 import os
-os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+#os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+#os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import torch
 from devo.config import cfg
 
@@ -14,16 +14,16 @@ import random
 
 seed = 1234
 torch.manual_seed(seed)
-np.random.seed(seed)
-random.seed(seed)
-torch.cuda.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-torch.use_deterministic_algorithms(True, warn_only=True)
-#torch.use_deterministic_algorithms(True)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-torch.backends.cuda.matmul.allow_tf32 = False
-torch.backends.cudnn.allow_tf32 = False
+#np.random.seed(seed)
+#random.seed(seed)
+#torch.cuda.manual_seed(seed)
+#torch.cuda.manual_seed_all(seed)
+#torch.use_deterministic_algorithms(True, warn_only=True)
+##torch.use_deterministic_algorithms(True)
+#torch.backends.cudnn.deterministic = True
+#torch.backends.cudnn.benchmark = False
+#torch.backends.cuda.matmul.allow_tf32 = False
+#torch.backends.cudnn.allow_tf32 = False
 
 
 
@@ -142,6 +142,12 @@ if __name__ == '__main__':
         default=True,
         help='use tempconv (default: True)'
     )
+    parser.add_argument(
+        '--use_ctx_features',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use context features (default: True)'
+    )
     parser.add_argument('--outdir', type=str, default=None, help='path to save plots')
     args = parser.parse_args()
     assert_eval_config(args)
@@ -154,7 +160,7 @@ if __name__ == '__main__':
 
     # args.save_trajectory = True
     # args.plot = True
-    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_tempconv": args.use_tempconv, "use_softagg": args.use_softagg, "use_pyramid": args.use_pyramid}
+    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_tempconv": args.use_tempconv, "use_softagg": args.use_softagg, "use_pyramid": args.use_pyramid, "use_ctx_features": args.use_ctx_features}
     print("kwargs", kwargs)
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz,timing=args.timing, \

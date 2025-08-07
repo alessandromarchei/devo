@@ -210,8 +210,11 @@ devo/pulp-trainlib
 
 
 #tests performed for deployment of the BA on gap9
-ba_*
+ba_*.c
+ba_*.h
 debug.png
 *.png
 quad*
 *.txt
+
+tmp*test test1.txt test2.txt testfp16_ba test_fp16.py test_randomness

@@ -110,6 +110,12 @@ if __name__ == '__main__':
         help='use softagg (default: True)'
     )
     parser.add_argument(
+        '--use_ctx_features',
+        type=lambda x: x.lower() == 'true',
+        default=True,
+        help='use context features (default: True)'
+    )
+    parser.add_argument(
         '--use_tempconv',
         type=lambda x: x.lower() == 'true',
         default=True,
@@ -128,7 +134,7 @@ if __name__ == '__main__':
 
     args.save_trajectory = True
     args.plot = True
-    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_pyramid": args.use_pyramid, "use_softagg": args.use_softagg, "use_tempconv": args.use_tempconv}
+    kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "use_tempconv": args.use_tempconv, "use_softagg": args.use_softagg, "use_pyramid": args.use_pyramid, "use_ctx_features": args.use_ctx_features}
     val_results, val_figures = evaluate(cfg, args, args.weights, datapath=args.datapath, split_file=args.val_split, trials=args.trials, \
                        plot=args.plot, save=args.save_trajectory, return_figure=args.return_figs, viz=args.viz,timing=args.timing, \
                         stride=args.stride, side=args.side, viz_flow=args.viz_flow,**kwargs)

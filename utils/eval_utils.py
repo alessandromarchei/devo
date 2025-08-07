@@ -144,7 +144,6 @@ def run_voxel_norm_seq(voxeldir, cfg, network, viz=False, iterator=None, timing=
     flowdata = slam.flow_data if viz_flow else None
     return poses, tstamps, flowdata
 
-
 @torch.no_grad()
 def run_voxel(voxeldir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False, scale=1.0, model="DEVO",use_pyramid=True, **kwargs): 
     

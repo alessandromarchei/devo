@@ -491,6 +491,138 @@ class DEVO:
                     self.patches_ = self.patches_.to(dtype=torch.float32, device=self.patches_.device)  
                     self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
                 
+                if self.cfg.BA_PRECISION == "fp16_chol":
+                    #uncomment for using double precision
+                    self.poses_ = self.poses_.to(dtype=torch.float16, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float16, device='cuda')
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float16, device='cuda')
+
+                    target = target.to(dtype=torch.float16, device='cuda')
+                    weight = weight.to(dtype=torch.float16, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.float16, device='cuda')
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                    fastba.BA_fp16_chol(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                    #exit(0)  # Exit after running BA in CPU FP16 mode
+                    #now convert everything back to float32 and gpu
+                    self.poses_ = self.poses_.to(dtype=torch.float32, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float32, device='cuda')  
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device='cuda')
+                    target = target.to(dtype=torch.float32, device='cuda')
+                    weight = weight.to(dtype=torch.float32, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.float32, device='cuda')   
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+
+                if self.cfg.BA_PRECISION == "bf16_chol":
+                    #uncomment for using double precision
+                    self.poses_ = self.poses_.to(dtype=torch.bfloat16, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.bfloat16, device='cuda')
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.bfloat16, device='cuda')
+
+                    target = target.to(dtype=torch.bfloat16, device='cuda')
+                    weight = weight.to(dtype=torch.bfloat16, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.bfloat16, device='cuda')
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                    fastba.BA_bf16_chol(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                    #exit(0)  # Exit after running BA in CPU FP16 mode
+                    #now convert everything back to float32 and gpu
+                    self.poses_ = self.poses_.to(dtype=torch.float32, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float32, device='cuda')  
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device='cuda')
+                    target = target.to(dtype=torch.float32, device='cuda')
+                    weight = weight.to(dtype=torch.float32, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.float32, device='cuda')   
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                if self.cfg.BA_PRECISION == "bf16_lu":
+                    #uncomment for using double precision
+                    self.poses_ = self.poses_.to(dtype=torch.bfloat16, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.bfloat16, device='cuda')
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.bfloat16, device='cuda')
+
+                    target = target.to(dtype=torch.bfloat16, device='cuda')
+                    weight = weight.to(dtype=torch.bfloat16, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.bfloat16, device='cuda')
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                    fastba.BA_bf16_lu(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                    #exit(0)  # Exit after running BA in CPU FP16 mode
+                    #now convert everything back to float32 and gpu
+                    self.poses_ = self.poses_.to(dtype=torch.float32, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float32, device='cuda')  
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device='cuda')
+                    target = target.to(dtype=torch.float32, device='cuda')
+                    weight = weight.to(dtype=torch.float32, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.float32, device='cuda')   
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                if self.cfg.BA_PRECISION == "fp16_lu":
+                    #uncomment for using double precision
+                    self.poses_ = self.poses_.to(dtype=torch.float16, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float16, device='cuda')
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float16, device='cuda')
+
+                    target = target.to(dtype=torch.float16, device='cuda')
+                    weight = weight.to(dtype=torch.float16, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.float16, device='cuda')
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                    fastba.BA_fp16_lu(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                    #exit(0)  # Exit after running BA in CPU FP16 mode
+                    #now convert everything back to float32 and gpu
+                    self.poses_ = self.poses_.to(dtype=torch.float32, device='cuda')
+                    self.patches_ = self.patches_.to(dtype=torch.float32, device='cuda')  
+                    self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device='cuda')
+                    target = target.to(dtype=torch.float32, device='cuda')
+                    weight = weight.to(dtype=torch.float32, device='cuda')
+                    lmbda = lmbda.to(dtype=torch.float32, device='cuda')   
+                    self.ii = self.ii.to(device='cuda')
+                    self.jj = self.jj.to(device='cuda')
+                    self.kk = self.kk.to(device='cuda')
+
+                if self.cfg.BA_PRECISION == "fp32_chol":
+                    #uncomment for using double precision
+
+                    fastba.BA_fp32_chol(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                
+                elif self.cfg.BA_PRECISION == "fp32_lu":
+                    #uncomment for using double precision
+
+                    fastba.BA_fp32_lu(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                    
+                if self.cfg.BA_PRECISION == "fp32_chol2":
+                    #uncomment for using double precision
+
+                    fastba.BA_fp32_chol2(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+
+
                 elif self.cfg.BA_PRECISION == "truncate":
                     decimal_places = 9
                     fastba.BA_trunc(self.poses, self.patches, self.intrinsics, 

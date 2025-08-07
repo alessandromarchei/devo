@@ -17,7 +17,14 @@ import cuda_ba_kahan_db64
 import ba_cpu_fp128
 import ba_cpu_profile
 import ba_cpu_debug 
-
+import ba_cpu_fp16
+import cuda_ba_fp16_chol
+import cuda_ba_fp32_chol
+import cuda_ba_fp16_lu
+import cuda_ba_fp32_lu
+import cuda_ba_fp32_chol2
+import cuda_ba_bf16_chol
+import cuda_ba_bf16_lu
 
 neighbors = cuda_ba.neighbors
 reproject = cuda_ba.reproject
@@ -83,3 +90,57 @@ def BA_cpu_profile(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk
 
 def BA_cpu_debug(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
     return ba_cpu_debug.forward(poses.data, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_cpu_fp16(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    #cast the input tensors to half precision, in case they are not already + convert to cpu tensor
+    # poses = poses.to(torch.float16).cpu()
+    # patches = patches.to(torch.float16).cpu()
+    # intrinsics = intrinsics.to(torch.float16).cpu()
+    # target = target.to(torch.float16).cpu()
+    # weight = weight.to(torch.float16).cpu()
+    # lmbda = lmbda.to(torch.float16).cpu()
+    # ii = ii.cpu()
+    # jj = jj.cpu()
+    # kk = kk.cpu()
+    # t0 = t0.cpu()
+    # t1 = t1.cpu()
+
+    
+#convert the output tensors back to float32
+    # poses = poses.to(torch.float32).cuda()
+    # patches = patches.to(torch.float32).cuda()
+    # intrinsics = intrinsics.to(torch.float32).cuda()
+    # target = target.to(torch.float32).cuda()
+    # weight = weight.to(torch.float32).cuda()
+    # lmbda = lmbda.to(torch.float32).cuda()
+    # ii = ii.cuda()
+    # jj = jj.cuda()
+    # kk = kk.cuda()
+    # t0 = t0.cuda()
+    # t1 = t1.cuda()
+
+    return ba_cpu_fp16.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_fp16_chol(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+
+    return cuda_ba_fp16_chol.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_fp32_lu(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+
+    return cuda_ba_fp32_lu.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_fp16_lu(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+
+    return cuda_ba_fp16_lu.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_fp32_chol(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_fp32_chol.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_fp32_chol2(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_fp32_chol2.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_bf16_chol(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_bf16_chol.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)
+
+def BA_bf16_lu(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations=2):
+    return cuda_ba_bf16_lu.forward(poses, patches, intrinsics, target, weight, lmbda, ii, jj, kk, t0, t1, iterations)

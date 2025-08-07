@@ -44,6 +44,7 @@ class DEVO:
         self.use_pyramid = pyramid
         self.use_tempconv = kwargs.get("use_tempconv", True)  # default to False
         self.use_softagg = kwargs.get("use_softagg", True)  # default to False
+        self.use_ctx_features = kwargs.get("use_ctx_features", True)  # default to False
 
         self.trial = kwargs.get("trial", 0)
 
@@ -136,7 +137,7 @@ class DEVO:
             checkpoint = torch.load(network)
             # TODO infer ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim
             self.network = VONet(patch_selector=self.cfg.PATCH_SELECTOR) if not self.evs else \
-                eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid, use_tempconv= self.use_tempconv, use_softagg=self.use_softagg)
+                eVONet(ctx_feat_dim=self.ctx_feat_dim, match_feat_dim=self.match_feat_dim, dim=self.dim, patch_selector=self.cfg.PATCH_SELECTOR, model=self.model, use_pyramid=self.use_pyramid, use_tempconv= self.use_tempconv, use_softagg=self.use_softagg, use_ctx_features= self.use_ctx_features)
             if 'model_state_dict' in checkpoint:
                 self.network.load_state_dict(checkpoint['model_state_dict'])
             else:
@@ -184,11 +185,11 @@ class DEVO:
 
     @property
     def patches(self):
-        return self.patches_.view(1, self.N*self.M, 3, 3, 3)
+        return self.patches_.view(1, self.N*self.M, 3, self.P, self.P)
     
     @property
     def patches_gt(self):
-        return self.patches_gt_.view(1, self.N*self.M, 3, 3, 3)
+        return self.patches_gt_.view(1, self.N*self.M, 3, self.P, self.P)
 
     @property
     def intrinsics(self):
@@ -204,7 +205,7 @@ class DEVO:
 
     @property
     def gmap(self):
-        return self.gmap_.view(1, self.mem * self.M, self.match_feat_dim, 3, 3)
+        return self.gmap_.view(1, self.mem * self.M, self.match_feat_dim, self.P, self.P)
 
     def get_pose(self, t):
         try:
@@ -303,7 +304,7 @@ class DEVO:
 
         with autocast(enabled=self.cfg.MIXED_PRECISION):
             corr = self.corr(coords, indicies=(kk, jj))
-            ctx = self.imap[:,kk % (self.M * self.mem)]
+            ctx = self.imap[:,kk % (self.M * self.mem)] if self.use_ctx_features else None
             net, (delta, weight, _) = \
                 self.network.update(net, ctx, corr, None, ii, jj, kk)
 
@@ -553,8 +554,10 @@ class DEVO:
         self.patches_[self.n] = patches
 
         ### update network attributes ###
-        self.imap_[self.n % self.mem] = imap.squeeze()
-        self.gmap_[self.n % self.mem] = gmap.squeeze()
+        self.imap_[self.n % self.mem] = imap.squeeze() if self.use_ctx_features else torch.zeros_like(torch.zeros(1, self.M, self.ctx_feat_dim, **self.kwargs))
+        #print(f"imap shape: {imap.shape}, imap[{self.n % self.mem}] shape: {self.imap_[self.n % self.mem].shape}")
+        self.gmap_[self.n % self.mem] = gmap.squeeze(0)
+        #print(f"gmap shape: {gmap.shape}, gmap[{self.n % self.mem}] shape: {self.gmap_[self.n % self.mem].shape}")
         
 
         #CREATING THE MATCHING FEATURES FOR THE PYRAMID

@@ -5,10 +5,12 @@
 #include <ATen/ATen.h>
 #include <ATen/NativeFunctions.h>
 #include <ATen/Parallel.h>
-
+#include <ATen/cuda/CUDAContext.h>
 #include <fstream>
 #include <limits>
 #include <iomanip>
+#include <ATen/cuda/Atomic.cuh>
+#include <cuda_fp16.h>
 
 
 void print_tensor_stats(const torch::Tensor& tensor, const std::string& name) {
@@ -403,7 +405,6 @@ torch::Tensor kahan_reduce_dim0(torch::Tensor input) {
 }
 
 
-
 torch::Tensor kahan_reduce_dim0_db64(torch::Tensor input) {
     TORCH_CHECK(input.dim() >= 1, "Input must be at least 1D");
 
@@ -632,3 +633,225 @@ auto check_kahan_result = [](const torch::Tensor& input_before, const torch::Ten
     }
 };
 
+
+
+
+void check_nan_inf_3d(const torch::Tensor& T, const std::string& name) {
+    TORCH_CHECK(T.dim() == 3, name + " must be 3D");
+    auto acc = T.accessor<float, 3>();
+    for (int i = 0; i < T.size(0); ++i) {
+        for (int j = 0; j < T.size(1); ++j) {
+            for (int k = 0; k < T.size(2); ++k) {
+                float val = acc[i][j][k];
+                if (std::isnan(val) || std::isinf(val)) {
+                    std::cout << name << "(" << i << "," << j << "," << k << ") = " << val << std::endl;
+                }
+            }
+        }
+    }
+}
+
+void check_nan_inf_2d(const torch::Tensor& T, const std::string& name) {
+    TORCH_CHECK(T.dim() == 2, name + " must be 2D");
+    auto acc = T.accessor<float, 2>();
+    for (int i = 0; i < T.size(0); ++i) {
+        for (int j = 0; j < T.size(1); ++j) {
+            float val = acc[i][j];
+            if (std::isnan(val) || std::isinf(val)) {
+                std::cout << name << "(" << i << "," << j << ") = " << val << std::endl;
+            }
+        }
+    }
+}
+
+
+
+void check_tensor_nan_inf(const at::Tensor& tensor, const std::string& name) {
+    TORCH_CHECK(tensor.scalar_type() == at::kHalf, "Expected Half tensor for check_nan_inf");
+
+    auto tensor_contig = tensor.contiguous();
+    auto ptr = tensor_contig.data_ptr<at::Half>();
+    auto numel = tensor.numel();
+
+    int printed = 0;
+    const int max_print = 10;
+
+    for (int64_t i = 0; i < numel && printed < max_print; ++i) {
+        float val = static_cast<float>(ptr[i]);
+        if (std::isnan(val) || std::isinf(val)) {
+            std::cout << name << "[" << i << "] = " << val << std::endl;
+            ++printed;
+        }
+    }
+}
+
+
+
+int check_tensor_nan_inf_bf16(const at::Tensor& tensor, const std::string& name) {
+    TORCH_CHECK(tensor.scalar_type() == at::kBFloat16, "Expected BFloat16 tensor for check_nan_inf");
+
+    auto tensor_contig = tensor.contiguous();
+    auto ptr = tensor_contig.data_ptr<at::BFloat16>();
+    auto numel = tensor.numel();
+
+    int printed = 0;
+    const int max_print = 10;
+    bool is_bf16_nan_inf = false;
+
+    for (int64_t i = 0; i < numel && printed < max_print; ++i) {
+        float val = static_cast<float>(ptr[i]);
+        if (std::isnan(val) || std::isinf(val)) {
+            std::cout << name << "[" << i << "] = " << val << std::endl;
+            ++printed;
+            is_bf16_nan_inf = true;
+        }
+    }
+
+    return is_bf16_nan_inf ? 1 : 0;
+}
+
+
+
+void check_tensor_nan_inf_fp32(const at::Tensor& tensor, const std::string& name) {
+    TORCH_CHECK(tensor.scalar_type() == at::kFloat, "Expected Float32 tensor for check_nan_inf");
+
+    auto tensor_contig = tensor.contiguous();
+    auto ptr = tensor_contig.data_ptr<float>();
+    auto numel = tensor.numel();
+
+    int printed = 0;
+    const int max_print = 10;
+
+    for (int64_t i = 0; i < numel && printed < max_print; ++i) {
+        float val = static_cast<float>(ptr[i]);
+        if (std::isnan(val) || std::isinf(val)) {
+            std::cout << name << "[" << i << "] = " << val << std::endl;
+            ++printed;
+        }
+    }
+}
+
+
+
+void print_2d_tensor_to_file(const torch::Tensor& tensor, const std::string& filename, int iteration = -1) {
+    std::ofstream ofs(filename, std::ios::app);
+    if (!ofs.is_open()) {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+        return;
+    }
+
+    // Move to CPU and cast to float32 if needed
+    torch::Tensor t = tensor.to(torch::kCPU);
+    if (t.scalar_type() != torch::kFloat32)
+        t = t.to(torch::kFloat32);
+
+    // Print iteration info if specified
+    if (iteration >= 0)
+        ofs << "Tensor at iteration " << iteration << ":\n";
+    else
+        ofs << "Tensor:\n";
+
+    // Print matrix
+    for (int i = 0; i < t.size(0); ++i) {
+        for (int j = 0; j < t.size(1); ++j) {
+            ofs << std::fixed << std::setprecision(6) << t[i][j].item<float>() << " ";
+        }
+        ofs << "\n";
+    }
+    ofs << "\n";
+
+    ofs.close();
+}
+
+
+
+void print_1d_tensor_to_file(const torch::Tensor& tensor, const std::string& filename, int iteration = -1) {
+    std::ofstream ofs(filename, std::ios::app);
+    if (!ofs.is_open()) {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+        return;
+    }
+
+    // Move to CPU and cast to float32 if needed
+    torch::Tensor t = tensor.to(torch::kCPU).to(torch::kFloat32);
+
+    // Print iteration info if specified
+    if (iteration >= 0)
+        ofs << "Tensor at iteration " << iteration << ":\n";
+    else
+        ofs << "Tensor:\n";
+
+    if (t.dim() == 1) {
+        for (int i = 0; i < t.size(0); ++i) {
+            ofs << std::fixed << std::setprecision(6) << t[i].item<float>() << " ";
+        }
+        ofs << "\n";
+    } else if (t.dim() == 2) {
+        for (int i = 0; i < t.size(0); ++i) {
+            for (int j = 0; j < t.size(1); ++j) {
+                ofs << std::fixed << std::setprecision(6) << t[i][j].item<float>() << " ";
+            }
+            ofs << "\n";
+        }
+    }
+
+    ofs.close();
+}
+
+
+
+__global__ void kahan_reduce_nd_kernel_fp16(
+    const at::Half* __restrict__ input,
+    at::Half* __restrict__ output,
+    int num_threads,
+    int inner_size)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= inner_size) return;
+
+    at::Half sum = 0.0f;
+    at::Half c = 0.0f;
+
+    for (int t = 0; t < num_threads; ++t) {
+        //the tensor is flattened, so each thread sums elements that are spaced by the number of elements in the single contribution
+        int flat_idx = t * inner_size + idx;
+        at::Half y = input[flat_idx] - c;
+        at::Half temp = sum + y;
+        c = (temp - sum) - y;
+        sum = temp;
+    }
+
+    output[idx] = sum;
+}
+
+
+
+torch::Tensor kahan_reduce_dim0_fp16(torch::Tensor input) {
+    TORCH_CHECK(input.dim() >= 1, "Input must be at least 1D");
+
+    //total number of threads is the number of contributions (1 thread per contribution)
+    int num_threads = input.size(0);
+    auto output_shape = input.sizes().slice(1);  // remove dim 0
+
+
+    // flatten inner dims for generality
+    //calculate the number of elements in the flattened tensor OF EACH CONTRIBUTION : example B[Nthreads, 60, 60] -> 60*60 = 3600
+    int inner_size = 1;
+    for (int i = 1; i < input.dim(); ++i)
+        inner_size *= input.size(i);
+
+    auto output = torch::zeros({inner_size}, input.options());
+
+    const int threads = 256;
+    const int blocks = (inner_size + threads - 1) / threads;
+
+    kahan_reduce_nd_kernel_fp16<<<blocks, threads>>>(
+        input.data_ptr<at::Half>(),
+        output.data_ptr<at::Half>(),
+        num_threads,
+        inner_size
+    );
+
+    // reshape to original shape minus dim 0
+    return output.view(output_shape);
+}

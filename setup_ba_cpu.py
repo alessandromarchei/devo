@@ -17,12 +17,24 @@ setup(
         #        'cxx':  ['-O3'], 
         #        'nvcc': ['-O3'],
         #    }),
-        CUDAExtension('ba_cpu_profile',
-            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_profile.cpp', 'devo/fastba/reproject.cu'],
+        # CUDAExtension('ba_cpu_profile',
+        #     sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_profile.cpp', 'devo/fastba/reproject.cu'],
+        #     extra_compile_args={
+        #         'cxx':  ['-O3'], 
+        #         'nvcc': ['-O3'],
+        #     }),
+        CUDAExtension('ba_cpu_fp16',
+            sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_fp16_at_half.cpp', 'devo/fastba/reproject.cu'],
             extra_compile_args={
                 'cxx':  ['-O3'], 
                 'nvcc': ['-O3'],
             }),
+        # CUDAExtension('ba_cpu_fp16',
+        #     sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_fp16.cpp', 'devo/fastba/reproject.cu'],
+        #     extra_compile_args={
+        #         'cxx':  ['-O3'], 
+        #         'nvcc': ['-O3'],
+        #     }),
         #CUDAExtension('ba_cpu_fp128',
         #    sources=['devo/fastba/ba.cpp', 'devo/fastba/ba_cpu_fp128.cpp', 'devo/fastba/reproject.cu'],
         #    extra_compile_args={

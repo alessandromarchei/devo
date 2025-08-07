@@ -17,7 +17,7 @@ checkpoint: #/home/amarchei/Desktop/repos/DEVO/checkpoints/devo_half/015000.pth
 fgraph_pickle: /home/amarchei/Desktop/repos/DEVO/pickles/train_full_dataset/TartanAirEVS.pickle
 train_split: splits/tartan/tartan_full_train.txt
 val_split: /home/amarchei/Desktop/repos/DEVO/splits/mvsec/mvsec_val.txt       
-eval_step: 10000         #save checkpoint every N iterations. ALSO EVALUATION
+eval_step: 10         #save checkpoint every N iterations. ALSO EVALUATION
 tensorboard_update_step: 500         #push to tensorboard every N iterations, for visualization
 first_gt_poses: 10000       #up until this step, LOSS: FLOW LOSS, after LOSS: POSE + FLOW + SCORE
 checkpoint_step: 5000       #load checkpoint every N iterations, for evaluation
@@ -62,3 +62,5 @@ use_pyramid: True     #BASELINE : True : use both the large and small matching f
 #UPDATE BLOCK
 use_tempconv: True
 use_softagg: True
+
+patch_size: 1
