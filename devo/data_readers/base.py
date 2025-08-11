@@ -435,8 +435,9 @@ class EVSDDataset(data.Dataset):
 
         if self.scale != 1.0:
             #check if the voxel size is already 160x160
-            voxels, disps, poses, intrinsics = transform_rescale(self.scale, voxels, disps, poses, intrinsics, self.args.square)
-
+            #voxels, disps, poses, intrinsics = transform_rescale(self.scale, voxels, disps, poses, intrinsics, self.args.square)
+            voxels, disps, poses, intrinsics = transform_rescale(self.scale, voxels, disps, poses, intrinsics)
+        
         if self.aug:
             voxels, poses, disps, intrinsics = \
                 self.aug(voxels, poses, disps, intrinsics)

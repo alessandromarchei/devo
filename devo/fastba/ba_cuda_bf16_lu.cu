@@ -15,7 +15,7 @@
 #define CHECK_NAN_INF(name, val) \
     if ((isnan(val) || isinf(val))) { \
         printf("[Thread %d] %s = %.10f (isnan: %d, isinf: %d)\n", \
-            threadIdx.x, name, val, isnan(val), isinf(val)); \
+            threadIdx.x, name, val, isnan((float)val), isinf((float)val)); \
     }
 
 
@@ -231,7 +231,7 @@ __global__ void pose_retr_kernel(const int t0, const int t1,
     torch::PackedTensorAccessor32<at::BFloat16,2,torch::RestrictPtrTraits> update)
 {
   GPU_1D_KERNEL_LOOP(i, t1 - t0) {
-    const at::BFloat16 t = t0 + i;
+    const int t = t0 + i;
     at::BFloat16 t1[3], t0[3] = { poses[t][0], poses[t][1], poses[t][2] };
     at::BFloat16 q1[4], q0[4] = { poses[t][3], poses[t][4], poses[t][5], poses[t][6] };
 
@@ -412,8 +412,20 @@ __global__ void reprojection_residuals_and_hessian(
       //CHECK_NAN_INF("d", d);
       //CHECK_NAN_INF("d2", d2);
 
-      const at::BFloat16 x1 = fx * (X / Z) + cx;
-      const at::BFloat16 y1 = fy * (Y / Z) + cy;
+      //previous code, does not prevent NaN values, since we are still dividing by Z
+      // const at::BFloat16 x1 = fx * (X / Z) + cx;
+      // const at::BFloat16 y1 = fy * (Y / Z) + cy;
+
+      at::BFloat16 x1;
+      at::BFloat16 y1;
+      if (Z >= 0.01) {
+        x1 = fx * (X / Z) + cx;
+        y1 = fy * (Y / Z) + cy;
+      } else {
+        x1 = fx * (X * d) + cx;
+        y1 = fy * (Y * d) + cy;
+      }
+      
 
       const at::BFloat16 rx = target[n][0] - x1;
       const at::BFloat16 ry = target[n][1] - y1;
@@ -516,6 +528,7 @@ __global__ void reprojection_residuals_and_hessian(
         if (ix >= 0)
         {
           atomicAdd(&local_v[6*ix+i], at::BFloat16(-w * r * Ji[i]));
+          CHECK_NAN_INF("local_v[6*ix+i]", local_v[6*ix+i]);
 
         // if (isinf(local_v[6*ix+i])) {
         //     local_v[6*ix+i] = at::BFloat16(65504.0f);
@@ -524,6 +537,7 @@ __global__ void reprojection_residuals_and_hessian(
         if (jx >= 0)
         {
           atomicAdd(&local_v[6*jx+i],  at::BFloat16(w * r * Jj[i]));
+          CHECK_NAN_INF("local_v[6*jx+i]", local_v[6*jx+i]);
 
           //check if new value
           // if (isinf(local_v[6*jx+i])) {
@@ -534,12 +548,14 @@ __global__ void reprojection_residuals_and_hessian(
       }
 
       atomicAdd(&local_C[k], at::BFloat16(w * Jz * Jz));
+      CHECK_NAN_INF("local_C[k]", local_C[k]);
 
       //check if new value
       // if (isinf(local_C[k])) {
       //     local_C[k] = at::BFloat16(65504.0f);
       // }
       atomicAdd(&local_u[k], at::BFloat16(w *  r * Jz));
+      CHECK_NAN_INF("local_u[k]", local_u[k]);
 
       //check if new value
       // if (isinf(local_u[k])) {
@@ -601,11 +617,13 @@ __global__ void reprojection_residuals_and_hessian(
         if (ix >= 0)
         {
           atomicAdd(&local_v[6*ix+i], at::BFloat16(-w * r * Ji[i]));
+          CHECK_NAN_INF("local_v[6*ix+i]", local_v[6*ix+i]);
 
         }
         if (jx >= 0)
         {
           atomicAdd(&local_v[6*jx+i],  at::BFloat16(w * r * Jj[i]));
+          CHECK_NAN_INF("local_v[6*jx+i]", local_v[6*jx+i]);
 
           //check if new value
         }
@@ -615,12 +633,14 @@ __global__ void reprojection_residuals_and_hessian(
       }
 
       atomicAdd(&local_C[k], at::BFloat16(w * Jz * Jz));
+      CHECK_NAN_INF("local_C[k]", local_C[k]);
 
       //check if new value
       // if (isinf(local_C[k])) {
       //     local_C[k] = at::BFloat16(65504.0f);
       // }
       atomicAdd(&local_u[k], at::BFloat16(w *  r * Jz));
+      CHECK_NAN_INF("local_u[k]", local_u[k]);
 
       //check if new value
       // if (isinf(local_u[k])) {
@@ -783,13 +803,19 @@ std::vector<torch::Tensor> cuda_ba(
     u = u.sum(0);
 
     //clamp every value in B, E, C, v, u to the range [-65504.0, 65504.0]
+    // print_2d_tensor_to_file(B, "B_bf16_lu.txt", itr);
+    // print_2d_tensor_to_file(E, "E_bf16_lu.txt", itr);
+    // print_1d_tensor_to_file(C, "C_bf16_lu.txt", itr);
+    // print_1d_tensor_to_file(v, "v_bf16_lu.txt", itr);
+    // print_1d_tensor_to_file(u, "u_bf16_lu.txt", itr);
+
+    check_tensor_nan_inf_bf16(B.cpu(), "B_reduced");
+    check_tensor_nan_inf_bf16(E.cpu(), "E_reduced");
+    check_tensor_nan_inf_bf16(C.cpu(), "C_reduced");
+    check_tensor_nan_inf_bf16(v.cpu(), "v_reduced");
+    check_tensor_nan_inf_bf16(u.cpu(), "u_reduced");
 
 
-    check_tensor_nan_inf(B.cpu(), "B_reduced");
-    check_tensor_nan_inf(E.cpu(), "E_reduced");
-    check_tensor_nan_inf(C.cpu(), "C_reduced");
-    check_tensor_nan_inf(v.cpu(), "v_reduced");
-    check_tensor_nan_inf(u.cpu(), "u_reduced");
 
     //DIMENSION IS REDUCED AFTER (FIRST CHANNEL IS REDUCED)
 
@@ -822,7 +848,7 @@ std::vector<torch::Tensor> cuda_ba(
       EQ = EQ.to(torch::kBFloat16);
       //clamp
 
-      check_tensor_nan_inf(EQ.cpu(), "EQ");
+      check_tensor_nan_inf_bf16(EQ.cpu(), "EQ");
       //print_tensor_stats(EQ, "EQ");
       torch::Tensor Et = torch::transpose(E, 0, 1);
       Et = Et.to(torch::kBFloat16);
@@ -860,6 +886,9 @@ std::vector<torch::Tensor> cuda_ba(
       //if (itr == 0) print_2d
       //if (itr == 0) print_2d_tensor_to_file(S, "S_bf16_chol.txt", itr);
 
+      //make sure S is symmetric
+      //S = (S + S.t()) / 2.0;
+
       auto result = torch::linalg_lu_factor(S);  
       torch::Tensor LU = std::get<0>(result);
       torch::Tensor pivots = std::get<1>(result);
@@ -889,8 +918,14 @@ std::vector<torch::Tensor> cuda_ba(
       int dx_nan = check_tensor_nan_inf_bf16(dX.cpu(), "dX");
       int dz_nan = check_tensor_nan_inf_bf16(dZ.cpu(), "dZ");
 
+      // print_2d_tensor_to_file(S, "S_bf16_lu.txt", itr);
+      // print_2d_tensor_to_file(LU, "LU_bf16_lu.txt", itr);
+      // print_1d_tensor_to_file(pivots, "pivots_bf16_lu.txt", itr);
+      // print_1d_tensor_to_file(dX, "dX_bf16_lu.txt", itr);
+      // print_1d_tensor_to_file(dZ, "dZ_bf16_lu.txt", itr);
+
       if (dx_nan || dz_nan) {
-        std::error("NaN or Inf detected in dX or dZ after solving the system.");
+        std::cerr << "[ERROR] NaN or Inf detected in dX or dZ after solving the system." << std::endl;
         exit(1);
       }
 

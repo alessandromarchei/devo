@@ -126,6 +126,10 @@ def analyze_pd(matrix: torch.Tensor):
 
     print("✅ Matrix is symmetric.")
 
+    #calculate the condition number
+    cond_num = torch.linalg.cond(matrix)
+    print(f"\nCondition number: {cond_num.item():.4e}")
+
     eigvals = torch.linalg.eigvalsh(matrix)
     min_eig = eigvals.min().item()
     num_neg = (eigvals <= 0).sum().item()

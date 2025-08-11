@@ -1,8 +1,8 @@
 ### DEVO Config File for MVSEC ###
 
 # VO config (increase for better accuracy)
-PATCHES_PER_FRAME: 96
-REMOVAL_WINDOW: 22
+PATCHES_PER_FRAME: 8
+REMOVAL_WINDOW: 4
 OPTIMIZATION_WINDOW: 10
 PATCH_LIFETIME: 13
 
@@ -24,4 +24,4 @@ NORM: 'std'
 SCORER_EVAL_MODE: 'multi'
 SCORER_EVAL_USE_GRID: True
 
-BA_PRECISION: 'debug'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'
+BA_PRECISION: 'float32'  # 'truncate', 'double', 'float32', 'truncate_double', 'det_fp32', 'single', 'reduction', 'debug'

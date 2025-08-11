@@ -667,16 +667,18 @@ def visualize_sparse_voxel(voxel):
         plt.spy(abs(voxel[i]))
     plt.show()
 
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
 
 def visualize_N_voxels(voxels_in, EPS=1e-3, idx_plot_vox=[0]):
-    # cmaps
-    colors = ['red', 'white', 'blue']
-    cmap = plt.cm.colors.ListedColormap(colors)
-    norm = plt.Normalize(vmin=-1, vmax=1)
+    # Custom red-white-blue colormap
+    colors = ['blue', 'white', 'red']
+    cmap = plt.cm.colors.LinearSegmentedColormap.from_list("custom_rwb", colors)
 
     device = voxels_in.device
 
-    if voxels_in.device != 'cpu':
+    if device != 'cpu':
         voxels_in = voxels_in.detach().cpu()
 
     voxels = torch.clone(voxels_in)
@@ -691,22 +693,32 @@ def visualize_N_voxels(voxels_in, EPS=1e-3, idx_plot_vox=[0]):
     voxels = voxels[idx_plot_vox]
     bins = voxels.shape[1]
 
-    voxels[torch.bitwise_and(voxels<EPS, voxels>0)] = 0
-    voxels[torch.bitwise_and(voxels>-EPS, voxels<0)] = 0
+    # Zero out small values
+    voxels[(voxels < EPS) & (voxels > 0)] = 0
+    voxels[(voxels > -EPS) & (voxels < 0)] = 0
 
-    voxels[voxels<0] = -1
-    voxels[voxels>0] = 1
+    # Find min and max for scaling
+    vmin = voxels.min().item()
+    vmax = voxels.max().item()
+
+    # Avoid division by zero
+    if vmax != 0:
+        voxels[voxels > 0] = voxels[voxels > 0] / vmax
+    if vmin != 0:
+        voxels[voxels < 0] = voxels[voxels < 0] / abs(vmin)
 
     fig = plt.figure(figsize=(20, 20))
     for i in range(N*bins):
         ax = fig.add_subplot(N, bins, i+1)
-        ax.imshow(voxels[i%N][i%bins], cmap=cmap, norm=norm)    
-    plt.tight_layout() 
+        ax.imshow(voxels[i % N][i % bins], cmap=cmap, vmin=-1, vmax=1)
+        ax.axis("off")
+    plt.tight_layout()
     plt.show()
 
-    #restore the voxels to original device
+    # Restore to original device
     if device != 'cpu':
         voxels = voxels.to(device)
+
 
 
 def visualize_voxel(*voxel_in, EPS=1e-3, save=False, folder="results/voxels", index=None):

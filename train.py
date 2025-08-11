@@ -30,6 +30,7 @@ import os
 import argparse
 import yaml
 from types import SimpleNamespace
+from utils.viz_utils import visualize_voxel, visualize_N_voxels, visualize_scorer_map
 
 
 DEBUG_PLOT_PATCHES = False
@@ -318,6 +319,9 @@ def train(rank, args):
 
                 # print(f"scene_id: {scene_id}")
                 #visualize_voxel(images[0][0])
+                img = images[0, 0]           # (5, 320, 240) → C=5 channels
+                img = img.unsqueeze(0)       # (1, 5, 320, 240) → N=1, bins=5
+                visualize_N_voxels(voxels_in=img)
 
                 
                 # fix poses to gt for first 1k steps

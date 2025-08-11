@@ -22,7 +22,7 @@ from utils.viz_utils import visualize_voxel, show_voxel_coordinates
 from scripts.draw_graph import draw_patch_graph
 import os
 
-
+from datetime import datetime
 
 # torch.manual_seed(0)
 class DEVO:
@@ -169,6 +169,42 @@ class DEVO:
 
         self.viz = viz
 
+
+        # --- weight logging (per-run) ---
+        self.run_id = kwargs.get("run_id", datetime.now().strftime("%Y%m%d_%H%M%S"))
+        self.weight_out = kwargs.get("weight_out", f"weights_run_{self.run_id}.npz")
+
+        #buffers from the weights of the graph
+        self._log_ii = []
+        self._log_jj = []
+        self._log_kk = []
+        self._log_it = []
+        self._log_wx = []
+        self._log_wy = []
+        self._log_wmag = []
+
+
+
+    def _log_weights_once(self, weight, ii, jj, kk):
+        # weight shape [1,E,2] or [E,2]
+        W = weight.squeeze(0).detach().float()  # [E,2]
+        wx = W[:,0]
+        wy = W[:,1]
+        wmag = torch.linalg.norm(W, dim=-1).clamp(0, 1)
+
+        it = int(self.iteration)
+
+        # Move to CPU numpy
+        self._log_ii.append(ii.detach().cpu().numpy().astype(np.int64))
+        self._log_jj.append(jj.detach().cpu().numpy().astype(np.int64))
+        self._log_kk.append(kk.detach().cpu().numpy().astype(np.int64))
+        self._log_it.append(np.full((W.shape[0],), it, dtype=np.int32))
+        self._log_wx.append(wx.detach().cpu().numpy().astype(np.float32))
+        self._log_wy.append(wy.detach().cpu().numpy().astype(np.float32))
+        self._log_wmag.append(wmag.detach().cpu().numpy().astype(np.float32))
+
+
+
     def load_weights(self, network):
         # load network from checkpoint file
         if isinstance(network, str):
@@ -269,11 +305,32 @@ class DEVO:
 
         tstamps = np.array(self.tlist, dtype=np.float64)
 
+        print(f"Finalizing DEVO with {len(poses)} poses, {len(tstamps)} timestamps, and {self.network.update.max_nedges} edges.")
+        # in terminate() add:
+        self._finalize_weight_log()
 
-        #write into a txt file the index, one per line, of the keys of self.traj
 
         return poses, tstamps, self.network.update.max_nedges
-    
+
+    #write into a txt file the index, one per line, of the keys of self.traj
+    def _finalize_weight_log(self):
+        if len(self._log_it) == 0:
+            return
+        ii  = np.concatenate(self._log_ii, axis=0)
+        jj  = np.concatenate(self._log_jj, axis=0)
+        kk  = np.concatenate(self._log_kk, axis=0)
+        it  = np.concatenate(self._log_it,  axis=0)
+        wx  = np.concatenate(self._log_wx,  axis=0)
+        wy  = np.concatenate(self._log_wy,  axis=0)
+        wmg = np.concatenate(self._log_wmag,axis=0)
+
+        print(f"Saving weights to {self.weight_out}")
+        np.savez_compressed(
+            self.weight_out,
+            ii=ii, jj=jj, kk=kk, iter=it, wx=wx, wy=wy, wmag=wmg
+        )
+
+
     def corr(self, coords, indicies=None):
         """ local correlation volume """
         ii, jj = indicies if indicies is not None else (self.kk, self.jj)
@@ -282,7 +339,7 @@ class DEVO:
 
         #dump_corr_inputs_npz("test_randomness/", self.gmap, self.pyramid, 0, coords, ii1, jj1)
         # compute the correlation operation with PATCHES FROM MATCHING FEATURES
-        corr1 = altcorr.corr(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
+        corr1 = altcorr.corr_debug(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
         
         if not self.use_pyramid:
             # if use_pyramid is False, only use corr1
@@ -290,7 +347,7 @@ class DEVO:
         else:
             # otherwise, use both corr1 and corr2
             #dump_corr_inputs_npz("test_randomness/", self.gmap, self.pyramid, 1, coords, ii1, jj1)
-            corr2 = altcorr.corr(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
+            corr2 = altcorr.corr_debug(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
             # stack together the two correlation volumes
             corr_volume = torch.stack([corr1, corr2], -1).reshape(1, len(ii), -1)
         
@@ -400,6 +457,8 @@ class DEVO:
         weight = weight.float()
             
         target = coords[...,self.P//2,self.P//2] + delta.float()
+
+        self._log_weights_once(weight, self.ii, self.jj, self.kk)
 
         #with Timer("BA", enabled=self.enable_timing):
         #    t0 = self.n - self.cfg.OPTIMIZATION_WINDOW if self.is_initialized else 1

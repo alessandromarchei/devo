@@ -217,4 +217,14 @@ debug.png
 quad*
 *.txt
 
-tmp*test test1.txt test2.txt testfp16_ba test_fp16.py test_randomness
+tmp* 
+test
+test1.txt
+test2.txt
+testfp16_ba
+test_fp16.py
+test_randomness
+
+testfp16_ba*/
+*.npy
+*.npz
