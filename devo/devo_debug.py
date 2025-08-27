@@ -17,6 +17,7 @@ from . import projective_ops as pops
 
 autocast = torch.cuda.amp.autocast
 Id = SE3.Identity(1, device="cuda")
+Id_pose = torch.tensor([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=torch.float32, device="cuda").view(1,7)
 
 from utils.viz_utils import visualize_voxel, show_voxel_coordinates
 from scripts.draw_graph import draw_patch_graph
@@ -280,19 +281,29 @@ class DEVO:
         return self.gmap_.view(1, self.mem * self.M, self.match_feat_dim, 3, 3)
 
     def get_pose(self, t):
-        if t in self.traj:
-            return SE3(self.traj[t])
-
-        t0, dP = self.delta[t]
-        return dP * self.get_pose(t0)
+        try:
+            if t in self.traj:
+                return SE3(self.traj[t])
+            
+            t0, dP = self.delta[t]
+            return dP * self.get_pose(t0)
+        except RecursionError:
+            print(f"RecursionError: {t} not found in trajectory. Returning identity pose.")
+            
+            return SE3(Id_pose)
 
     def terminate(self):
         """ interpolate missing poses """
         # print("keyframes", self.n)
         self.traj = {}
+
+        #mapping poses inside the pose list (end of run) ==> voxel indexes of corresponding keyframes.
+        #self.traj = dict: key = timestamp, value = pose at that index
         for i in range(self.n):
             self.traj[self.tstamps_[i].item()] = self.poses_[i]
 
+
+        #interpolate the poses between keyframes.
         if self.is_initialized:
             poses = [self.get_pose(t) for t in range(self.counter)]
             poses = lietorch.stack(poses, dim=0)
@@ -304,11 +315,6 @@ class DEVO:
             poses[:, :3] = poses[:, :3] + np.random.randn(self.counter, 3) * 0.01 # small random trans
 
         tstamps = np.array(self.tlist, dtype=np.float64)
-
-        print(f"Finalizing DEVO with {len(poses)} poses, {len(tstamps)} timestamps, and {self.network.update.max_nedges} edges.")
-        # in terminate() add:
-        self._finalize_weight_log()
-
 
         return poses, tstamps, self.network.update.max_nedges
 
@@ -339,17 +345,31 @@ class DEVO:
 
         #dump_corr_inputs_npz("test_randomness/", self.gmap, self.pyramid, 0, coords, ii1, jj1)
         # compute the correlation operation with PATCHES FROM MATCHING FEATURES
-        corr1 = altcorr.corr_debug(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
-        
+
+
+        #corr1 = altcorr.corr_debug(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
+        corr1 = altcorr.corr(self.gmap, self.pyramid[0], coords / 1, ii1, jj1, 3)
+
+
+        # if(self.ii.shape[0] >= 500):
+        #     #filter out the quantites that are basically not processed
+        #     #self.remove_unused_corr_data(self.gmap, self.pyramid[0], coords, ii1, jj1, corr1, 0.01)
+
+
+        #     save_corr_io_as_c_pair(gmap=self.gmap, fmap=self.pyramid[0], coords=coords, ii=ii1, jj=jj1, corr= corr1, 
+        #                        R=3, base_name=f"test_corr/edges_{self.ii.shape[0]}_corr1")
+        #     exit()
+        #print("new iteration \n\n\n")
         if not self.use_pyramid:
             # if use_pyramid is False, only use corr1
             corr_volume = corr1.reshape(1, len(ii), -1)
         else:
             # otherwise, use both corr1 and corr2
-            #dump_corr_inputs_npz("test_randomness/", self.gmap, self.pyramid, 1, coords, ii1, jj1)
-            corr2 = altcorr.corr_debug(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
+            #dump_corr_inputs("test/corr_input_1.txt", self.gmap, self.pyramid, 1, coords, ii1, jj1)
+            corr2 = altcorr.corr(self.gmap, self.pyramid[1], coords / 4, ii1, jj1, 3)
             # stack together the two correlation volumes
             corr_volume = torch.stack([corr1, corr2], -1).reshape(1, len(ii), -1)
+
         
         return corr_volume
 
@@ -458,7 +478,7 @@ class DEVO:
             
         target = coords[...,self.P//2,self.P//2] + delta.float()
 
-        self._log_weights_once(weight, self.ii, self.jj, self.kk)
+        #self._log_weights_once(weight, self.ii, self.jj, self.kk)
 
         #with Timer("BA", enabled=self.enable_timing):
         #    t0 = self.n - self.cfg.OPTIMIZATION_WINDOW if self.is_initialized else 1
@@ -996,13 +1016,9 @@ class DEVO:
                     self.patches_ = self.patches_.to(dtype=torch.float32, device=self.patches_.device)  
                     self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
                 else:
-                    torch.cuda.synchronize()  # Wait for any prior GPU work
-                    start_ba = time.time()
                     fastba.BA(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
-                    torch.cuda.synchronize()  # Wait for this call to fully finish
 
-                    elapsed_ba_ms = (time.time() - start_ba) * 1000  # Convert seconds → ms
 
                     #print(f"[BA] Total elapsed time: {elapsed_ba_ms:.2f} ms")
                 
@@ -1205,4 +1221,3 @@ class DEVO:
         #     f.write(f"================\n")
 
         self.iteration += 1
-

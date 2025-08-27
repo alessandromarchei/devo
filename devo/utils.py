@@ -722,3 +722,95 @@ def save_golden_outputs_as_c_pair(poses, patches, base_name="golden_outputs"):
     print(f"[INFO] Saved golden header to: {header_path}")
     print(f"[INFO] Saved golden source to: {source_path}")
     print(f"[INFO] Golden Poses: {n_poses}, Golden Patches: {n_patches} (center only)")
+
+
+def save_corr_io_as_c_pair(
+    gmap, fmap, coords, ii, jj, corr, R: int,
+    base_name: str = "corr_io_fp16_floats"
+):
+    """
+    Save correlation IO to .h/.c using __fp16 (half precision) values
+    written in normal float notation (e.g., 0.02545) instead of hex or int.
+    """
+
+    header_path = f"{base_name}.h"
+    source_path = f"{base_name}.c"
+
+    #gmap shape [1, buf, channel, 3, 3]
+    #change order to [1, buf, 3, 3, channel], so save by channel order
+    gmap = gmap.permute(0, 1, 3, 4, 2)  # [B, N, H, W, C] -> [B, N, 3, 3, C]
+    
+    #fmap shape [1, buf, channel, H2, W2]
+    #change order to [1, buf, H2, W2, channel]
+    fmap = fmap.permute(0, 1, 3, 4, 2)
+
+    def as_fp16_float_flat(t: torch.Tensor) -> np.ndarray:
+        # Convert to float16 for rounding, then back to float32 for printing
+        return t.detach().contiguous().to(torch.float16).cpu().numpy().astype(np.float32).reshape(-1)
+
+    def as_u16_flat(t: torch.Tensor) -> np.ndarray:
+        return t.detach().contiguous().view(-1).cpu().to(torch.int).numpy().astype(np.uint16)
+
+    def float_list(fvals: np.ndarray, per_line=16) -> str:
+        parts = [f"{v:.8g}" for v in fvals.tolist()]  # shorten but keep precision
+        lines = []
+        for i in range(0, len(parts), per_line):
+            lines.append(", ".join(parts[i:i+per_line]))
+        return ",\n  ".join(lines)
+
+    # ---- Shapes ----
+    Bg, Ng, PgH, PgW, Cg = gmap.shape
+    Bf, Bbuf, H2, W2, Cf = fmap.shape
+    Bc, M, two, PcH, PcW  = coords.shape
+    Bco, Mo, D1, D2, PoH, PoW = corr.shape
+
+    assert Bg == 1 and Bf == 1 and Bc == 1 and Bco == 1
+    assert two == 2
+    assert PgH == PgW == PcH == PcW == PoH == PoW == 3
+    assert Cg == Cf
+    assert M == Mo == ii.numel() == jj.numel()
+
+    C = Cg
+    D = D1
+    Nedges = M
+
+    # ---- Flatten ----
+    gmap_f   = as_fp16_float_flat(gmap)
+    fmap_f   = as_fp16_float_flat(fmap)
+    coords_f = as_fp16_float_flat(coords)
+    corr_f   = as_fp16_float_flat(corr)
+    ii_u16   = as_u16_flat(ii)
+    jj_u16   = as_u16_flat(jj)
+
+    with open(header_path, "w") as h, open(source_path, "w") as c:
+        # ---------- Header ----------
+        h.write("// Auto-generated correlation IO (__fp16 floats)\n\n")
+        h.write("#pragma once\n#include <stdint.h>\n\n")
+        h.write(f"#define MATCH_FEATURES_CHANNELS        {C}\n")
+        h.write(f"#define MATCH_FEATURES_HEIGHT          {H2}\n")
+        h.write(f"#define MATCH_FEATURES_WIDTH           {W2}\n")
+        h.write(f"#define BUF_SIZE                     {Bbuf}\n")
+        h.write(f"#define NEDGES   {Nedges}\n")
+        h.write(f"#define RADIUS   {R}\n")
+        h.write(f"#define D        {D}\n\n")
+
+        h.write(f"extern const fp16 patches[{gmap_f.size}];\n")
+        h.write(f"extern const fp16 match_features[{fmap_f.size}];\n")
+        h.write(f"extern const fp16 coords[{coords_f.size}];\n")
+        h.write(f"extern const uint16_t ii[{ii_u16.size}];\n")
+        h.write(f"extern const uint16_t jj[{jj_u16.size}];\n")
+        h.write(f"extern const fp16 correlation[{corr_f.size}];\n\n")
+
+        # ---------- Source ----------
+        c.write("// Auto-generated correlation IO (fp16 floats)\n\n")
+        c.write(f"#include \"{base_name}.h\"\n\n")
+
+        c.write(f"const fp16 patches[{gmap_f.size}] = {{\n  {float_list(gmap_f)}\n}};\n\n")
+        c.write(f"const fp16 match_features[{fmap_f.size}] = {{\n  {float_list(fmap_f)}\n}};\n\n")
+        c.write(f"const fp16 coords[{coords_f.size}] = {{\n  {float_list(coords_f)}\n}};\n\n")
+        c.write(f"const uint16_t ii[{ii_u16.size}] = {{\n  {', '.join(map(str, ii_u16))}\n}};\n\n")
+        c.write(f"const uint16_t jj[{jj_u16.size}] = {{\n  {', '.join(map(str, jj_u16))}\n}};\n\n")
+        c.write(f"const fp16 corr_out[{corr_f.size}] = {{\n  {float_list(corr_f)}\n}};\n")
+
+    print(f"[INFO] Saved header to: {header_path}")
+    print(f"[INFO] Saved source to: {source_path}")

@@ -224,6 +224,7 @@ test2.txt
 testfp16_ba
 test_fp16.py
 test_randomness
+test_corr/
 
 testfp16_ba*/
 *.npy

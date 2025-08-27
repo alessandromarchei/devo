@@ -510,36 +510,37 @@ class Patchifier(nn.Module):
                            index=self.iteration)
          
 
+
+        coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
+        scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
         x += 1
         y += 1
-        coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
-        
-        scores = altcorr.patchify(scores[0,:,None], coords, 0).view(n, patches_per_image) # extract weights of scorer map
 
+        coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)
         #save the coordinates in the range (H//4, W//4) with the dump function
         #coords_folder = "test_randomness/coords_mvsec2_trial{}/".format(self.trial)
             
-        coords_folder = "test_randomness/mvsec3_coords/"
+        # coords_folder = "test_randomness/mvsec3_coords/"
 
-        if not os.path.exists(coords_folder):
-            os.makedirs(coords_folder)
+        # if not os.path.exists(coords_folder):
+        #     os.makedirs(coords_folder)
 
 
-        coords_path = f"{coords_folder}coords_{self.iteration}.npz"
+        # coords_path = f"{coords_folder}coords_{self.iteration}.npz"
     
         
-        #dump_extracted_coords_npz(path=coords_path,coords=coords)
+        # #dump_extracted_coords_npz(path=coords_path,coords=coords)
 
-        #load coordinates from the file
-        coords = np.load(coords_path)["coords"]
+        # #load coordinates from the file
+        # coords = np.load(coords_path)["coords"]
 
         #remove all the coordinates that are more than patches_per_image
-        if coords.shape[1] > patches_per_image:
-            print(f"Reducing coordinates from {coords.shape[1]} to {patches_per_image}")
-            coords = coords[:,:patches_per_image]
+        # if coords.shape[1] > patches_per_image:
+        #     print(f"Reducing coordinates from {coords.shape[1]} to {patches_per_image}")
+        #     coords = coords[:,:patches_per_image]
 
 
-        coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
+        # coords = torch.from_numpy(coords).to(device=fmap.device) # (b*n,patches_per_image, 2)
 
         
         #print(f"coords from {coords_path}")

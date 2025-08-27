@@ -79,6 +79,71 @@ __global__ void patchify_backward_kernel(int R,
   }
 }
 
+// template <typename scalar_t>
+// __global__ void corr_forward_kernel(int R,
+//     const torch::PackedTensorAccessor32<scalar_t,5,torch::RestrictPtrTraits> fmap1,
+//     const torch::PackedTensorAccessor32<scalar_t,5,torch::RestrictPtrTraits> fmap2,
+//     const torch::PackedTensorAccessor32<float,5,torch::RestrictPtrTraits> coords,
+//     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> us,
+//     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> vs,
+//     torch::PackedTensorAccessor32<scalar_t,6,torch::RestrictPtrTraits> corr)
+// {
+//   // diameter
+//   const int D = 2*R + 2;
+
+//   const int B = coords.size(0);
+//   const int M = coords.size(1);
+//   const int H = coords.size(3);
+//   const int W = coords.size(4);
+
+//   const int C = fmap1.size(2);
+//   const int H2 = fmap2.size(3);
+//   const int W2 = fmap2.size(4);
+
+//   int n = blockIdx.x * blockDim.x + threadIdx.x;
+
+//   if (n < B * M * H * W * D * D) {
+//     const int jj = n % D; n /= D;
+//     const int ii = n % D; n /= D;
+//     const int j0 = n % W; n /= W;
+//     const int i0 = n % H; n /= H;
+//     const int  m = n % M; n /= M;
+
+//     const int ix = us[m];
+//     const int jx = vs[m];
+
+//     const float x = coords[n][m][0][i0][j0];
+//     const float y = coords[n][m][1][i0][j0];
+
+
+
+//     const int i1 = static_cast<int>(floor(y)) + (ii - R);
+//     const int j1 = static_cast<int>(floor(x)) + (jj - R);
+
+//     //printf("thread %d: correlation between patches[%d][%d][%d][%d] and matching features[%d][%d][%d][%d] at coords (%f, %f) with ii=%d, jj=%d\n",
+//     //       n, n, ix, i0, j0, n, jx, i1, j1, x, y, ii, jj);
+
+//     scalar_t s = 0;
+//     if (within_bounds(i1, j1, H2, W2)) {
+
+//       #pragma unroll 8
+//       for (int i=0; i<C; i+=8) {
+//         //loading 8 elements from fmap1 and fmap2 into the arrays f1 and f2 to perform the DOT PRODUCT
+//         scalar_t f1[8]; for (int j=0; j<8; j++) f1[j] = fmap1[n][ix][i+j][i0][j0];
+//         scalar_t f2[8]; for (int j=0; j<8; j++) f2[j] = fmap2[n][jx][i+j][i1][j1];
+
+//         #pragma unroll
+//         for (int j=0; j<8; j++) s += f1[j] * f2[j];
+//       }
+//     }
+
+
+//     corr[n][m][ii][jj][i0][j0] = s;
+//     //printf("thread %d: value of correlation[%d][%d][%d][%d][%d][%d] = %f\n",
+//     //       n, n, m, ii, jj, i0, j0, s);
+//   }
+// }
+
 template <typename scalar_t>
 __global__ void corr_forward_kernel(int R,
     const torch::PackedTensorAccessor32<scalar_t,5,torch::RestrictPtrTraits> fmap1,
@@ -88,59 +153,93 @@ __global__ void corr_forward_kernel(int R,
     const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> vs,
     torch::PackedTensorAccessor32<scalar_t,6,torch::RestrictPtrTraits> corr)
 {
+
+  /*
+    FMAP1 = [1, BUF * NPATCHES, MATCH_FEAT_DIM, 3, 3]   EXTRACTED PATCHES FROM 
+    FMAP2 = [1, BUF, MATCH_FEAT_DIM, H/4, W/4]
+    COORDS = [1, Nedges, 2, 3, 3]
+    II = [Nedges]
+    JJ = [Nedges]
+    CORR = [1, Nedges, 2*R+2, 2*R+2, 3, 3]
+  
+  */
   // diameter
   const int D = 2*R + 2;
 
-  const int B = coords.size(0);
-  const int M = coords.size(1);
-  const int H = coords.size(3);
-  const int W = coords.size(4);
+  const int B = coords.size(0);   // 1
+  const int M = coords.size(1);   // Nedges
+  const int H = coords.size(3);   // 3
+  const int W = coords.size(4);   // 3
 
-  const int C = fmap1.size(2);
-  const int H2 = fmap2.size(3);
-  const int W2 = fmap2.size(4);
+  const int C = fmap1.size(2);  // MATCH_FEAT_DIM = 128
+  const int H2 = fmap2.size(3);  // H/4
+  const int W2 = fmap2.size(4);  // W/4
 
   int n = blockIdx.x * blockDim.x + threadIdx.x;
 
   if (n < B * M * H * W * D * D) {
+    //for every Npairs * 3 * 3 * 8 * 8
     const int jj = n % D; n /= D;
     const int ii = n % D; n /= D;
     const int j0 = n % W; n /= W;
     const int i0 = n % H; n /= H;
     const int  m = n % M; n /= M;
 
+    //each thread is responsible for EDGE m, and pixel (i0, j0) in the patch
+
     const int ix = us[m];
     const int jx = vs[m];
 
     const float x = coords[n][m][0][i0][j0];
     const float y = coords[n][m][1][i0][j0];
-
-
+    printf("x = coords[%d][%d][0][%d][%d] = %f\n", n, m, i0, j0, x);
+    printf("y = coords[%d][%d][1][%d][%d] = %f\n", n, m, i0, j0, y);
 
     const int i1 = static_cast<int>(floor(y)) + (ii - R);
     const int j1 = static_cast<int>(floor(x)) + (jj - R);
-
-    //printf("thread %d: correlation between patches[%d][%d][%d][%d] and matching features[%d][%d][%d][%d] at coords (%f, %f) with ii=%d, jj=%d\n",
-    //       n, n, ix, i0, j0, n, jx, i1, j1, x, y, ii, jj);
+    printf("i1 = floor(%f) + (%d - %d) = %d\n", y, ii, R, i1);
+    printf("j1 = floor(%f) + (%d - %d) = %d\n", x, jj, R, j1);
 
     scalar_t s = 0;
-    if (within_bounds(i1, j1, H2, W2)) {
+    scalar_t s_2 = 0;
+    //copy of fmap1 and fmap2
+
+    
+    if (within_bounds(i1, j1, H2, W2))  //if the pixel (i1, j1) is within bounds of fmap2
+    {
 
       #pragma unroll 8
       for (int i=0; i<C; i+=8) {
-        //loading 8 elements from fmap1 and fmap2 into the arrays f1 and f2 to perform the DOT PRODUCT
-        scalar_t f1[8]; for (int j=0; j<8; j++) f1[j] = fmap1[n][ix][i+j][i0][j0];
-        scalar_t f2[8]; for (int j=0; j<8; j++) f2[j] = fmap2[n][jx][i+j][i1][j1];
+        scalar_t f1[8]; 
+        for (int j=0; j<8; j++) 
+        {
+          f1[j] = fmap1[n][ix][i+j][i0][j0];
+        }
+
+        scalar_t f2[8]; 
+        for (int j=0; j<8; j++) 
+        {
+          f2[j] = fmap2[n][jx][i+j][i1][j1];
+        }
 
         #pragma unroll
         for (int j=0; j<8; j++) s += f1[j] * f2[j];
       }
+
+          //added only for verification and comparison
+      for(int i = 0;i < C; i++) {
+        s_2+= fmap1[n][ix][i][i0][j0] * fmap2[n][jx][i][i1][j1];
+      }
+      //printf("corr between patches[%d][%d][%d][%d] and matching features[%d][%d][%d][%d] at coords (%f, %f) \n",
+      //       n, ix, i0, j0, n, jx, i1, j1, x, y);
     }
 
 
+
+    if (s != s_2) {
+      printf("corr[%d][%d][%d][%d][%d][%d]: %f, s_2: %f\n", n, m, ii, jj, i0, j0, s, s_2);
+    }
     corr[n][m][ii][jj][i0][j0] = s;
-    //printf("thread %d: value of correlation[%d][%d][%d][%d][%d][%d] = %f\n",
-    //       n, n, m, ii, jj, i0, j0, s);
   }
 }
 
