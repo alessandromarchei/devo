@@ -503,12 +503,9 @@ class Patchifier(nn.Module):
             #x, y = ev_density_selector(events=events, 
             #    patches_per_image=patches_per_image, 
             #    suppression_borders=11)
-            x, y = ev_density_selector_viz(events=events, 
-                           patches_per_image=patches_per_image, 
-                           suppression_borders=7,
-                           visualize=False,
-                           index=self.iteration)
-         
+            x, y = ev_density_selector(events=events, 
+                           patches_per_image=patches_per_image,
+                           suppression_borders=7)
 
 
         coords = torch.stack([x, y], dim=-1).float() # in range (H//4, W//4)

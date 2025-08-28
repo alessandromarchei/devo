@@ -131,6 +131,12 @@ class DEVO:
         self.ii = torch.as_tensor([], dtype=torch.long, device="cuda")
         self.jj = torch.as_tensor([], dtype=torch.long, device="cuda")
         self.kk = torch.as_tensor([], dtype=torch.long, device="cuda")
+
+
+        #graph indices used after filering due to low weigths
+        self.ii_thresholded = torch.as_tensor([], dtype=torch.long, device="cuda")
+        self.jj_thresholded = torch.as_tensor([], dtype=torch.long, device="cuda")
+        self.kk_thresholded = torch.as_tensor([], dtype=torch.long, device="cuda")
         
         # initialize poses to identity matrix
         self.poses_[:,6] = 1.0
@@ -465,6 +471,7 @@ class DEVO:
     def update(self):
         coords = self.reproject()
 
+
         with autocast(enabled=True):
             
             corr = self.corr(coords)    #CORRELATION BLOCK 
@@ -472,6 +479,27 @@ class DEVO:
             with Timer("other", enabled=self.enable_timing):
                 self.net, (delta, weight, _) = \
                     self.network.update(self.net, ctx, corr, None, self.ii, self.jj, self.kk)
+
+
+        #implement a sort of thresholding mechanism in order to remove the edges with weights smaller than 0.05
+        #ctx shape [1,Nedges,384]
+        #corr shape [1,Nedges,882]
+        #self.ii shape [Nedges]
+        #self.net shape [1,Nedges,384]
+
+        #calculate magnitude of weights :  [1,Nedges,2] ==> [1,Nedges]
+        # weight_norm = weight.norm(dim=-1)
+        # mask = weight_norm > 0.05
+        # #remove the mask dimension
+        # mask = mask.squeeze(0)
+
+        # #discard and remove the data with indices with mask = False
+        # self.ii_thresholded = self.ii[mask]
+        # self.jj_thresholded = self.jj[mask]
+        # self.kk_thresholded = self.kk[mask]
+        # self.net = self.net[:,mask]
+        # ctx = ctx[:,mask]
+        # corr = corr[:,mask]
 
         lmbda = torch.as_tensor([1e-4], device="cuda")
         weight = weight.float()
@@ -570,7 +598,7 @@ class DEVO:
                     self.patches_ = self.patches_.to(dtype=torch.float32, device=self.patches_.device)  
                     self.intrinsics_ = self.intrinsics_.to(dtype=torch.float32, device=self.intrinsics_.device)
                 
-                if self.cfg.BA_PRECISION == "fp16_chol":
+                elif self.cfg.BA_PRECISION == "fp16_chol":
                     #uncomment for using double precision
                     self.poses_ = self.poses_.to(dtype=torch.float16, device='cuda')
                     self.patches_ = self.patches_.to(dtype=torch.float16, device='cuda')
@@ -599,7 +627,7 @@ class DEVO:
                     self.kk = self.kk.to(device='cuda')
 
 
-                if self.cfg.BA_PRECISION == "bf16_chol":
+                elif self.cfg.BA_PRECISION == "bf16_chol":
                     #uncomment for using double precision
                     self.poses_ = self.poses_.to(dtype=torch.bfloat16, device='cuda')
                     self.patches_ = self.patches_.to(dtype=torch.bfloat16, device='cuda')
@@ -627,7 +655,7 @@ class DEVO:
                     self.jj = self.jj.to(device='cuda')
                     self.kk = self.kk.to(device='cuda')
 
-                if self.cfg.BA_PRECISION == "bf16_lu":
+                elif self.cfg.BA_PRECISION == "bf16_lu":
                     #uncomment for using double precision
                     self.poses_ = self.poses_.to(dtype=torch.bfloat16, device='cuda')
                     self.patches_ = self.patches_.to(dtype=torch.bfloat16, device='cuda')
@@ -655,7 +683,7 @@ class DEVO:
                     self.jj = self.jj.to(device='cuda')
                     self.kk = self.kk.to(device='cuda')
 
-                if self.cfg.BA_PRECISION == "fp16_lu":
+                elif self.cfg.BA_PRECISION == "fp16_lu":
                     #uncomment for using double precision
                     self.poses_ = self.poses_.to(dtype=torch.float16, device='cuda')
                     self.patches_ = self.patches_.to(dtype=torch.float16, device='cuda')
@@ -683,7 +711,7 @@ class DEVO:
                     self.jj = self.jj.to(device='cuda')
                     self.kk = self.kk.to(device='cuda')
 
-                if self.cfg.BA_PRECISION == "fp32_chol":
+                elif self.cfg.BA_PRECISION == "fp32_chol":
                     #uncomment for using double precision
 
                     fastba.BA_fp32_chol(self.poses, self.patches, self.intrinsics, 
@@ -695,7 +723,7 @@ class DEVO:
                     fastba.BA_fp32_lu(self.poses, self.patches, self.intrinsics, 
                             target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
                     
-                if self.cfg.BA_PRECISION == "fp32_chol2":
+                elif self.cfg.BA_PRECISION == "fp32_chol2":
                     #uncomment for using double precision
 
                     fastba.BA_fp32_chol2(self.poses, self.patches, self.intrinsics, 

@@ -36,6 +36,23 @@ from tqdm import tqdm
 # plt.imshow(image.detach().cpu().numpy().transpose(1,2,0))
 # plt.show()
 
+
+"""
+    landing and takeoff frames of MVSEC:
+    indoor 1 : takeoff 150, landing 2060 (total frames 2205) ==> skip_end = 145
+    indoor 2 : takeoff 280, landing 2500 (total frames 2664) ==> skip_end = 164
+    indoor 3 : takeoff 250, landing 2800 (total frames 2951) ==> skip_end = 151
+    indoor 4 : takeoff 250, landing 550 (total frames 622) ==> skip_end = 75
+"""
+
+#CREATE A LIST WITH THE SKIP START AND SKIP END BASED ON THE SCENE NAME
+skip_ranges_mvsec = {
+    "indoor_flying1": (150, 145),
+    "indoor_flying2": (280, 164),
+    "indoor_flying3": (250, 151),
+    "indoor_flying4": (250, 75)
+}
+
 @torch.no_grad()
 def run_rgb(imagedir, cfg, network, viz=False, iterator=None, timing=False, H=480, W=640, viz_flow=False): 
     slam = DEVO(cfg, network, ht=H, wd=W, viz=viz, viz_flow=viz_flow)
@@ -196,6 +213,23 @@ def run_voxel_advanced(voxeldir, cfg, network, viz=False, iterator=None, timing=
 
     kwargs['skip_start'] = skip_start
     kwargs['skip_end'] = skip_end    
+
+    print(f"Voxel dir : {voxeldir}")
+    #check if mvsec is in the name of the voxeldir
+    if ('mvsec' in voxeldir) and (skip_end != 0 or skip_start != 0):
+        #check which scene is being processed
+        if('indoor_flying1' in voxeldir):
+            skip_start, skip_end = skip_ranges_mvsec["indoor_flying1"]
+            print("Processing indoor_flying1, skipping first 150 frames and last 145 frames")
+        elif('indoor_flying2' in voxeldir):
+            skip_start, skip_end = skip_ranges_mvsec["indoor_flying2"]
+            print("Processing indoor_flying2, skipping first 280 frames and last 164 frames")
+        elif('indoor_flying3' in voxeldir):
+            skip_start, skip_end = skip_ranges_mvsec["indoor_flying3"]
+            print("Processing indoor_flying3, skipping first 250 frames and last 151 frames")
+        elif('indoor_flying4' in voxeldir):
+            skip_start, skip_end = skip_ranges_mvsec["indoor_flying4"]
+            print("Processing indoor_flying4, skipping first 250 frames and last 75 frames")
 
     data_list = list(iterator)
     total_len = len(data_list)

@@ -387,6 +387,10 @@ class DEVO:
                 if self.cfg.BA_PRECISION == 'reduction':
                     fastba.BA_red(self.poses, self.patches, self.intrinsics,
                         target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
+                elif self.cfg.BA_PRECISION == "kahan_db64":
+                    #kahan summation method, deterministic float64 + reduction
+                    fastba.BA_kahan_db64(self.poses, self.patches, self.intrinsics, 
+                            target, weight, lmbda, self.ii, self.jj, self.kk, t0, self.n, 2)
                 else:
                     #default using BA with atomic operations
                     fastba.BA(self.poses, self.patches, self.intrinsics,

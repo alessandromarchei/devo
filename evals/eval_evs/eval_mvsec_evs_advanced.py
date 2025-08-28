@@ -1,7 +1,7 @@
 import os
 import torch
 from devo.config import cfg
-os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
 
 from utils.load_utils import load_mvsec_traj, mvsec_evs_iterator
 from utils.eval_utils import assert_eval_config, run_voxel_advanced, run_voxel
@@ -14,19 +14,28 @@ seed = 1234
 torch.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
-torch.cuda.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-torch.use_deterministic_algorithms(True)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-torch.backends.cuda.matmul.allow_tf32 = False
-torch.backends.cudnn.allow_tf32 = False
+
 
 H, W = 260, 346
 
 @torch.no_grad()
 def evaluate(config, args, net, train_step=None, datapath="", split_file=None, 
              trials=1, stride=1, plot=False, save=False, return_figure=False, viz=False, timing=False, side='left', viz_flow=False, use_pyramid=True,**kwargs):
+
+    if kwargs["torch_deterministic"]:
+        #use pytorch in deterministic mode
+        print("Using pytorch deterministic mode")
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.use_deterministic_algorithms(True)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+
+
+
     dataset_name = "mvsec_evs"
     assert side == "left" or side == "right"
     assert stride == 1 # != does not work yet
@@ -146,6 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('--path', type=str, default=None, help='path to load coords or ba inputs files')
     parser.add_argument('--load_ba', type=lambda x: x.lower() == 'true', default=False, help='load ba inputs')
     parser.add_argument('--load_coords', type=lambda x: x.lower() == 'true', default=False, help='load coords files')
+    parser.add_argument('--torch_deterministic', action='store_true', help='use pytorch deterministic mode')
     args = parser.parse_args()
     assert_eval_config(args)
 
@@ -159,6 +169,7 @@ if __name__ == '__main__':
     # args.plot = True
     kwargs = {"dim_inet": args.dim_inet, "dim_fnet": args.dim_fnet, "skip_start": args.skip_start, "skip_end": args.skip_end}
     kwargs["devo_debug"] = args.devo_debug
+    kwargs["torch_deterministic"] = args.torch_deterministic
     kwargs["logname"] = args.logname
     if args.outdir is not None:
         kwargs["outdir"] = args.outdir

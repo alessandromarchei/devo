@@ -338,35 +338,41 @@ def nms_image(image_tensor, kernel_size=3):
 
 
 def ev_density_selector(events,
-    patches_per_image,
-    suppression_borders=0,
-):
-    #get the absolute value of the events tensor. shape [batch_size, 5, height, width]
-    positive_event_tensor = torch.abs(events.squeeze(0))
+                        patches_per_image,
+                        suppression_borders=0):
+    """
+    Select patches based on event density and optionally visualize each step.
 
-    #downsample [batch_size, 5, height, width] to [batch_size, 5, height/4, width/4]
-    downsampled_event_tensor = F.avg_pool2d(positive_event_tensor, 4, 4)
-    event_in_xy_form = downsampled_event_tensor.transpose(3, 2)
+    Algorithm:
+    1 Make event tensor positive (neg events become positive with abs)
+    2 Average pooling (2x2) (H,W) ==> (H/4,W/4)
+    3 Mean across channels (C) ==> (H/4,W/4)
+    4 Non maximum suppression with area of 7 or 11 (take highest values with areas of interest) (1 max pooling with stride = 1, then take the indices where pixels are = input image)
+    5 select top_k values
+    6 return coordinates of those values
 
-    #mean across the BINS. shape [batch_size, 5, height/4, width/4]
-    ev_mean = torch.mean(event_in_xy_form, dim=1)
+    Note that due to pooling, the reconstructed coordinates are not exactly the same as the original image, so selected points could be misaligned.
 
-    if suppression_borders != 0:
-        # perform non maximum suppression
-        ev_mean = nms_image(ev_mean, kernel_size=suppression_borders)
+    Args:
+        events: input event tensor [1, 5, H, W]
+        patches_per_image: number of patches to select
+        suppression_borders: kernel size for NMS (0 = no suppression)
+    """
+    # Step 1: Positive event tensor
+    positive_event_tensor = torch.abs(events.squeeze(0))  # shape: [1, 5, H, W]
 
+    # Step 2: Downsample
+    downsampled_event_tensor = F.avg_pool2d(positive_event_tensor, 4, 4)  # [1, 5, H/4, W/4]
 
-    #flatten : shape [batch_size, height/4 * width/4]
-    event_mean_flat = torch.flatten(ev_mean, start_dim=1, end_dim=-1)
+    # Step 4: Mean across bins
+    ev_mean = torch.mean(downsampled_event_tensor, dim=1)  # shape: [1, W/4, H/4]
 
-    #get the indices of the top k values in the flattened tensor
-    values, indices = torch.topk(event_mean_flat, k=patches_per_image, dim=-1)
+    row_indices, col_indices = select_keypoints_nms_rounds(
+        ev_mean, patches_per_image, suppression_borders
+    )
 
-    # compute the row and column indices of the top k values in the flattened tensor
-    row_indices = indices / ev_mean.shape[-1]
-    col_indices = indices % ev_mean.shape[-1]
-
-    # compute the batch indices of the top k values in the flattened tensor
+# compute the batch indices of the top k values in the flattened tensor
+#ev_mean shape = [1, H/4, W/4]
     batch_indices = (
         torch.arange(ev_mean.shape[0], device="cuda")
         .view(-1, 1)
@@ -374,12 +380,58 @@ def ev_density_selector(events,
     )
 
     # combine the batch, row, and column indices to obtain the indices in the original 3D tensor
+    row_indices = row_indices.view(-1, patches_per_image)
+    col_indices = col_indices.view(-1, patches_per_image)
     orig_indices = torch.stack((batch_indices, row_indices, col_indices), dim=-1)
 
     coords = orig_indices[:, :, 1:]
     #return the coordindate in (x,y) format as the other implementations
     (x,y) = coords[:, :, 0], coords[:, :, 1] # (batch_size, patches_per_image)
     return (x, y)
+
+# def ev_density_selector(events,
+#     patches_per_image,
+#     suppression_borders=0,
+# ):
+#     #get the absolute value of the events tensor. shape [batch_size, 5, height, width]
+#     positive_event_tensor = torch.abs(events.squeeze(0))
+
+#     #downsample [batch_size, 5, height, width] to [batch_size, 5, height/4, width/4]
+#     downsampled_event_tensor = F.avg_pool2d(positive_event_tensor, 4, 4)
+#     event_in_xy_form = downsampled_event_tensor.transpose(3, 2)
+
+#     #mean across the BINS. shape [batch_size, 5, height/4, width/4]
+#     ev_mean = torch.mean(event_in_xy_form, dim=1)
+
+#     if suppression_borders != 0:
+#         # perform non maximum suppression
+#         ev_mean = nms_image(ev_mean, kernel_size=suppression_borders)
+
+
+#     #flatten : shape [batch_size, height/4 * width/4]
+#     event_mean_flat = torch.flatten(ev_mean, start_dim=1, end_dim=-1)
+
+#     #get the indices of the top k values in the flattened tensor
+#     values, indices = torch.topk(event_mean_flat, k=patches_per_image, dim=-1)
+
+#     # compute the row and column indices of the top k values in the flattened tensor
+#     row_indices = indices / ev_mean.shape[-1]
+#     col_indices = indices % ev_mean.shape[-1]
+
+#     # compute the batch indices of the top k values in the flattened tensor
+#     batch_indices = (
+#         torch.arange(ev_mean.shape[0], device="cuda")
+#         .view(-1, 1)
+#         .repeat(1, patches_per_image)
+#     )
+
+#     # combine the batch, row, and column indices to obtain the indices in the original 3D tensor
+#     orig_indices = torch.stack((batch_indices, row_indices, col_indices), dim=-1)
+
+#     coords = orig_indices[:, :, 1:]
+#     #return the coordindate in (x,y) format as the other implementations
+#     (x,y) = coords[:, :, 0], coords[:, :, 1] # (batch_size, patches_per_image)
+#     return (x, y)
 
 
 import torch
@@ -417,6 +469,16 @@ def ev_density_selector_viz(events,
     """
     Select patches based on event density and optionally visualize each step.
 
+    Algorithm:
+    1 Make event tensor positive (neg events become positive with abs)
+    2 Average pooling (2x2) (H,W) ==> (H/4,W/4)
+    3 Mean across channels (C) ==> (H/4,W/4)
+    4 Non maximum suppression with area of 7 or 11 (take highest values with areas of interest) (1 max pooling with stride = 1, then take the indices where pixels are = input image)
+    5 select top_k values
+    6 return coordinates of those values
+
+    Note that due to pooling, the reconstructed coordinates are not exactly the same as the original image, so selected points could be misaligned.
+
     Args:
         events: input event tensor [1, 5, H, W]
         patches_per_image: number of patches to select
@@ -440,19 +502,23 @@ def ev_density_selector_viz(events,
     if visualize:
         plot_tensor(ev_mean, "3_Mean_Across_Bins", folder, index)
 
-    # Step 5: Non-maximum suppression (optional)
+    row_indices, col_indices = select_keypoints_nms_rounds(
+        ev_mean, patches_per_image, suppression_borders
+    )
+
+    # # Step 5: Non-maximum suppression (optional)
     if suppression_borders != 0:
         ev_mean = nms_image(ev_mean, kernel_size=suppression_borders)
         if visualize:
             plot_tensor(ev_mean, "4_After_NMS", folder, index)
 
-    # Flatten and select top k
-    event_mean_flat = ev_mean.flatten()  # shape: [1, W/4 * H/4]
-    values, indices = torch.topk(event_mean_flat, k=patches_per_image, dim=-1)
+    # # Flatten and select top k
+    # event_mean_flat = ev_mean.flatten()  # shape: [1, W/4 * H/4]
+    # values, indices = torch.topk(event_mean_flat, k=patches_per_image, dim=-1)
 
-    # Compute row and col indices
-    row_indices = indices / ev_mean.shape[-1]
-    col_indices = indices % ev_mean.shape[-1]
+    # # Compute row and col indices
+    # row_indices = indices / ev_mean.shape[-1]
+    # col_indices = indices % ev_mean.shape[-1]
 
     # Optional: plot points on final mean image
     if visualize:
@@ -487,3 +553,72 @@ def ev_density_selector_viz(events,
     #return the coordindate in (x,y) format as the other implementations
     (x,y) = coords[:, :, 0], coords[:, :, 1] # (batch_size, patches_per_image)
     return (x, y)
+
+def select_keypoints_nms_rounds(ev_mean, patches_per_image, suppression_borders):
+    """
+    Deterministic multi-round NMS keypoint selection.
+
+    Args:
+        ev_mean: [1, H, W] or [H, W] tensor of scores
+        patches_per_image: number of points to select (K)
+        suppression_borders: kernel size for NMS (passed to nms_image)
+
+    Returns:
+        row_indices [K], col_indices [K]
+    """
+    # Normalize to [H, W]
+    if ev_mean.dim() == 3:
+        ev_map = ev_mean.squeeze(0).clone()
+    else:
+        ev_map = ev_mean.clone()
+    H, W = ev_map.shape
+
+    selected_rows, selected_cols = [], []
+    already_selected = torch.zeros_like(ev_map, dtype=torch.bool)
+    selected_points = 0
+
+    while selected_points < patches_per_image:
+        # Run NMS on the *current* map
+        nms_map = nms_image(ev_map.unsqueeze(0), kernel_size=suppression_borders).squeeze(0)
+
+        # Mask out already selected
+        nms_map[already_selected] = float(0)
+
+        # Flatten and pick remaining points
+        flat = nms_map.view(-1)
+        need = patches_per_image - selected_points
+        vals, idx = torch.topk(flat, k=need, largest=True)
+
+        # Keep only valid ones (ignore -inf)
+        valid_mask = vals > float(0)
+        # print(f"[DEBUG] NMS round: selected {valid_mask.sum().item()} valid points")
+        if not valid_mask.any():
+            # If NMS produced nothing, break (we won't add more)
+            break
+
+        idx = idx[valid_mask]
+        rows = torch.div(idx, W, rounding_mode='floor')
+
+        selected_points += rows.shape[0]
+
+        if selected_points < patches_per_image:
+            print(f"[DEBUG] Total selected so far: {selected_points}, continuing NMS rounds...")
+
+
+        cols = idx % W
+
+        selected_rows.append(rows)
+        selected_cols.append(cols)
+
+        # Mark them so next round will ignore
+        already_selected[rows, cols] = True
+        ev_map[rows, cols] = float(0)
+
+    if selected_points > 0:
+        row_indices = torch.cat(selected_rows)[:patches_per_image]
+        col_indices = torch.cat(selected_cols)[:patches_per_image]
+    else:
+        row_indices = torch.empty(0, dtype=torch.long)
+        col_indices = torch.empty(0, dtype=torch.long)
+
+    return row_indices, col_indices
